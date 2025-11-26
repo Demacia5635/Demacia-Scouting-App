@@ -19,7 +19,8 @@ class Selection extends QuestionType {
     this.isMultiSelect = false,
     this.isChangable = false,
     this.segments = const [],
-  }) : initValue = initValue ?? (options.isNotEmpty ? () => {options.first} : () => {}),
+  }) : initValue =
+           initValue ?? (options.isNotEmpty ? () => {options.first} : () => {}),
        onChanged = onChanged ?? ((p0) {}) {
     if (isMultiSelect) selectionOption = SelectionOptions.segments;
     segments = [];
@@ -59,7 +60,9 @@ class Selection extends QuestionType {
     'placeHolder': placeHolder,
     'options': options.map((option) => option.toJson()).toList(),
     'selectionOption': selectionOption.index,
-    'initValue': initValue != null ? initValue!().map((option) => option.toJson()).toList() : [],
+    'initValue': initValue != null
+        ? initValue!().map((option) => option.toJson()).toList()
+        : [],
     'isMultiSelect': isMultiSelect,
   };
 
@@ -68,7 +71,7 @@ class Selection extends QuestionType {
     Key? key,
     void Function(Set<Entry>?)? onChanged,
     bool isChangable = false,
-    dynamic init
+    dynamic init,
   }) {
     List<Entry> options = [];
     for (var entry in json['options']) {
@@ -94,7 +97,10 @@ class Selection extends QuestionType {
       selectionOption: SelectionOptions.values.elementAt(
         json['selectionOption'] as int,
       ),
-      initValue: init != null && init() != null && init is Set<Entry> Function()? ? init : (() => initValue),
+      initValue:
+          init != null && init() != null && init is Set<Entry> Function()?
+          ? init
+          : (() => initValue),
       isMultiSelect: json['isMultiSelect'] as bool,
       onChanged: onChanged,
       isChangable: isChangable,
@@ -147,15 +153,9 @@ class SelectionChangableState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: Text(widget.placeHolder),
+          placeholder: (widget.placeHolder),
           value: value,
-          makeItem: (Entry t) => Row(
-            spacing: 4,
-            children: [
-              t.icon != null ? Icon(t.icon, color: t.color) : Container(),
-              Text(t.title, style: TextStyle(color: t.color)),
-            ],
-          ),
+          makeItem: (Entry t) => t.title,
           onChange: (Entry t) {
             setState(() {
               value = t;
@@ -237,15 +237,9 @@ class SelectionState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: Text(widget.placeHolder),
+          placeholder: (widget.placeHolder),
           value: value,
-          makeItem: (Entry t) => Row(
-            spacing: 4,
-            children: [
-              t.icon != null ? Icon(t.icon, color: t.color) : Container(),
-              Text(t.title, style: TextStyle(color: t.color)),
-            ],
-          ),
+          makeItem: (Entry t) => t.title,
           onChange: (Entry t) {
             setState(() {
               value = t;
