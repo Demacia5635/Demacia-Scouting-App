@@ -101,8 +101,7 @@ class HomePageState extends State<HomePage> with RouteAware {
                                 return MapEntry(qIndex, () {
                                   if (savedValue != null) {
                                     if (savedValue is Set<Entry>) {
-                                      widget.json!['screens'][i]['questions'][qIndex -
-                                              1]['question']['initValue'] =
+                                      widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =
                                           savedValue
                                               .map((option) => option.toJson())
                                               .toList();

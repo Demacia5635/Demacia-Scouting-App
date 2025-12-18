@@ -11,8 +11,9 @@ class FormPage extends StatefulWidget {
   FormPage({
     super.key,
     required this.index,
-    this.name = 'Empty Form Name',flutter pub, required bool isChangable get
-
+    this.name = 'Empty Form Name',
+    this.icon = Icons.article,
+    this.color = Colors.blue,
     Map<int, (Question, dynamic)>? questions,
     this.isChangable = false,
     Map<String, dynamic> Function()? onSave,
