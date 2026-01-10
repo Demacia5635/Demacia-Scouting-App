@@ -82,5 +82,7 @@ class DefaultFirebaseOptions {
     projectId: 'scoting-app',
     authDomain: 'scoting-app.firebaseapp.com',
     storageBucket: 'scoting-app.firebasestorage.app',
+    databaseURL:
+        "https://scoting-app-default-rtdb.asia-southeast1.firebasedatabase.app/",
   );
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/form_page.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/qr_code.dart';
@@ -47,9 +48,18 @@ class HomePageState extends State<HomePage> with RouteAware {
   Widget build(BuildContext context) => Scaffold(
     resizeToAvoidBottomInset: false,
     appBar: DemaciaAppBar(
-      onSave: () =>
-          widget.json != null ? save(widget.json!, MainApp.currentSave) : null,
-      onLongSave: () => widget.json != null
+      onSave:
+          () async {
+                widget.json != null
+                    ? save(widget.json!, MainApp.currentSave)
+                    : null;
+                await DatabaseService().update(
+                  path: 'form',
+                  data: widget.json!,
+                );
+              }
+              as void Function(),
+      onLongSave: () async => widget.json != null
           ? longSave(widget.json!, context, () => setState(() {}))
           : null,
     ),
@@ -153,7 +163,7 @@ class HomePageState extends State<HomePage> with RouteAware {
                                 FormPage.fromJson(
                                   widget.json!['screens'][i],
                                   isChangable: false,
-                                  getJson: () => widget.json!,
+                                  getJson: () async => widget.json!,
                                   onChanged: (p0, p1) {
                                     setState(() {
                                       data[i]![p0] = p1;

@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class DemaciaAppBar extends AppBar {
   DemaciaAppBar({
     super.key,
-    void Function()? onSave,
-    void Function()? onLongSave,
-  }) : onSave = onSave ?? (() {}),
-       onLongSave = onLongSave ?? (() {}),
+    Future<void> Function()? onLongSave,
+    required this.onSave,
+  }) : onLongSave = onLongSave ?? (() {}),
        super(
          actions: [
            Container(
@@ -52,6 +52,7 @@ class DemaciaAppBar extends AppBar {
              margin: EdgeInsets.symmetric(horizontal: 20),
              child: ElevatedButton(
                onPressed: onSave,
+
                onLongPress: onLongSave,
                child: Icon(Icons.save),
              ),

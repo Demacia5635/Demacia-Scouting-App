@@ -1,14 +1,17 @@
 import 'dart:convert';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:scouting_qr_maker/firebase_options.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   final prefs = await SharedPreferences.getInstance();
-
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (prefs.containsKey('saves')) {
     MainApp.saves = [];
     for (var save in prefs.getStringList('saves')!) {

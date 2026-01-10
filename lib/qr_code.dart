@@ -81,10 +81,10 @@ class QrCodeState extends State<QrCode> {
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.arrowLeft) {
       // Check if there's a route to pop (i.e., not the very first screen)
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => widget.previosPage()),
-        );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => widget.previosPage()),
+      );
     }
   }
 
@@ -95,6 +95,7 @@ class QrCodeState extends State<QrCode> {
     autofocus: true,
     child: Scaffold(
       appBar: DemaciaAppBar(
+        onSave: () {},
         // onSave: () => save(widget.data, MainApp.currentSave),
         // onLongSave: () => longSave(widget.data, context, () => setState(() {})),
       ),
@@ -113,15 +114,12 @@ class QrCodeState extends State<QrCode> {
                   size: 300,
                   backgroundColor: Colors.white,
                 ),
-    
+
                 Text(
                   qrData,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),             
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-    
+
                 Row(
                   spacing: 100,
                   mainAxisAlignment: MainAxisAlignment.center,

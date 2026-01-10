@@ -1,5 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/question.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
@@ -16,11 +19,11 @@ class FormPage extends StatefulWidget {
     this.color = Colors.blue,
     Map<int, (Question, dynamic)>? questions,
     this.isChangable = false,
-    Map<String, dynamic> Function()? onSave,
+    Future<Map<String, dynamic>> Function()? onSave,
     this.nextPage,
     this.previosPage,
   }) : questions = questions ?? {},
-       onSave = onSave ?? (() => {});
+       onSave = onSave ?? (() => Future.value({}));
 
   int index;
   String name;
@@ -30,7 +33,7 @@ class FormPage extends StatefulWidget {
   Map<int, (Question, dynamic)> questions;
   bool isChangable;
 
-  Map<String, dynamic> Function() onSave;
+  Future<Map<String, dynamic>> Function() onSave;
 
   Widget Function()? nextPage;
   Widget Function()? previosPage;
@@ -49,7 +52,7 @@ class FormPage extends StatefulWidget {
   factory FormPage.fromJson(
     Map<String, dynamic> json, {
     bool isChangable = false,
-    Map<String, dynamic> Function()? getJson,
+    Future<Map<String, dynamic>> Function()? getJson,
     FormPage Function()? nextPage,
     FormPage Function()? previosPage,
     void Function(int, dynamic)? onChanged,
@@ -293,9 +296,17 @@ class FormPageState extends State<FormPage> {
     child: Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: DemaciaAppBar(
-        onSave: () => save(widget.onSave(), MainApp.currentSave),
-        onLongSave: () =>
-            longSave(widget.onSave(), context, () => setState(() {})),
+        onSave:
+            () async {
+                  save(widget.toJson(), MainApp.currentSave);
+                  await DatabaseService().update(
+                    path: 'form',
+                    data: widget.toJson(),
+                  );
+                }
+                as void Function(),
+        onLongSave: () async =>
+            longSave(await widget.onSave(), context, () => setState(() {})),
       ),
       body: Stack(
         children: [

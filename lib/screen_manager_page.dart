@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
@@ -19,31 +20,44 @@ class ScreenManagerPage extends StatefulWidget {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
   };
 
-  factory ScreenManagerPage.fromJson(
-    Map<String, dynamic> json
-  ) {
+  factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
     Map<int, FormPage> screens = {};
+    // Create the widget instance first so getJson has a reference
     ScreenManagerPage widget = ScreenManagerPage(screens: screens);
 
-    for (var screen in json['screens']) {
-      screens.addAll({
-        screen['index'] as int: FormPage.fromJson(
-          screen,
-          isChangable: true,
-          getJson: () => widget.toJson(),
-          init: () {},
-        ),
-      });
-    }
-    for (int i = 0; i < screens.length; i++) {
-      screens[i]!.previosPage = (i != 0) ? () => screens[i - 1]! : null;
-      screens[i]!.nextPage = (i + 1 != screens.length)
-          ? () => screens[i + 1]!
-          : null;
+    // 1. Fill the map
+    for (var screenJson in json['screens']) {
+      int index = screenJson['index'] as int;
+      screens[index] = FormPage.fromJson(
+        screenJson,
+        isChangable: true,
+        getJson: () async => widget.toJson(),
+        init: () {},
+      );
     }
 
-    widget = ScreenManagerPage(screens: screens);
+    // 2. Safely link pages by sorting the existing keys
+    final sortedKeys = screens.keys.toList()..sort();
 
+    for (int i = 0; i < sortedKeys.length; i++) {
+      int currentKey = sortedKeys[i];
+      FormPage? currentPage = screens[currentKey];
+
+      if (currentPage != null) {
+        // Link to previous (if not the first in the sorted list)
+        currentPage.previosPage = (i > 0)
+            ? () => screens[sortedKeys[i - 1]]!
+            : null;
+
+        // Link to next (if not the last in the sorted list)
+        currentPage.nextPage = (i < sortedKeys.length - 1)
+            ? () => screens[sortedKeys[i + 1]]!
+            : null;
+      }
+    }
+
+    // Update the widget reference with the populated screens
+    widget.screens = screens;
     return widget;
   }
 }
@@ -75,7 +89,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
       index: ++currentIndex,
       name: 'Form Num $currentIndex',
       isChangable: true,
-      onSave: () => widget.toJson(),
+      onSave: () async => widget.toJson(),
     );
 
     setState(() {
@@ -199,8 +213,16 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     autofocus: true,
     child: Scaffold(
       appBar: DemaciaAppBar(
-        onSave: () => save(widget.toJson(), MainApp.currentSave),
-        onLongSave: () =>
+        onSave:
+            () async {
+                  save(widget.toJson(), MainApp.currentSave);
+                  await DatabaseService().update(
+                    path: 'form',
+                    data: widget.toJson(),
+                  );
+                }
+                as void Function(),
+        onLongSave: () async =>
             longSave(widget.toJson(), context, () => setState(() {})),
       ),
       body: GridView.builder(
