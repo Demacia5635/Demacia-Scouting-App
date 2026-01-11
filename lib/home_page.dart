@@ -53,8 +53,8 @@ class HomePageState extends State<HomePage> with RouteAware {
                 widget.json != null
                     ? save(widget.json!, MainApp.currentSave)
                     : null;
-                await DatabaseService().update(
-                  path: 'form',
+                await DatabaseService().create(
+                  path: 'data',
                   data: widget.json!,
                 );
               }

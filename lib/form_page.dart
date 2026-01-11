@@ -299,8 +299,8 @@ class FormPageState extends State<FormPage> {
         onSave:
             () async {
                   save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().update(
-                    path: 'form',
+                  await DatabaseService().create(
+                    path: 'data',
                     data: widget.toJson(),
                   );
                 }
