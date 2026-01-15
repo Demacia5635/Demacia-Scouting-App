@@ -79,4 +79,10 @@ class DatabaseService {
   }
 
   static Future<void> updatePlayerProfile(String uuid) async {}
+
+  ///**Retrieves all the data from the table in real time**
+  static Stream getAllRealTime() {
+    /**TODO: change to real table and real primary key */
+    return supabase.from("").stream(primaryKey: ["primary_key"]);
+  }
 }
