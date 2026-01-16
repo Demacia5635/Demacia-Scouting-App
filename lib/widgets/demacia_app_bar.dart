@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_database/firebase_database.dart';
 
 class DemaciaAppBar extends AppBar {
   DemaciaAppBar({

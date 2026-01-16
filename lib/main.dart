@@ -1,9 +1,7 @@
 import 'dart:convert';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:scouting_qr_maker/firebase_options.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,12 +11,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   final prefs = await SharedPreferences.getInstance();
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
   await Supabase.initialize(
-    url: dotenv.env['URL'] ?? '',
-    anonKey: dotenv.env['API_KEY'] ?? '',
+    url: 'https://jnqbzzttvrjeudzbonix.supabase.co',
+    anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
   );
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (prefs.containsKey('saves')) {
     MainApp.saves = [];
     for (var save in prefs.getStringList('saves')!) {
