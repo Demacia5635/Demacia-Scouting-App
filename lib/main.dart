@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,13 +16,9 @@ void main() async {
     url: 'https://jnqbzzttvrjeudzbonix.supabase.co',
     anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
   );
-  if (prefs.containsKey('saves')) {
-    MainApp.saves = [];
-    for (var save in prefs.getStringList('saves')!) {
-      MainApp.saves.add(Save.fromJson(jsonDecode(save)));
-    }
-  }
-
+  DatabaseService databaseService = DatabaseService();
+  final jsonData = await databaseService.getLatestForm();
+  MainApp.saves.add(Save.fromJson(jsonData!));
   if (prefs.containsKey('current_save')) {
     MainApp.currentSave = MainApp.saves[prefs.getInt('current_save')!];
   }

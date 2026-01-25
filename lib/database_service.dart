@@ -23,23 +23,23 @@ class DatabaseService {
     }
   }
 
-  // ==================== READ DATA ====================
+  Future<Map<String, dynamic>?> getLatestForm() async {
+    try {
+      final response = await _supabase
+          .from('data')
+          .select()
+          .not('form', 'is', null)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
 
-  /// Read data from a table with realtime updates
-  Stream<List<Map<String, dynamic>>> readData(
-    String table, {
-    String primaryKey = 'id',
-    String? orderBy,
-    bool ascending = true,
-  }) {
-    SupabaseStreamBuilder query = _supabase
-        .from(table)
-        .stream(primaryKey: [primaryKey]);
-
-    if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      if (response != null && response['form'] != null) {
+        return response['form'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching latest form: $e');
+      return null;
     }
-
-    return query;
   }
 }

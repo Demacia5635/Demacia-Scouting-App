@@ -28,7 +28,7 @@ class Save {
 
   factory Save.fromJson(Map<String, dynamic> json) => Save(
     index: json['index'] as int,
-    title: json['title'] as String,
+    title: json['name'] as String,
     color: Color.from(
       alpha: json['color']['a'] as double,
       red: json['color']['r'] as double,
