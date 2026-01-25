@@ -26,20 +26,40 @@ class Save {
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
   };
 
-  factory Save.fromJson(Map<String, dynamic> json) => Save(
-    index: json['index'] as int,
-    title: json['name'] as String,
-    color: Color.from(
-      alpha: json['color']['a'] as double,
-      red: json['color']['r'] as double,
-      green: json['color']['g'] as double,
-      blue: json['color']['b'] as double,
-    ),
-    icon: IconData(
-      json['icon']['codePoint'] as int,
-      fontFamily: json['icon']['fontFamily'] as String,
-    ),
-  );
+  factory Save.fromJson(Map<String, dynamic> json) {
+    // Handle both nested and flat color structures
+    Color parsedColor;
+    if (json['color'] is Map) {
+      final colorMap = json['color'] as Map<String, dynamic>;
+      parsedColor = Color.from(
+        alpha: (colorMap['a'] as num?)?.toDouble() ?? 1.0,
+        red: (colorMap['r'] as num?)?.toDouble() ?? 0.0,
+        green: (colorMap['g'] as num?)?.toDouble() ?? 0.0,
+        blue: (colorMap['b'] as num?)?.toDouble() ?? 1.0,
+      );
+    } else {
+      parsedColor = Colors.blue;
+    }
+
+    // Handle icon
+    IconData parsedIcon;
+    if (json['icon'] is Map) {
+      final iconMap = json['icon'] as Map<String, dynamic>;
+      parsedIcon = IconData(
+        iconMap['codePoint'] as int? ?? Icons.save_alt.codePoint,
+        fontFamily: iconMap['fontFamily'] as String?,
+      );
+    } else {
+      parsedIcon = Icons.save_alt;
+    }
+
+    return Save(
+      index: json['index'] as int? ?? 0,
+      title: json['title'] as String? ?? 'Untitled',
+      color: parsedColor,
+      icon: parsedIcon,
+    );
+  }
 
   void editSave(BuildContext context) {
     String pickingName = title;
@@ -130,11 +150,15 @@ class Save {
               },
             ),
             ElevatedButton(
-              child: const Text('Rename'),
+              child: const Text('Save'),
               onPressed: () async {
                 title = pickingName;
                 icon = pickingIcon;
                 color = pickingColor;
+
+                // Save to Supabase
+                await saveSaves();
+
                 Navigator.of(context).pop();
               },
             ),
@@ -144,20 +168,28 @@ class Save {
     );
   }
 
-  void saveSaves() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      'saves',
-      MainApp.saves.map((p0) => jsonEncode(p0.toJson())).toList(),
-    );
-    await prefs.setInt('current_save', index);
+  Future<void> saveSaves() async {
+    try {
+      final databaseService = DatabaseService();
+
+      // Update this save in Supabase
+      await databaseService.updateSave(index: index, saveData: toJson());
+
+      // Also save current save to SharedPreferences for quick access
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('current_save', index);
+
+      print('Save updated successfully in Supabase');
+    } catch (e) {
+      print('Error saving to Supabase: $e');
+    }
   }
 
   Widget build(BuildContext context, void Function() onPressed) {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         onPressed();
-        saveSaves();
+        await saveSaves();
         MainApp.currentSave = this;
         Navigator.pop(context);
       },

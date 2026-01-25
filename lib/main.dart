@@ -5,26 +5,57 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
+import 'package:scouting_qr_maker/form_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
-  final prefs = await SharedPreferences.getInstance();
   WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+
+  // Initialize Supabase
   await Supabase.initialize(
     url: 'https://jnqbzzttvrjeudzbonix.supabase.co',
     anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
   );
+
   DatabaseService databaseService = DatabaseService();
-  final jsonData = await databaseService.getLatestForm();
-  MainApp.saves.add(Save.fromJson(jsonData!));
-  if (prefs.containsKey('current_save')) {
-    MainApp.currentSave = MainApp.saves[prefs.getInt('current_save')!];
+
+  // Load saves from Supabase
+  try {
+    final savesData = await databaseService.getAllSaves();
+
+    if (savesData.isNotEmpty) {
+      print('Successfully loaded ${savesData.length} saves from Supabase');
+
+      // Convert JSON data to Save objects
+      MainApp.saves = savesData.map((saveJson) {
+        return Save.fromJson(saveJson);
+      }).toList();
+
+      print('Loaded saves: ${MainApp.saves.map((s) => s.title).join(", ")}');
+    } else {
+      print('No saves found in Supabase, using default saves');
+      // Keep the default saves if nothing in database
+    }
+  } catch (e) {
+    print('Error loading saves from Supabase: $e');
+    print('Using default saves');
+    // Keep the default saves on error
   }
 
-  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  // Load current save preference from SharedPreferences
+  if (prefs.containsKey('current_save')) {
+    int saveIndex = prefs.getInt('current_save')!;
+    if (saveIndex < MainApp.saves.length) {
+      MainApp.currentSave = MainApp.saves[saveIndex];
+    }
+  }
 
+  // Get package info
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
   MainApp.version = packageInfo.version;
 
   runApp(MainApp());
@@ -92,5 +123,30 @@ class MainApp extends StatelessWidget {
       theme: ThemeData.dark(),
       home: HomePage(),
     );
+  }
+}
+
+/// Helper function to load form from Supabase and convert it to FormPage
+Future<FormPage?> loadFormPageFromSupabase() async {
+  try {
+    final databaseService = DatabaseService();
+    final formData = await databaseService.getLatestFormData();
+
+    if (formData == null) {
+      print('No form data found in Supabase');
+      return null;
+    }
+
+    // Convert the form data to FormPage
+    final formPage = FormPage.fromJson(
+      formData,
+      isChangable: false, // Set to true if you want to edit
+      init: () => null,
+    );
+
+    return formPage;
+  } catch (e) {
+    print('Error loading FormPage from Supabase: $e');
+    return null;
   }
 }
