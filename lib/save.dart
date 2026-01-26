@@ -9,25 +9,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
 class Save {
-  Save({required this.index, String? title, Color? color, IconData? icon})
-    : title = title ??= index.toString(),
-      color = color ??= Colors.blue,
-      icon = icon ??= Icons.save_alt;
+  Save({
+    required this.index,
+    String? title,
+    Color? color,
+    IconData? icon,
+    bool? isSpecialForm,
+  }) : title = title ??= index.toString(),
+       color = color ??= Colors.blue,
+       icon = icon ??= Icons.save_alt,
+       isSpecialForm = isSpecialForm ?? false;
 
   int index;
   String title;
   Color color;
   IconData icon;
+  bool isSpecialForm;
 
   Map<String, dynamic> toJson() => {
     'index': index,
     'title': title,
+    'isSpecialForm': isSpecialForm,
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
   };
 
   factory Save.fromJson(Map<String, dynamic> json) {
-    // Handle both nested and flat color structures
     Color parsedColor;
     if (json['color'] is Map) {
       final colorMap = json['color'] as Map<String, dynamic>;
@@ -58,6 +65,7 @@ class Save {
       title: json['title'] as String? ?? 'Untitled',
       color: parsedColor,
       icon: parsedIcon,
+      isSpecialForm: json['isSpecialForm'] as bool? ?? false,
     );
   }
 
@@ -157,6 +165,7 @@ class Save {
                 color = pickingColor;
 
                 // Save to Supabase
+                print('save to supabase');
                 await saveSaves();
 
                 Navigator.of(context).pop();
@@ -169,13 +178,15 @@ class Save {
   }
 
   Future<void> saveSaves() async {
+    print('saves save');
     try {
       final databaseService = DatabaseService();
 
-      // Update this save in Supabase
+      //Update save in Supabase
+      print('JSON: \n${toJson()}');
       await databaseService.updateSave(index: index, saveData: toJson());
 
-      // Also save current save to SharedPreferences for quick access
+      //save current save to SharedPreferences for quick access
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('current_save', index);
 

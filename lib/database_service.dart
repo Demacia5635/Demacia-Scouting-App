@@ -10,12 +10,14 @@ class DatabaseService {
     required String table,
     required Map<String, dynamic> data,
   }) async {
+    print('upload data: $data');
     try {
       final response = await _supabase
           .from(table)
           .insert(data)
           .select()
           .single();
+      print('response: $response');
       return response;
     } catch (e) {
       print('Error uploading data: $e');
@@ -27,6 +29,7 @@ class DatabaseService {
   /// Handles multiple data formats and returns parsed FormPage data
   Future<Map<String, dynamic>?> getLatestFormData() async {
     try {
+      print('get latest form data');
       final response = await _supabase
           .from('data')
           .select()
@@ -53,6 +56,7 @@ class DatabaseService {
   /// Get all non-null form entries
   Future<List<Map<String, dynamic>>> getAllForms() async {
     try {
+      print('get all forms');
       final response = await _supabase
           .from('data')
           .select()
@@ -80,6 +84,7 @@ class DatabaseService {
   /// Normalize different data formats into a consistent structure
   Map<String, dynamic>? _normalizeFormData(dynamic formData) {
     try {
+      print('normalize form data');
       if (formData == null) return null;
 
       Map<String, dynamic> data;
@@ -132,6 +137,7 @@ class DatabaseService {
     dynamic id, {
     String idColumn = 'id',
   }) async {
+    print('get form by id: $id from table: $table');
     try {
       final response = await _supabase
           .from(table)
@@ -154,6 +160,7 @@ class DatabaseService {
     required String column,
     required dynamic value,
   }) async {
+    print('get form where $column = $value');
     try {
       final response = await _supabase
           .from('data')
@@ -190,6 +197,7 @@ class DatabaseService {
     required int id,
     required Map<String, dynamic> formData,
   }) async {
+    print('update form id: $id with data: $formData');
     try {
       final response = await _supabase
           .from('data')
@@ -209,6 +217,7 @@ class DatabaseService {
   /// Get all saves from Supabase
   Future<List<Map<String, dynamic>>> getAllSaves() async {
     try {
+      print('get all saves');
       final response = await _supabase
           .from('saves')
           .select()
@@ -226,6 +235,7 @@ class DatabaseService {
     Map<String, dynamic> saveData,
   ) async {
     try {
+      print('Uploading save with data: $saveData');
       final response = await _supabase
           .from('saves')
           .insert(saveData)
@@ -244,7 +254,7 @@ class DatabaseService {
     required Map<String, dynamic> saveData,
   }) async {
     try {
-      // First check if the save exists
+      print('Updating save with data: $saveData');
       final existing = await _supabase
           .from('saves')
           .select()
@@ -252,7 +262,6 @@ class DatabaseService {
           .maybeSingle();
 
       if (existing != null) {
-        // Update existing save
         final response = await _supabase
             .from('saves')
             .update(saveData)
@@ -261,7 +270,6 @@ class DatabaseService {
             .single();
         return response;
       } else {
-        // Insert new save if it doesn't exist
         final response = await _supabase
             .from('saves')
             .insert(saveData)
