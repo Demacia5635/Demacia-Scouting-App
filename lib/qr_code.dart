@@ -8,6 +8,8 @@ import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
 import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:scouting_qr_maker/database_service.dart';
 
 class QrCode extends StatefulWidget {
   QrCode({super.key, required this.data, required this.previosPage});
@@ -54,7 +56,11 @@ class QrCodeState extends State<QrCode> {
   @override
   void initState() {
     super.initState();
+    focusNode = FocusNode();
+    _loadData();
+  }
 
+  Future<void> _loadData() async {
     for (Map<int, dynamic> screen in widget.data.values) {
       for (dynamic value in screen.values) {
         if (valueToString(value) != '\u200B') {
@@ -64,7 +70,25 @@ class QrCodeState extends State<QrCode> {
       qrData += ',';
     }
 
-    focusNode = FocusNode();
+    Map<String, Map<String, String>> dataMap = {}; // Changed to String keys
+    for (var entry in widget.data.entries) {
+      Map<String, String> screenMap = {}; // Changed to String keys
+      for (var screenEntry in entry.value.entries) {
+        String value = valueToString(screenEntry.value);
+        if (value != '\u200B') {
+          screenMap[screenEntry.key.toString()] =
+              value; // Convert key to string
+        }
+      }
+      dataMap[entry.key.toString()] = screenMap; // Convert key to string
+    }
+
+    await DatabaseService().uploadData(
+      table: 'answor',
+      data: {'answer': dataMap},
+    );
+
+    setState(() {}); // Trigger rebuild after data loads
   }
 
   /// Handles raw keyboard events.
