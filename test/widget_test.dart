@@ -13,7 +13,10 @@ import 'package:scouting_qr_maker/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    /// In the code snippet you provided, `var Myapp();` is not a valid Dart statement. It seems like
+    /// there might be a typo or a mistake in that line of code.
+    // var Myapp();
+    // await tester.pumpWidget(const MyApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

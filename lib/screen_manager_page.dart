@@ -8,24 +8,37 @@ import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/form_page.dart';
 
 class ScreenManagerPage extends StatefulWidget {
-  ScreenManagerPage({super.key, Map<int, FormPage>? screens})
-    : screens = screens ?? {};
+  ScreenManagerPage({
+    super.key,
+    Map<int, FormPage>? screens,
+    bool? isSpecialForm,
+  }) : screens = screens ?? {},
+       isSpecialForm = isSpecialForm ?? false;
 
   Map<int, FormPage> screens;
+  bool isSpecialForm;
 
   @override
   State<ScreenManagerPage> createState() => _ScreenManagerPageState();
 
   Map<String, dynamic> toJson() => {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
+    'isSpecialForm': isSpecialForm,
   };
 
   factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
     Map<int, FormPage> screens = {};
     // Create the widget instance first so getJson has a reference
-    ScreenManagerPage widget = ScreenManagerPage(screens: screens);
+    ScreenManagerPage widget = ScreenManagerPage(
+      screens: screens,
+      isSpecialForm: json['isSpecialForm'] as bool? ?? false,
+    );
 
     // 1. Fill the map
+    print('screen is null?: ${json['screens'] == null}');
+    if (json['screens'] == null) {
+      return widget;
+    }
     for (var screenJson in json['screens']) {
       int index = screenJson['index'] as int;
       screens[index] = FormPage.fromJson(
@@ -342,6 +355,23 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                           ),
                         )
                       : Container(),
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          screen.isSpecialForm = !screen.isSpecialForm;
+                        });
+                      },
+                      icon: Icon(
+                        Icons.star,
+                        color: screen.isSpecialForm
+                            ? Colors.yellow
+                            : Colors.grey,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
