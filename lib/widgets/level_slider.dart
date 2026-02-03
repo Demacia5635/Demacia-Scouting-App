@@ -12,14 +12,13 @@ class LevelSlider extends QuestionType {
     this.sliderColor = Colors.purple,
     this.thumbColor = Colors.purpleAccent,
     this.min = 1,
-    this.max = 6,
+    this.max = 12,
     this.divisions,
     double Function()? initValue,
     void Function(double value)? onChanged,
     this.isChangable = false,
   }) : onChanged = onChanged ?? ((p0) {}),
-       initValue = initValue ?? (() => 1)
-  {
+       initValue = initValue ?? (() => 1) {
     if (divisions == 0) divisions = null;
   }
 
@@ -99,7 +98,9 @@ class LevelSlider extends QuestionType {
     min: json['min'] as double,
     max: json['max'] as double,
     divisions: json['divisions'] as int,
-    initValue: init != null && init() != null && init is double Function()? ? init : (() => json['initValue'] as double),
+    initValue: init != null && init() != null && init is double Function()?
+        ? init
+        : (() => json['initValue'] as double),
     onChanged: onChanged,
     isChangable: isChangable,
   );
