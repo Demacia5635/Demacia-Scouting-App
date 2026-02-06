@@ -25,13 +25,14 @@ void main() async {
 
   // Load saves from Supabase
   try {
-    final savesData = await databaseService.getAllSaves();
-
+    final savesData = await databaseService.getAllForms();
+    print('Fetched saves data: $savesData');
     if (savesData.isNotEmpty) {
       print('Successfully loaded ${savesData.length} saves from Supabase');
 
       // Convert JSON data to Save objects
       MainApp.saves = savesData.map((saveJson) {
+        print('Parsing save JSON: $saveJson');
         return Save.fromJson(saveJson);
       }).toList();
 

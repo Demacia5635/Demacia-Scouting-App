@@ -60,8 +60,10 @@ class DatabaseService {
       final response = await _supabase
           .from('data')
           .select()
-          .not('form', 'is', null)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: true)
+          .limit(6);
+      //.not('form', 'is', null)
+      //.order('created_at', ascending: false);
 
       List<Map<String, dynamic>> forms = [];
 
