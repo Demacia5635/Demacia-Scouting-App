@@ -13,7 +13,12 @@ class dataRoom extends StatefulWidget {
 }
 
 class dataRoomState extends State<dataRoom> {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  Future<List<Map<String, dynamic>>> getAllForms() async {
+    final res = await _supabase.from('forms').select();
+    return List<Map<String, dynamic>>.from(res);
+  }
 
   List<dynamic> dataList = [];
   bool isLoading = true;
