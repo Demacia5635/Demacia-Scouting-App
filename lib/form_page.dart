@@ -299,7 +299,6 @@ class FormPageState extends State<FormPage> {
       appBar: DemaciaAppBar(
         onSave:
             () async {
-                  save(widget.toJson(), MainApp.currentSave);
                   await DatabaseService().uploadData(
                     table: 'data',
                     data: {'form': widget.toJson()},

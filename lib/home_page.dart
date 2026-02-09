@@ -50,9 +50,6 @@ class HomePageState extends State<HomePage> with RouteAware {
     appBar: DemaciaAppBar(
       onSave:
           () async {
-                widget.json != null
-                    ? save(widget.json!, MainApp.currentSave)
-                    : null;
                 await DatabaseService().uploadData(
                   table: 'data',
                   data: {'form': widget.json!},

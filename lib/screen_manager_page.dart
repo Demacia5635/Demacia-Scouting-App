@@ -228,7 +228,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
       appBar: DemaciaAppBar(
         onSave:
             () async {
-                  save(widget.toJson(), MainApp.currentSave);
                   await DatabaseService().uploadData(
                     table: 'data',
                     data: {'form': widget.toJson()},
