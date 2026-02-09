@@ -132,22 +132,24 @@ class DemaciaAppBar extends AppBar {
           content: SizedBox(
             height: 200,
             width: 500,
-            child: Column(
-              spacing: 10,
-              children: MainApp.saves
-                  .map(
-                    (p0) => p0.build(context, () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setInt('current_save', p0.index);
-                      MainApp.currentSave = p0;
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (p0) => HomePage()),
-                        (Route<dynamic> route) => false,
-                      );
-                    }),
-                  )
-                  .toList(),
+            child: SingleChildScrollView(
+              child: Column(
+                spacing: 10,
+                children: MainApp.saves
+                    .map(
+                      (p0) => p0.build(context, () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('current_save', p0.index);
+                        MainApp.currentSave = p0;
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (p0) => HomePage()),
+                          (Route<dynamic> route) => false,
+                        );
+                      }),
+                    )
+                    .toList(),
+              ),
             ),
           ),
         );

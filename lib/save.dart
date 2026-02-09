@@ -1,5 +1,3 @@
-  import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
@@ -29,7 +27,7 @@ class Save {
   Map<String, dynamic> toJson() => {
     'index': index,
     'title': title,
-    'isSpecialForm': isSpecialForm,
+    //'isSpecialForm': isSpecialForm,
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
   };
@@ -65,7 +63,7 @@ class Save {
       title: json['title'] as String? ?? 'Untitled',
       color: parsedColor,
       icon: parsedIcon,
-      isSpecialForm: json['isSpecialForm'] as bool? ?? false,
+      //isSpecialForm: json['isSpecialForm'] as bool? ?? false,
     );
   }
 
