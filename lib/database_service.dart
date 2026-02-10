@@ -1,11 +1,7 @@
-import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DatabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
-  
-  // Timeout duration for all queries
-  static const Duration _timeout = Duration(seconds: 30);
 
   // ==================== UPLOAD DATA ====================
 
@@ -20,13 +16,9 @@ class DatabaseService {
           .from(table)
           .insert(data)
           .select()
-          .single()
-          .timeout(_timeout);
+          .single();
       print('response: $response');
       return response;
-    } on TimeoutException catch (e) {
-      print('Upload timeout: $e');
-      rethrow;
     } catch (e) {
       print('Error uploading data: $e');
       rethrow;
@@ -40,12 +32,11 @@ class DatabaseService {
       print('get latest form data');
       final response = await _supabase
           .from('data')
-          .select('form, created_at, id')  // Select only needed columns
+          .select()
           .not('form', 'is', null)
           .order('created_at', ascending: false)
           .limit(1)
-          .maybeSingle()
-          .timeout(_timeout);
+          .maybeSingle();
 
       if (response == null || response['form'] == null) {
         print('No form data found in database');
@@ -56,9 +47,6 @@ class DatabaseService {
 
       // Handle different data formats
       return _normalizeFormData(formData);
-    } on TimeoutException catch (e) {
-      print('Get latest form timeout: $e');
-      return null;
     } catch (e) {
       print('Error fetching latest form: $e');
       return null;
@@ -71,11 +59,11 @@ class DatabaseService {
       print('get all forms');
       final response = await _supabase
           .from('data')
-          .select('form')
-          .not('form', 'is', null)  // Uncommented the filter
+          .select()
           .order('created_at', ascending: true)
-          .limit(10)  // Reasonable limit
-          .timeout(_timeout);
+          .limit(6);
+      //.not('form', 'is', null)
+      //.order('created_at', ascending: false);
 
       List<Map<String, dynamic>> forms = [];
 
@@ -89,9 +77,6 @@ class DatabaseService {
       }
 
       return forms;
-    } on TimeoutException catch (e) {
-      print('Get all forms timeout: $e');
-      return [];
     } catch (e) {
       print('Error fetching all forms: $e');
       return [];
@@ -158,17 +143,13 @@ class DatabaseService {
     try {
       final response = await _supabase
           .from(table)
-          .select('form, created_at, id')  // Select only needed columns
+          .select()
           .eq(idColumn, id)
-          .maybeSingle()
-          .timeout(_timeout);
+          .maybeSingle();
 
       if (response != null && response['form'] != null) {
         return _normalizeFormData(response['form']);
       }
-      return null;
-    } on TimeoutException catch (e) {
-      print('Get by ID timeout: $e');
       return null;
     } catch (e) {
       print('Error fetching by ID: $e');
@@ -185,20 +166,16 @@ class DatabaseService {
     try {
       final response = await _supabase
           .from('data')
-          .select('form, created_at, id')  // Select only needed columns
+          .select()
           .eq(column, value)
           .not('form', 'is', null)
           .order('created_at', ascending: false)
           .limit(1)
-          .maybeSingle()
-          .timeout(_timeout);
+          .maybeSingle();
 
       if (response != null && response['form'] != null) {
         return _normalizeFormData(response['form']);
       }
-      return null;
-    } on TimeoutException catch (e) {
-      print('Get form where timeout: $e');
       return null;
     } catch (e) {
       print('Error fetching form where $column = $value: $e');
@@ -209,15 +186,8 @@ class DatabaseService {
   /// Delete a form entry
   Future<bool> deleteForm(int id) async {
     try {
-      await _supabase
-          .from('data')
-          .delete()
-          .eq('id', id)
-          .timeout(_timeout);
+      await _supabase.from('data').delete().eq('id', id);
       return true;
-    } on TimeoutException catch (e) {
-      print('Delete form timeout: $e');
-      return false;
     } catch (e) {
       print('Error deleting form: $e');
       return false;
@@ -236,12 +206,8 @@ class DatabaseService {
           .update({'form': formData})
           .eq('id', id)
           .select()
-          .single()
-          .timeout(_timeout);
+          .single();
       return response;
-    } on TimeoutException catch (e) {
-      print('Update form timeout: $e');
-      return null;
     } catch (e) {
       print('Error updating form: $e');
       return null;
@@ -257,13 +223,9 @@ class DatabaseService {
       final response = await _supabase
           .from('saves')
           .select()
-          .order('index', ascending: true)
-          .timeout(_timeout);
+          .order('index', ascending: true);
 
       return List<Map<String, dynamic>>.from(response);
-    } on TimeoutException catch (e) {
-      print('Get all saves timeout: $e');
-      return [];
     } catch (e) {
       print('Error fetching saves: $e');
       return [];
@@ -280,12 +242,8 @@ class DatabaseService {
           .from('saves')
           .insert(saveData)
           .select()
-          .single()
-          .timeout(_timeout);
+          .single();
       return response;
-    } on TimeoutException catch (e) {
-      print('Upload save timeout: $e');
-      return null;
     } catch (e) {
       print('Error uploading save: $e');
       return null;
@@ -303,8 +261,7 @@ class DatabaseService {
           .from('saves')
           .select()
           .eq('index', index)
-          .maybeSingle()
-          .timeout(_timeout);
+          .maybeSingle();
 
       if (existing != null) {
         final response = await _supabase
@@ -312,21 +269,16 @@ class DatabaseService {
             .update(saveData)
             .eq('index', index)
             .select()
-            .single()
-            .timeout(_timeout);
+            .single();
         return response;
       } else {
         final response = await _supabase
             .from('saves')
             .insert(saveData)
             .select()
-            .single()
-            .timeout(_timeout);
+            .single();
         return response;
       }
-    } on TimeoutException catch (e) {
-      print('Update save timeout: $e');
-      return null;
     } catch (e) {
       print('Error updating save: $e');
       return null;
@@ -336,15 +288,8 @@ class DatabaseService {
   /// Delete a save
   Future<bool> deleteSave(int index) async {
     try {
-      await _supabase
-          .from('saves')
-          .delete()
-          .eq('index', index)
-          .timeout(_timeout);
+      await _supabase.from('saves').delete().eq('index', index);
       return true;
-    } on TimeoutException catch (e) {
-      print('Delete save timeout: $e');
-      return false;
     } catch (e) {
       print('Error deleting save: $e');
       return false;
