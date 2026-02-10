@@ -11,4 +11,5 @@ enum QUESTION_TYPE {
   color,
   string,
   selection,
+  multipleChoice,
 }

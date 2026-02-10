@@ -60,6 +60,12 @@ class QrCodeState extends State<QrCode> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    focusNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     for (Map<int, dynamic> screen in widget.data.values) {
       for (dynamic value in screen.values) {
@@ -88,7 +94,10 @@ class QrCodeState extends State<QrCode> {
       data: {'answer': dataMap},
     );
 
-    setState(() {}); // Trigger rebuild after data loads
+    // Check if widget is still mounted before calling setState
+    if (mounted) {
+      setState(() {}); // Trigger rebuild after data loads
+    }
   }
 
   /// Handles raw keyboard events.

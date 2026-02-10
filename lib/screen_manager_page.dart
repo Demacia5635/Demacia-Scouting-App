@@ -75,6 +75,7 @@ class ScreenManagerPage extends StatefulWidget {
   }
 }
 
+
 class _ScreenManagerPageState extends State<ScreenManagerPage> {
   int currentIndex = -1;
 

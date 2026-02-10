@@ -1,70 +1,965 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter/services.dart';
+import 'package:scouting_qr_maker/widgets/color_input.dart';
+import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/widgets/question_type.dart';
 
 class MultipleChoice extends QuestionType {
-  MultipleChoice({super.key, required this.label, required this.choices});
+  MultipleChoice({
+    super.key,
+    required this.label,
+    required this.icon,
+    void Function(double value)? onChanged,
+    this.plus = Colors.green,
+    this.minus = Colors.red,
+    this.textColor = Colors.white,
+    this.numberColor = Colors.white,
+    this.iconColor = Colors.blue,
+    this.stepValue = 1,
+    this.longPressedValue = 2,
+    this.max = 1000,
+    this.min = 0,
+    double Function()? initValue,
+    this.isChangable = false,
+  }) : onChanged = onChanged ?? ((p0) {}),
+       initValue = initValue ?? (() => 0.0);
 
   String label;
-  List<String> choices;
+  final IconData icon;
+  final Color plus;
+  final Color minus;
+  final Color textColor;
+  final Color numberColor;
+  final Color iconColor;
+  final double stepValue;
+  final double max;
+  final double min;
+  final double longPressedValue;
+  double Function() initValue;
+  void Function(double) onChanged;
+  bool isChangable;
 
   @override
-  State<MultipleChoice> createState() => MultipleChoiceState();
+  State<StatefulWidget> createState() =>
+      isChangable ? MultipleChoiceChangableState() : MultipleChoiceState();
 
   @override
-  Widget settings(void Function(QuestionType) onChanged) {
-    // TODO: implement settings
-    throw UnimplementedError();
-  }
+  Widget settings(void Function(MultipleChoice p1) onChanged) =>
+      MultipleChoiceSettings(onChanged: onChanged, multipleChoice: this);
 
   @override
-  Map<String, dynamic> toJson() {
-    // TODO: implement toJson
-    throw UnimplementedError();
-  }
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
+    'plus': {'a': plus.a, 'r': plus.r, 'g': plus.g, 'b': plus.b},
+    'minus': {'a': minus.a, 'r': minus.r, 'g': minus.g, 'b': minus.b},
+    'textColor': {
+      'a': textColor.a,
+      'r': textColor.r,
+      'g': textColor.g,
+      'b': textColor.b,
+    },
+    'numberColor': {
+      'a': numberColor.a,
+      'r': numberColor.r,
+      'g': numberColor.g,
+      'b': numberColor.b,
+    },
+    'iconColor': {
+      'a': iconColor.a,
+      'r': iconColor.r,
+      'g': iconColor.g,
+      'b': iconColor.b,
+    },
+    'stepValue': stepValue,
+    'max': max,
+    'min': min,
+    'longPressedValue': longPressedValue,
+    'initValue': initValue(),
+  };
 
-  factory MultipleChoice.fromJson(Map<String, dynamic> json, {Key? key}) {
-    //TODO: implement fromJson
+  factory MultipleChoice.fromJson(
+    Map<String, dynamic> json, {
+    Key? key,
+    void Function(double)? onChanged,
+    bool isChangable = false,
+    dynamic init
+  }) {
+
     return MultipleChoice(
-      label: json['label'] as String,
-      choices: List<String>.from(json['choices'] as List<dynamic>),
-      key: key,
-    );
+    key: key,
+    label: json['label'] as String,
+    icon: IconData(
+      json['icon']['codePoint'] as int,
+      fontFamily: json['icon']['fontFamily'] as String,
+    ),
+    plus: Color.from(
+      alpha: json['plus']['a'] as double,
+      red: json['plus']['r'] as double,
+      green: json['plus']['g'] as double,
+      blue: json['plus']['b'] as double,
+    ),
+    minus: Color.from(
+      alpha: json['minus']['a'] as double,
+      red: json['minus']['r'] as double,
+      green: json['minus']['g'] as double,
+      blue: json['minus']['b'] as double,
+    ),
+    textColor: Color.from(
+      alpha: json['textColor']['a'] as double,
+      red: json['textColor']['r'] as double,
+      green: json['textColor']['g'] as double,
+      blue: json['textColor']['b'] as double,
+    ),
+    numberColor: Color.from(
+      alpha: json['numberColor']['a'] as double,
+      red: json['numberColor']['r'] as double,
+      green: json['numberColor']['g'] as double,
+      blue: json['numberColor']['b'] as double,
+    ),
+    iconColor: Color.from(
+      alpha: json['iconColor']['a'] as double,
+      red: json['iconColor']['r'] as double,
+      green: json['iconColor']['g'] as double,
+      blue: json['iconColor']['b'] as double,
+    ),
+    stepValue: json['stepValue'] as double,
+    max: json['max'] as double,
+    min: json['min'] as double,
+    longPressedValue: json['longPressedValue'] as double,
+    initValue: init != null && init() != null && init is double Function()? ? init : (() => json['initValue'] as double),
+    onChanged: onChanged,
+    isChangable: isChangable,
+  );
   }
+}
+
+class MultipleChoiceChangableState extends State<MultipleChoice> {
+  double count = 0;
+
+  TextEditingController labelController = TextEditingController(text: '');
+  TextEditingController initValueController = TextEditingController(text: '0');
+
+  @override
+  void initState() {
+    super.initState();
+
+    count = widget.initValue();
+
+    labelController.text = widget.label;
+    initValueController.text = count.toString();
+  }
+
+  @override
+  Widget build(final BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Row(
+        children: <Widget>[
+          const Spacer(),
+          Expanded(child: Icon(widget.icon, color: widget.iconColor, size: 30)),
+          Expanded(
+            child: FittedBox(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 100),
+                  child: TextField(
+                    textAlign: TextAlign.center,
+                    controller: labelController,
+                    onChanged: (String text) => widget.label = text,
+                    style: TextStyle(color: widget.textColor, fontSize: 20),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Spacer(flex: 2),
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-20',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 20);
+                    widget.initValue = () => count;
+                    initValueController.text = count.toString();
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-15',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 15);
+                    widget.initValue = () => count;
+                    initValueController.text = count.toString();
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-10',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 10);
+                    widget.initValue = () => count;
+                    initValueController.text = count.toString();
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-5',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 5);
+                    widget.initValue = () => count;
+                    initValueController.text = count.toString();
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 100),
+                child: TextField(
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
+                  ],
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.center,
+                  controller: initValueController,
+                  onChanged: (String text) {
+                    count = (String text) {
+                      try {
+                        return double.parse(text);
+                      } on Exception catch (_) {
+                        return count;
+                      }
+                    }.call(text);
+                    widget.initValue = () => count;
+                  },
+                  style: TextStyle(color: widget.numberColor, fontSize: 20),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+5',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 5);
+                    initValueController.text = count.toString();
+                    widget.initValue = () => count;
+                  });
+                  widget.onChanged(min(widget.max, count + 5));
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+10',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 10);
+                    initValueController.text = count.toString();
+                    widget.initValue = () => count;
+                  });
+                  widget.onChanged(min(widget.max, count + 10));
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+15',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 15);
+                    initValueController.text = count.toString();
+                    widget.initValue = () => count;
+                  });
+                  widget.onChanged(min(widget.max, count + 15));
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+20',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 20);
+                    initValueController.text = count.toString();
+                    widget.initValue = () => count;
+                  });
+                  widget.onChanged(min(widget.max, count + 20));
+                },
+                onLongPress: () {
+
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class RoundedIconButton extends StatelessWidget {
+  const RoundedIconButton({
+    super.key,
+    required this.icon,
+    required this.onPress,
+    required this.onLongPress,
+    final Color? color,
+  }) : color = color ?? Colors.amber;
+
+  final IconData icon;
+  final void Function() onPress;
+  final void Function() onLongPress;
+  final Color color;
+
+  @override
+  Widget build(final BuildContext context) => RawMaterialButton(
+    elevation: 6.0,
+    onPressed: onPress,
+    onLongPress: onLongPress,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    fillColor: color,
+    child: Icon(icon, color: Colors.white, size: 40),
+  );
+}
+class RoundedTextButton extends StatelessWidget {
+  const RoundedTextButton({
+    super.key,
+    required this.text,
+    required this.onPress,
+    required this.onLongPress,
+    final Color? color,
+  }) : color = color ?? Colors.amber;
+
+  final String text;
+  final void Function() onPress;
+  final void Function() onLongPress;
+  final Color color;
+
+  @override
+  Widget build(final BuildContext context) => RawMaterialButton(
+    elevation: 6.0,
+    onPressed: onPress,
+    onLongPress: onLongPress,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    fillColor: color,
+    child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 20)),
+  );
 }
 
 class MultipleChoiceState extends State<MultipleChoice> {
+  double count = 0;
+
   @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Text(widget.label),
-        Column(children: widget.choices.map((choice) => Text(choice)).toList()),
-      ],
-    );
+  void initState() {
+    super.initState();
+
+    count = widget.initValue();
   }
+
+  @override
+  Widget build(final BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Row(
+        children: <Widget>[
+          const Spacer(),
+          Expanded(child: Icon(widget.icon, color: widget.iconColor, size: 30)),
+          Expanded(
+            child: FittedBox(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: widget.textColor),
+                ),
+              ),
+            ),
+          ),
+          const Spacer(flex: 2),
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-20',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 20);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+              Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-15',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 15);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-10',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 10);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.minus,
+                text: '-5',
+                onPress: () {
+                  setState(() {
+                    count = max(widget.min, count - 5);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 8,
+              child: Text(
+                count.toString(),
+                style: const TextStyle(fontSize: 30),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+5',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 5);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+10',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 10);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+              Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+15',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 15);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: RoundedTextButton(
+                color: widget.plus,
+                text: '+20',
+                onPress: () {
+                  setState(() {
+                    count = min(widget.max, count + 20);
+                  });
+                  widget.onChanged(count);
+                },
+                onLongPress: () {
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
-class Button extends StatelessWidget {
-  final void Function() onPressed;
-  final String title;
-  final Color? color;
-
-  const Button({
+class MultipleChoiceSettings extends StatefulWidget {
+  MultipleChoiceSettings({
     super.key,
-    required this.onPressed,
-    required this.title,
-    required this.color,
+    required this.onChanged,
+    required this.multipleChoice,
   });
 
+  void Function(MultipleChoice) onChanged;
+  MultipleChoice multipleChoice;
+
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(backgroundColor: color),
-        child: Text(title),
-      ),
-    );
+  State<StatefulWidget> createState() => MultipleChoiceSettingsState();
+}
+
+class MultipleChoiceSettingsState extends State<MultipleChoiceSettings> {
+  TextEditingController stepController = TextEditingController(text: '1');
+  TextEditingController longStepController = TextEditingController(text: '2');
+  TextEditingController maxController = TextEditingController(text: '1000');
+  TextEditingController minController = TextEditingController(text: '0');
+
+  @override
+  void initState() {
+    super.initState();
+
+    stepController.text = widget.multipleChoice.stepValue.toString();
+    longStepController.text = widget.multipleChoice.longPressedValue.toString();
+    maxController.text = widget.multipleChoice.max.toString();
+    minController.text = widget.multipleChoice.min.toString();
   }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    spacing: 15,
+    children: [
+      Row(
+        spacing: 10,
+        children: [
+          Text(
+            "Select the Color of the Text and Number: ",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          ColorInput(
+            initValue: () => widget.multipleChoice.textColor,
+            onChanged: (color) {
+              widget.multipleChoice = MultipleChoice(
+                label: widget.multipleChoice.label,
+                icon: widget.multipleChoice.icon,
+                onChanged: widget.multipleChoice.onChanged,
+                plus: widget.multipleChoice.plus,
+                minus: widget.multipleChoice.minus,
+                textColor: color,
+                numberColor: widget.multipleChoice.numberColor,
+                iconColor: widget.multipleChoice.iconColor,
+                stepValue: widget.multipleChoice.stepValue,
+                longPressedValue: widget.multipleChoice.longPressedValue,
+                initValue: widget.multipleChoice.initValue,
+                isChangable: true,
+              );
+              widget.onChanged(widget.multipleChoice);
+            },
+          ),
+
+          ColorInput(
+            initValue: () => widget.multipleChoice.numberColor,
+            onChanged: (color) {
+              widget.multipleChoice = MultipleChoice(
+                label: widget.multipleChoice.label,
+                icon: widget.multipleChoice.icon,
+                onChanged: widget.multipleChoice.onChanged,
+                plus: widget.multipleChoice.plus,
+                minus: widget.multipleChoice.minus,
+                textColor: widget.multipleChoice.textColor,
+                numberColor: color,
+                iconColor: widget.multipleChoice.iconColor,
+                stepValue: widget.multipleChoice.stepValue,
+                longPressedValue: widget.multipleChoice.longPressedValue,
+                initValue: widget.multipleChoice.initValue,
+                isChangable: true,
+              );
+              widget.onChanged(widget.multipleChoice);
+            },
+          ),
+        ],
+      ),
+
+      Row(
+        spacing: 10,
+        children: [
+          Text(
+            "Select the Color of the Icon: ",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          ColorInput(
+            initValue: () => widget.multipleChoice.iconColor,
+            onChanged: (color) {
+              widget.multipleChoice = MultipleChoice(
+                label: widget.multipleChoice.label,
+                icon: widget.multipleChoice.icon,
+                onChanged: widget.multipleChoice.onChanged,
+                plus: widget.multipleChoice.plus,
+                minus: widget.multipleChoice.minus,
+                textColor: widget.multipleChoice.textColor,
+                numberColor: widget.multipleChoice.numberColor,
+                iconColor: color,
+                stepValue: widget.multipleChoice.stepValue,
+                longPressedValue: widget.multipleChoice.longPressedValue,
+                initValue: widget.multipleChoice.initValue,
+                isChangable: true,
+              );
+              widget.onChanged(widget.multipleChoice);
+            },
+          ),
+
+          Container(
+            constraints: BoxConstraints(maxHeight: 300, maxWidth: 400),
+            child: IconPicker(
+              onChanged: (icon) {
+                widget.multipleChoice = MultipleChoice(
+                  label: widget.multipleChoice.label,
+                  icon: icon,
+                  onChanged: widget.multipleChoice.onChanged,
+                  plus: widget.multipleChoice.plus,
+                  minus: widget.multipleChoice.minus,
+                  textColor: widget.multipleChoice.textColor,
+                  numberColor: widget.multipleChoice.numberColor,
+                  iconColor: widget.multipleChoice.iconColor,
+                  stepValue: widget.multipleChoice.stepValue,
+                  longPressedValue: widget.multipleChoice.longPressedValue,
+                  initValue: widget.multipleChoice.initValue,
+                  isChangable: true,
+                );
+                widget.onChanged(widget.multipleChoice);
+              },
+            ),
+          ),
+        ],
+      ),
+
+      Row(
+        spacing: 10,
+        children: [
+          Text(
+            "Select the Color of the Plus and Minus: ",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          ColorInput(
+            initValue: () => widget.multipleChoice.minus,
+            onChanged: (color) {
+              widget.multipleChoice = MultipleChoice(
+                label: widget.multipleChoice.label,
+                icon: widget.multipleChoice.icon,
+                onChanged: widget.multipleChoice.onChanged,
+                plus: widget.multipleChoice.plus,
+                minus: color,
+                textColor: widget.multipleChoice.textColor,
+                numberColor: widget.multipleChoice.numberColor,
+                iconColor: widget.multipleChoice.iconColor,
+                stepValue: widget.multipleChoice.stepValue,
+                longPressedValue: widget.multipleChoice.longPressedValue,
+                initValue: widget.multipleChoice.initValue,
+                isChangable: true,
+              );
+              widget.onChanged(widget.multipleChoice);
+            },
+          ),
+          ColorInput(
+            initValue: () => widget.multipleChoice.plus,
+            onChanged: (color) {
+              widget.multipleChoice = MultipleChoice(
+                label: widget.multipleChoice.label,
+                icon: widget.multipleChoice.icon,
+                onChanged: widget.multipleChoice.onChanged,
+                plus: color,
+                minus: widget.multipleChoice.minus,
+                textColor: widget.multipleChoice.textColor,
+                numberColor: widget.multipleChoice.numberColor,
+                iconColor: widget.multipleChoice.iconColor,
+                stepValue: widget.multipleChoice.stepValue,
+                longPressedValue: widget.multipleChoice.longPressedValue,
+                initValue: widget.multipleChoice.initValue,
+                isChangable: true,
+              );
+              widget.onChanged(widget.multipleChoice);
+            },
+          ),
+        ],
+      ),
+
+      Row(
+        spacing: 10,
+        children: [
+          Text(
+            "Select the lower and upper limits",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+
+          Container(
+            constraints: BoxConstraints(maxWidth: 100),
+            child: TextField(
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
+              ],
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              controller: minController,
+              onChanged: (String text) {
+                widget.multipleChoice = MultipleChoice(
+                  label: widget.multipleChoice.label,
+                  icon: widget.multipleChoice.icon,
+                  onChanged: widget.multipleChoice.onChanged,
+                  plus: widget.multipleChoice.plus,
+                  minus: widget.multipleChoice.minus,
+                  textColor: widget.multipleChoice.textColor,
+                  numberColor: widget.multipleChoice.numberColor,
+                  iconColor: widget.multipleChoice.iconColor,
+                  stepValue: widget.multipleChoice.stepValue,
+                  longPressedValue: widget.multipleChoice.longPressedValue,
+                  min: () {
+                    try {
+                      if (double.parse(text) > widget.multipleChoice.max) {
+                        throw Exception();
+                      }
+                      return double.parse(text);
+                    } on Exception catch (_) {
+                      return widget.multipleChoice.min;
+                    }
+                  }.call(),
+                  max: () {
+                    try {
+                      if (double.parse(maxController.text) <
+                          () {
+                            try {
+                              if (double.parse(text) >
+                                  widget.multipleChoice.max) {
+                                throw Exception();
+                              }
+                              return double.parse(text);
+                            } on Exception catch (_) {
+                              return widget.multipleChoice.min;
+                            }
+                          }.call()) {
+                        throw Exception();
+                      }
+                      return double.parse(maxController.text);
+                    } on Exception catch (_) {
+                      return widget.multipleChoice.max;
+                    }
+                  }.call(),
+                  initValue: () => clampDouble(
+                    widget.multipleChoice.initValue(),
+                    () {
+                      try {
+                        if (double.parse(text) > widget.multipleChoice.max) {
+                          throw Exception();
+                        }
+                        return double.parse(text);
+                      } on Exception catch (_) {
+                        return widget.multipleChoice.min;
+                      }
+                    }.call(),
+                    () {
+                      try {
+                        if (double.parse(maxController.text) <
+                            () {
+                              try {
+                                if (double.parse(text) >
+                                    widget.multipleChoice.max) {
+                                  throw Exception();
+                                }
+                                return double.parse(text);
+                              } on Exception catch (_) {
+                                return widget.multipleChoice.min;
+                              }
+                            }.call()) {
+                          throw Exception();
+                        }
+                        return double.parse(maxController.text);
+                      } on Exception catch (_) {
+                        return widget.multipleChoice.max;
+                      }
+                    }.call(),
+                  ),
+                  isChangable: true,
+                );
+                widget.onChanged(widget.multipleChoice);
+              },
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
+
+          Container(
+            constraints: BoxConstraints(maxWidth: 100),
+            child: TextField(
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
+              ],
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              controller: maxController,
+              onChanged: (String text) {
+                widget.multipleChoice = MultipleChoice(
+                  label: widget.multipleChoice.label,
+                  icon: widget.multipleChoice.icon,
+                  onChanged: widget.multipleChoice.onChanged,
+                  plus: widget.multipleChoice.plus,
+                  minus: widget.multipleChoice.minus,
+                  textColor: widget.multipleChoice.textColor,
+                  numberColor: widget.multipleChoice.numberColor,
+                  iconColor: widget.multipleChoice.iconColor,
+                  stepValue: widget.multipleChoice.stepValue,
+                  longPressedValue: widget.multipleChoice.longPressedValue,
+                  min: () {
+                    try {
+                      if (double.parse(minController.text) >
+                          () {
+                            try {
+                              if (double.parse(text) <
+                                  widget.multipleChoice.min) {
+                                throw Exception();
+                              }
+                              return double.parse(text);
+                            } on Exception catch (_) {
+                              return widget.multipleChoice.max;
+                            }
+                          }.call()) {
+                        throw Exception();
+                      }
+                      return double.parse(minController.text);
+                    } on Exception catch (_) {
+                      return widget.multipleChoice.min;
+                    }
+                  }.call(),
+                  max: () {
+                    try {
+                      if (double.parse(text) < widget.multipleChoice.min) {
+                        throw Exception();
+                      }
+                      return double.parse(text);
+                    } on Exception catch (_) {
+                      return widget.multipleChoice.max;
+                    }
+                  }.call(),
+                  initValue: () => clampDouble(
+                    widget.multipleChoice.initValue(),
+                    () {
+                      try {
+                        if (double.parse(minController.text) >
+                            () {
+                              try {
+                                if (double.parse(text) <
+                                    widget.multipleChoice.min) {
+                                  throw Exception();
+                                }
+                                return double.parse(text);
+                              } on Exception catch (_) {
+                                return widget.multipleChoice.max;
+                              }
+                            }.call()) {
+                          throw Exception();
+                        }
+                        return double.parse(minController.text);
+                      } on Exception catch (_) {
+                        return widget.multipleChoice.min;
+                      }
+                    }.call(),
+                    () {
+                      try {
+                        if (double.parse(text) < widget.multipleChoice.min) {
+                          throw Exception();
+                        }
+                        return double.parse(text);
+                      } on Exception catch (_) {
+                        return widget.multipleChoice.max;
+                      }
+                    }.call(),
+                  ),
+                  isChangable: true,
+                );
+                widget.onChanged(widget.multipleChoice);
+              },
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 }

@@ -43,6 +43,7 @@ class HomePageState extends State<HomePage> with RouteAware {
       widget.json = null;
     });
   }
+  
 
   @override
   Widget build(BuildContext context) => Scaffold(

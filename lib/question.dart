@@ -3,6 +3,7 @@ import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/boolean_switch.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
+import 'package:scouting_qr_maker/widgets/multiple_choice.dart';
 import 'package:scouting_qr_maker/widgets/question_type.dart';
 import 'package:scouting_qr_maker/widgets/score_counter.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
@@ -73,11 +74,19 @@ class Question extends StatefulWidget {
         isChangable: isChangable,
         init: init(),
       ),
-      Types.slider => LevelSlider.fromJson(
+      Types.multipleChoice => MultipleChoice.fromJson(
         json['question'],
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
         },
+        isChangable: isChangable,
+        init: init(),
+      ),
+      Types.slider => LevelSlider.fromJson(
+        json['question'],
+        onChanged: (p0) => {
+          if (onChanged != null) onChanged(json['index'], p0),
+        },  
         isChangable: isChangable,
         init: init(),
       ),
@@ -156,6 +165,7 @@ const List<(Types, String)> segments = <(Types, String)>[
   (Types.icon, 'Icon'),
   (Types.string, 'String'),
   (Types.selectable, 'Selection'),
+  (Types.multipleChoice, 'Multiple Choice'), 
 ];
 
 class QuestionState extends State<Question> {
@@ -223,6 +233,22 @@ class QuestionState extends State<Question> {
                             setState(() => widget.question = p0);
                           },
                           scoreCounter: scoreCounter,
+                        );
+                        case Types.multipleChoice:
+                        MultipleChoice multipleChoice = MultipleChoice(
+                          label: "Label",
+                          icon: Icons.check_box,
+                          isChangable: true,
+                          onChanged: (p0) => {
+                            widget.onChanged(widget.index, p0),
+                          },
+                        );
+                        widget.question = multipleChoice;
+                        settings = MultipleChoiceSettings(
+                          onChanged: (MultipleChoice p0) {
+                            setState(() => widget.question = p0);
+                          },
+                          multipleChoice: multipleChoice,
                         );
                       case Types.slider:
                         LevelSlider levelSlider = LevelSlider(
@@ -406,6 +432,7 @@ enum Types {
   icon,
   string,
   selectable,
+  multipleChoice,
 }
 
 enum Options { delete, duplicate }

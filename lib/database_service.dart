@@ -7,21 +7,22 @@ class DatabaseService {
 
   /// Upload data to a table
   Future<Map<String, dynamic>?> uploadData({
-    required String table,
-    required Map<String, dynamic> data,
+  required String table,
+  required Map<String, dynamic> data,
+  String? onConflict, // Add this parameter
   }) async {
-    print('upload data: $data');
+  print('upload data: $data');
     try {
       final response = await _supabase
           .from(table)
-          .insert(data)
+          .upsert(data, onConflict: onConflict) // Use upsert instead of insert
           .select()
           .single();
-      print('response: $response');
-      return response;
+    print('response: $response');
+    return response;
     } catch (e) {
-      print('Error uploading data: $e');
-      rethrow;
+    print('Error uploading data: $e');
+    rethrow;
     }
   }
 
