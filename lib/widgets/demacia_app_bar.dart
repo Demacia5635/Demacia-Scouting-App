@@ -3,82 +3,117 @@ import 'package:scouting_qr_maker/home_page.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DemaciaAppBar extends AppBar {
-  DemaciaAppBar({
+class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const DemaciaAppBar({
     super.key,
     Future<void> Function()? onLongSave,
     required this.onSave,
-  }) : onLongSave = onLongSave ?? (() {}),
-       super(
-         actions: [
-           Container(
-             margin: EdgeInsets.symmetric(horizontal: 20),
-             child: Builder(
-               builder: (context) {
-                 return ElevatedButton(
-                   onPressed: null,
-                   child: Text(MainApp.currentSave.title),
-                 );
-               },
-             ),
-           ),
+  }) : onLongSave = onLongSave ?? _defaultOnLongSave;
 
-           Container(
-             margin: EdgeInsets.symmetric(horizontal: 20),
-             child: Builder(
-               builder: (context) {
-                 return ElevatedButton(
-                   onPressed: () => onDelete(context),
-                   child: Icon(Icons.delete_forever),
-                 );
-               },
-             ),
-           ),
+  final void Function() onSave;
+  final void Function() onLongSave;
 
-           Container(
-             margin: EdgeInsets.symmetric(horizontal: 20),
-             child: Builder(
-               builder: (context) {
-                 return ElevatedButton(
-                   onPressed: () => loadSaves(context),
-                   child: Icon(Icons.folder_open),
-                 );
-               },
-             ),
-           ),
+  static Future<void> _defaultOnLongSave() async {}
 
-           Container(
-             margin: EdgeInsets.symmetric(horizontal: 20),
-             child: ElevatedButton(
-               onPressed: onSave,
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-               onLongPress: onLongSave,
-               child: Icon(Icons.save),
-             ),
-           ),
+  @override
+  Widget build(BuildContext context) {
+    // Now we can safely access MediaQuery here
+    bool isSmallScreen = MediaQuery.of(context).size.width < 600;
 
-           Container(
-             margin: EdgeInsets.symmetric(horizontal: 20),
-             child: Text(
-               MainApp.version,
-               textAlign: TextAlign.center,
-               style: TextStyle(color: Colors.white),
-             ),
-           ),
-         ],
-         centerTitle: true,
-         elevation: 7,
-         title: Text(
-           "Demacia Scouting Maker",
-           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-         ),
-         backgroundColor: Colors.deepPurple.shade700,
-       );
+    return AppBar(
+      actions: [
+        // Current Save Title Button
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: ElevatedButton(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 16,
+                vertical: 8,
+              ),
+              minimumSize: const Size(0, 0),
+            ),
+            child: Text(
+              MainApp.currentSave.title,
+              style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
 
-  void Function() onSave;
-  void Function() onLongSave;
+        // Delete Button
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: ElevatedButton(
+            onPressed: () => _onDelete(context),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              minimumSize: const Size(0, 0),
+            ),
+            child: Icon(Icons.delete_forever, size: isSmallScreen ? 20 : 24),
+          ),
+        ),
 
-  static void onDelete(BuildContext context) {
+        // Load Button
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: ElevatedButton(
+            onPressed: () => _loadSaves(context),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              minimumSize: const Size(0, 0),
+            ),
+            child: Icon(Icons.folder_open, size: isSmallScreen ? 20 : 24),
+          ),
+        ),
+
+        // Save Button
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: ElevatedButton(
+            onPressed: onSave,
+            onLongPress: onLongSave,
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              minimumSize: const Size(0, 0),
+            ),
+            child: Icon(Icons.save, size: isSmallScreen ? 20 : 24),
+          ),
+        ),
+
+        // Version Text
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: Center(
+            child: Text(
+              MainApp.version,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 10 : 14,
+              ),
+            ),
+          ),
+        ),
+      ],
+      centerTitle: true,
+      elevation: 7,
+      title: Text(
+        isSmallScreen ? "Demacia" : "Demacia Scouting Maker",
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: Colors.deepPurple.shade700,
+    );
+  }
+
+  static void _onDelete(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -86,7 +121,7 @@ class DemaciaAppBar extends AppBar {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
-          title: Text(
+          title: const Text(
             'Choose which save to delete',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -102,11 +137,13 @@ class DemaciaAppBar extends AppBar {
                       await prefs.remove('current_save');
                       await prefs.remove('app_data_${p0.index}');
                       MainApp.currentSave = MainApp.saves[0];
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (p0) => HomePage()),
-                        (Route<dynamic> route) => false,
-                      );
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (p0) => HomePage()),
+                          (Route<dynamic> route) => false,
+                        );
+                      }
                     }),
                   )
                   .toList(),
@@ -117,7 +154,7 @@ class DemaciaAppBar extends AppBar {
     );
   }
 
-  static void loadSaves(BuildContext context) {
+  static void _loadSaves(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -125,7 +162,7 @@ class DemaciaAppBar extends AppBar {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
-          title: Text(
+          title: const Text(
             'Choose which save to load',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -141,11 +178,13 @@ class DemaciaAppBar extends AppBar {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setInt('current_save', p0.index);
                         MainApp.currentSave = p0;
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (p0) => HomePage()),
-                          (Route<dynamic> route) => false,
-                        );
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (p0) => HomePage()),
+                            (Route<dynamic> route) => false,
+                          );
+                        }
                       }),
                     )
                     .toList(),

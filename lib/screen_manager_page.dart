@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
@@ -28,13 +27,11 @@ class ScreenManagerPage extends StatefulWidget {
 
   factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
     Map<int, FormPage> screens = {};
-    // Create the widget instance first so getJson has a reference
     ScreenManagerPage widget = ScreenManagerPage(
       screens: screens,
       isSpecialForm: json['isSpecialForm'] as bool? ?? false,
     );
 
-    // 1. Fill the map
     print('screen is null?: ${json['screens'] == null}');
     if (json['screens'] == null) {
       return widget;
@@ -49,7 +46,6 @@ class ScreenManagerPage extends StatefulWidget {
       );
     }
 
-    // 2. Safely link pages by sorting the existing keys
     final sortedKeys = screens.keys.toList()..sort();
 
     for (int i = 0; i < sortedKeys.length; i++) {
@@ -57,19 +53,16 @@ class ScreenManagerPage extends StatefulWidget {
       FormPage? currentPage = screens[currentKey];
 
       if (currentPage != null) {
-        // Link to previous (if not the first in the sorted list)
         currentPage.previosPage = (i > 0)
             ? () => screens[sortedKeys[i - 1]]!
             : null;
 
-        // Link to next (if not the last in the sorted list)
         currentPage.nextPage = (i < sortedKeys.length - 1)
             ? () => screens[sortedKeys[i + 1]]!
             : null;
       }
     }
 
-    // Update the widget reference with the populated screens
     widget.screens = screens;
     return widget;
   }
@@ -79,23 +72,13 @@ class ScreenManagerPage extends StatefulWidget {
 class _ScreenManagerPageState extends State<ScreenManagerPage> {
   int currentIndex = -1;
 
-  late FocusNode focusNode;
-
   @override
   void initState() {
     super.initState();
 
-    focusNode = FocusNode();
-
     final keyList = widget.screens.keys.toList();
     keyList.sort((p0, p1) => p0.compareTo(p1));
     currentIndex = keyList.isNotEmpty ? keyList.last : -1;
-  }
-
-  @override
-  void dispose() {
-    focusNode.dispose();
-    super.dispose();
   }
 
   void _addNewFormPage() {
@@ -127,6 +110,10 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     );
     IconData pickingIcon = screen.icon;
     Color pickingColor = screen.color;
+    
+    // Get screen size for responsive dialog
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isPhone = screenWidth < 600;
 
     return showDialog<void>(
       context: context,
@@ -134,54 +121,71 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
         return AlertDialog(
           title: const Text('Rename Screen'),
           content: SizedBox(
-            width: 700,
-            height: 450,
-            child: Column(
-              spacing: 14,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    label: Text("Enter new Screen name"),
+            width: isPhone ? screenWidth * 0.9 : 700,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 14,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      label: Text("Enter new Screen name"),
+                    ),
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 10,
-                  children: [
-                    Text(
-                      "Change Icon:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      width: 500,
-                      child: IconPicker(onChanged: (p0) => pickingIcon = p0),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          screen.icon = Icons.description;
-                        });
-                      },
-                      icon: Icon(Icons.delete),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 10,
-                  children: [
-                    Text(
-                      "Change color:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    ColorInput(
-                      initValue: () => pickingColor,
-                      onChanged: (p0) => pickingColor = p0,
-                    ),
-                  ],
-                ),
-              ],
+                  // Icon picker section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Change Icon:",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                screen.icon = Icons.description;
+                                pickingIcon = Icons.description;
+                              });
+                            },
+                            icon: Icon(Icons.delete),
+                            tooltip: "Reset Icon",
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: IconPicker(
+                          onChanged: (p0) => pickingIcon = p0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Color picker section
+                  Row(
+                    mainAxisAlignment: isPhone 
+                        ? MainAxisAlignment.spaceBetween 
+                        : MainAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      Text(
+                        "Change color:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Flexible(
+                        child: ColorInput(
+                          initValue: () => pickingColor,
+                          onChanged: (p0) => pickingColor = p0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
@@ -208,50 +212,40 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     );
   }
 
-  /// Handles raw keyboard events.
-  void _handleKeyEvent(RawKeyEvent event) {
-    // Check if the event is a key down event and the pressed key is the Escape key.
-    if (event is RawKeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape) {
-      // Check if there's a route to pop (i.e., not the very first screen)
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); // Pop the current route
-      }
-    }
-  }
-
   @override
-  Widget build(BuildContext context) => RawKeyboardListener(
-    focusNode: focusNode,
-    onKey: _handleKeyEvent,
-    autofocus: true,
-    child: Scaffold(
+  Widget build(BuildContext context) {
+    // Get screen size for responsive grid
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth < 400 ? 2 : 
+                           screenWidth < 600 ? 2 : 
+                           screenWidth < 900 ? 3 :
+                           screenWidth < 1200 ? 4 : 5;
+    
+    return Scaffold(
       appBar: DemaciaAppBar(
-        onSave:
-            () async {
-                  save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
-                }
-                as void Function(),
+        onSave: () async {
+          save(widget.toJson(), MainApp.currentSave);
+          await DatabaseService().uploadData(
+            table: 'data',
+            data: {'form': widget.toJson()},
+          );
+        } as void Function(),
         onLongSave: () async =>
             longSave(widget.toJson(), context, () => setState(() {})),
       ),
       body: GridView.builder(
-        padding: const EdgeInsets.all(16.0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          crossAxisSpacing: 16.0,
-          mainAxisSpacing: 16.0,
-          childAspectRatio: 0.5625,
+        padding: EdgeInsets.all(screenWidth < 600 ? 8.0 : 16.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: screenWidth < 600 ? 8.0 : 16.0,
+          mainAxisSpacing: screenWidth < 600 ? 8.0 : 16.0,
+          childAspectRatio: 0.65,
         ),
         itemCount: widget.screens.length + 1,
         itemBuilder: (context, index) {
           if (index == widget.screens.length) {
             return Card(
-              margin: EdgeInsets.all(8),
+              margin: EdgeInsets.all(4),
               elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.0),
@@ -259,23 +253,17 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => _addNewFormPage(),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: Icon(
-                          Icons.add,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Center(
+                  child: Icon(
+                    Icons.add,
+                    size: screenWidth < 600 ? 36 : 48,
+                    color: Colors.grey.shade300,
+                  ),
                 ),
               ),
             );
           }
+          
           final screenList = widget.screens.values.toList();
           screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
           final screen = screenList[index];
@@ -292,15 +280,16 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             screen.nextPage = null;
           }
 
-          card(isDragging) => Card(
-            margin: EdgeInsets.all(8),
-            elevation: 4.0,
+          Widget card(bool isDragging) => Card(
+            margin: EdgeInsets.all(4),
+            elevation: isDragging ? 8.0 : 4.0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(12.0),
-              onDoubleTap: () => _navigateToScreen(screen),
+              onTap: () => _navigateToScreen(screen),
+              onLongPress: screenWidth < 600 ? () => _showRenameDialog(screen) : null,
               child: Stack(
                 children: [
                   Padding(
@@ -312,7 +301,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                         Center(
                           child: Icon(
                             screen.icon,
-                            size: 48,
+                            size: screenWidth < 600 ? 36 : 48,
                             color: screen.color,
                           ),
                         ),
@@ -321,7 +310,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                           screen.name,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: screenWidth < 600 ? 14 : 18,
                             fontWeight: FontWeight.bold,
                             color: screen.color,
                           ),
@@ -331,34 +320,41 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       ],
                     ),
                   ),
-                  !isDragging
-                      ? Positioned(
-                          top: 4,
-                          right: 4,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.delete_forever,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => _deleteScreen(screen),
-                            tooltip: 'Delete Screen',
-                          ),
-                        )
-                      : Container(),
-                  !isDragging
-                      ? Positioned(
-                          top: 4,
-                          left: 4,
-                          child: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.grey),
-                            onPressed: () => _showRenameDialog(screen),
-                            tooltip: 'Rename Screen',
-                          ),
-                        )
-                      : Container(),
+                  if (!isDragging)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                          size: screenWidth < 600 ? 20 : 24,
+                        ),
+                        onPressed: () => _deleteScreen(screen),
+                        tooltip: 'Delete Screen',
+                        padding: EdgeInsets.all(4),
+                        constraints: BoxConstraints(),
+                      ),
+                    ),
+                  if (!isDragging && screenWidth >= 600)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.edit, 
+                          color: Colors.grey,
+                          size: screenWidth < 600 ? 20 : 24,
+                        ),
+                        onPressed: () => _showRenameDialog(screen),
+                        tooltip: 'Rename Screen',
+                        padding: EdgeInsets.all(4),
+                        constraints: BoxConstraints(),
+                      ),
+                    ),
                   Positioned(
-                    bottom: 4,
-                    right: 4,
+                    bottom: 0,
+                    right: 0,
                     child: IconButton(
                       onPressed: () {
                         setState(() {
@@ -370,60 +366,126 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                         color: screen.isSpecialForm
                             ? Colors.yellow
                             : Colors.grey,
+                        size: screenWidth < 600 ? 20 : 24,
                       ),
+                      padding: EdgeInsets.all(4),
+                      constraints: BoxConstraints(),
                     ),
                   ),
                 ],
               ),
             ),
           );
+
+          // Simplified drag-and-drop for phones
+          if (screenWidth < 600) {
+            return LongPressDraggable<FormPage>(
+              data: screen,
+              feedback: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: screenWidth / crossAxisCount - 16,
+                  height: (screenWidth / crossAxisCount - 16) / 0.65,
+                  child: card(true),
+                ),
+              ),
+              childWhenDragging: Opacity(
+                opacity: 0.3,
+                child: card(false),
+              ),
+              child: DragTarget<FormPage>(
+                onAcceptWithDetails: (details) {
+                  setState(() {
+                    if (details.data.index == screen.index) return;
+                    
+                    final oldIndex = details.data.index;
+                    final newIndex = screen.index;
+                    
+                    if (oldIndex < newIndex) {
+                      for (var s in screenList) {
+                        if (s.index > oldIndex && s.index <= newIndex) {
+                          s.index--;
+                        }
+                      }
+                    } else {
+                      for (var s in screenList) {
+                        if (s.index >= newIndex && s.index < oldIndex) {
+                          s.index++;
+                        }
+                      }
+                    }
+                    
+                    details.data.index = newIndex;
+                    screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
+                    
+                    for (int i = 0; i < screenList.length; i++) {
+                      screenList[i].index = i;
+                      screenList[i].previosPage = i > 0 ? () => screenList[i - 1] : null;
+                      screenList[i].nextPage = i < screenList.length - 1 ? () => screenList[i + 1] : null;
+                    }
+                  });
+                },
+                builder: (context, candidateData, rejectedData) {
+                  return card(false);
+                },
+              ),
+            );
+          }
+
+          // Desktop drag-and-drop with drop zones
           return Row(
             children: [
-              index == 0
-                  ? DragTarget<FormPage>(
-                      onAcceptWithDetails: (details) {
-                        setState(() {
-                          for (var p0 in screenList) {
-                            p0.index++;
-                          }
-                          details.data.index = 0;
-                          screenList.sort(
-                            (p0, p1) => p0.index.compareTo(p1.index),
-                          );
-                          for (int i = 0; i < screenList.length; i++) {
-                            screenList[i].index = i;
-                          }
-                          details.data.previosPage = null;
-                          details.data.nextPage = () => screenList[1];
-                        });
-                      },
-                      builder: (context, candidateData, rejectedData) {
-                        if (candidateData.isNotEmpty ||
-                            rejectedData.isNotEmpty) {
-                          if (candidateData.first!.index !=
-                              screenList.first.index) {
-                            return Container(
-                              margin: EdgeInsets.symmetric(horizontal: 10),
-                              width: 25,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: Colors.greenAccent.shade700,
-                                  width: 2,
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                        return Container(width: 25);
-                      },
-                    )
-                  : Container(width: 25),
+              if (index == 0)
+                DragTarget<FormPage>(
+                  onAcceptWithDetails: (details) {
+                    setState(() {
+                      for (var p0 in screenList) {
+                        p0.index++;
+                      }
+                      details.data.index = 0;
+                      screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
+                      for (int i = 0; i < screenList.length; i++) {
+                        screenList[i].index = i;
+                      }
+                      details.data.previosPage = null;
+                      details.data.nextPage = () => screenList[1];
+                    });
+                  },
+                  builder: (context, candidateData, rejectedData) {
+                    if (candidateData.isNotEmpty || rejectedData.isNotEmpty) {
+                      if (candidateData.first!.index != screenList.first.index) {
+                        return Container(
+                          margin: EdgeInsets.symmetric(horizontal: 10),
+                          width: 25,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.greenAccent.shade700,
+                              width: 2,
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                    return Container(width: 25);
+                  },
+                )
+              else
+                Container(width: 25),
 
               Expanded(
                 child: Draggable<FormPage>(
                   data: screen,
-                  feedback: card(true),
+                  feedback: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 200,
+                      height: 300,
+                      child: card(true),
+                    ),
+                  ),
                   childWhenDragging: Opacity(opacity: 0.3, child: card(false)),
                   child: card(false),
                 ),
@@ -475,6 +537,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
           );
         },
       ),
-    ),
-  );
+    );
+  }
 }

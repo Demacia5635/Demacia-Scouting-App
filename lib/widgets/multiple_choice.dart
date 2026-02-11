@@ -20,7 +20,7 @@ class MultipleChoice extends QuestionType {
     this.iconColor = Colors.blue,
     this.stepValue = 1,
     this.longPressedValue = 2,
-    this.max = 1000,
+    this.max = 4000,
     this.min = 0,
     double Function()? initValue,
     this.isChangable = false,
@@ -592,7 +592,7 @@ class MultipleChoiceSettings extends StatefulWidget {
 class MultipleChoiceSettingsState extends State<MultipleChoiceSettings> {
   TextEditingController stepController = TextEditingController(text: '1');
   TextEditingController longStepController = TextEditingController(text: '2');
-  TextEditingController maxController = TextEditingController(text: '1000');
+  TextEditingController maxController = TextEditingController(text: '4000');
   TextEditingController minController = TextEditingController(text: '0');
 
   @override
