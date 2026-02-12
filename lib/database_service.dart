@@ -7,22 +7,22 @@ class DatabaseService {
 
   /// Upload data to a table
   Future<Map<String, dynamic>?> uploadData({
-  required String table,
-  required Map<String, dynamic> data,
-  String? onConflict, // Add this parameter
+    required String table,
+    required Map<String, dynamic> data,
+    String? onConflict, // Add this parameter
   }) async {
-  print('upload data: $data');
+    print('upload data: $data');
     try {
       final response = await _supabase
           .from(table)
           .upsert(data, onConflict: onConflict) // Use upsert instead of insert
           .select()
           .single();
-    print('response: $response');
-    return response;
+      print('response: $response');
+      return response;
     } catch (e) {
-    print('Error uploading data: $e');
-    rethrow;
+      print('Error uploading data: $e');
+      rethrow;
     }
   }
 
@@ -61,7 +61,7 @@ class DatabaseService {
       final response = await _supabase
           .from('data')
           .select()
-          .order('created_at', ascending: true)
+          .order('created_at', ascending: false)
           .limit(6);
       //.not('form', 'is', null)
       //.order('created_at', ascending: false);
@@ -82,6 +82,17 @@ class DatabaseService {
       print('Error fetching all forms: $e');
       return [];
     }
+  }
+
+  Future<Map<String, dynamic>> getForm() async {
+    final response = await _supabase
+        .from('data')
+        .select()
+        .eq('created_at', '2026-02-12 21:39:28.629788+00')
+        .single();
+    final form = response['form'];
+    print('MY MY MY form: $form');
+    return form;
   }
 
   /// Normalize different data formats into a consistent structure

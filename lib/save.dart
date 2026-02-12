@@ -7,27 +7,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
 class Save {
-  Save({
-    required this.index,
-    String? title,
-    Color? color,
-    IconData? icon,
-    bool? isSpecialForm,
-  }) : title = title ??= index.toString(),
-       color = color ??= Colors.blue,
-       icon = icon ??= Icons.save_alt,
-       isSpecialForm = isSpecialForm ?? false;
+  Save({required this.index, String? title, Color? color, IconData? icon})
+    : title = title ??= index.toString(),
+      color = color ??= Colors.blue,
+      icon = icon ??= Icons.save_alt;
 
   int index;
   String title;
   Color color;
   IconData icon;
-  bool isSpecialForm;
 
   Map<String, dynamic> toJson() => {
     'index': index,
     'title': title,
-    //'isSpecialForm': isSpecialForm,
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
   };
@@ -63,7 +55,6 @@ class Save {
       title: json['title'] as String? ?? 'Untitled',
       color: parsedColor,
       icon: parsedIcon,
-      //isSpecialForm: json['isSpecialForm'] as bool? ?? false,
     );
   }
 

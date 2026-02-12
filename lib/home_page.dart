@@ -31,61 +31,79 @@ class HomePageState extends State<HomePage> with RouteAware {
   void loadData() async {
     final prefs = await SharedPreferences.getInstance();
     DatabaseService databaseService = DatabaseService();
-    databaseService.getAllForms().then((savesData) {
-      print('Fetched saves data: $savesData');
-      if (savesData.isNotEmpty) {
-        print('Successfully loaded ${savesData.length} saves from Supabase');
+    databaseService
+        .getAllForms()
+        .then((savesData) {
+          print('Fetched saves data: $savesData');
+          if (savesData.isNotEmpty) {
+            print(
+              'Successfully loaded ${savesData.length} saves from Supabase',
+            );
 
-        // Convert JSON data to Save objects
-        MainApp.saves = savesData.map((saveJson) {
-          print('Parsing save JSON: $saveJson');
-          return Save.fromJson(saveJson);
-        }).toList();
+            // Convert JSON data to Save objects
+            MainApp.saves = savesData.map((saveJson) {
+              print('Parsing save JSON: $saveJson');
+              return Save.fromJson(saveJson);
+            }).toList();
 
-        print('Loaded saves: ${MainApp.saves.map((s) => s.title).join(", ")}');
-      } else {
-        print('No saves found in Supabase, using default saves');
-        // Keep the default saves if nothing in database
-      }
-    }).catchError((e) {
-      print('Error loading saves from Supabase: $e');
-      print('Using default saves');
-      // Keep the default saves on error
-    });
+            print(
+              'Loaded saves: ${MainApp.saves.map((s) => s.title).join(", ")}',
+            );
 
-    if (prefs.containsKey('app_data_${MainApp.currentSave.index}')) {
-      setState(() {
-        widget.json = jsonDecode(
-          prefs.getString('app_data_${MainApp.currentSave.index}')!,
-        );
-      });
-      return;
-    }
+            print('\n current save: ${MainApp.currentSave.toJson()}');
+          } else {
+            print('No saves found in Supabase, using default saves');
+            // Keep the default saves if nothing in database
+          }
+        })
+        .catchError((e) {
+          print('Error loading saves from Supabase: $e');
+          print('Using default saves');
+          // Keep the default saves on error
+        });
+    MainApp.saves.add(Save.fromJson(await databaseService.getForm()));
+    print('last: ${MainApp.saves.last.toJson()}');
+    MainApp.currentSave = MainApp.saves.last;
+    print('current: ${MainApp.currentSave.toJson()}');
+    // if (prefs.containsKey('app_data_${MainApp.currentSave.index}')) {
+    //   setState(() {
+    //     // widget.json = jsonDecode(
+    //     //   prefs.getString('app_data_${MainApp.currentSave.index}')!,
+    //     // );
+    //     print('json null: ${widget.json.toString()}');
+    //   });
+    //   return;
+    // }
 
     setState(() {
       widget.json = null;
     });
+    widget.json = await databaseService.getForm();
+    print('json: after my my my ${widget.json.toString()}');
+    print('isJsonNull? : ${widget.json == null}');
+    print('tamir the king: ${widget.json!['screens']}');
   }
-  
 
   @override
   Widget build(BuildContext context) {
     // Get screen width for responsive design
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: DemaciaAppBar(
-        onSave: () async {
-          widget.json != null
-              ? save(widget.json!, MainApp.currentSave)
-              : null;
-          await DatabaseService().uploadData(
-            table: 'data',
-            data: {'form': widget.json!},
-          );
-        } as void Function(),
+        onSave:
+            () async {
+                  widget.json != null
+                      ? save(widget.json!, MainApp.currentSave)
+                      : null;
+                  await DatabaseService().uploadData(
+                    table: 'data',
+                    data: {'form': widget.json!},
+                  );
+                }
+                as void Function(),
         onLongSave: () async => widget.json != null
             ? longSave(widget.json!, context, () => setState(() {}))
             : null,
@@ -107,7 +125,8 @@ class HomePageState extends State<HomePage> with RouteAware {
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            if (widget.json != null && widget.json!.isNotEmpty) {
+                            if (widget.json != null &&
+                                widget.json!.isNotEmpty) {
                               return ScreenManagerPage.fromJson(widget.json!);
                             }
                             return ScreenManagerPage();
@@ -153,7 +172,9 @@ class HomePageState extends State<HomePage> with RouteAware {
                                       if (savedValue is Set<Entry>) {
                                         widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =
                                             savedValue
-                                                .map((option) => option.toJson())
+                                                .map(
+                                                  (option) => option.toJson(),
+                                                )
                                                 .toList();
                                       } else {
                                         switch (savedValue.runtimeType) {
@@ -169,7 +190,8 @@ class HomePageState extends State<HomePage> with RouteAware {
                                             widget
                                                 .json!['screens'][i]['questions'][qIndex]['question']['initValue'] = {
                                               'codePoint': savedValue.codePoint,
-                                              'fontFamily': savedValue.fontFamily,
+                                              'fontFamily':
+                                                  savedValue.fontFamily,
                                             };
                                           default:
                                             widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =

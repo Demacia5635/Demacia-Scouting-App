@@ -15,7 +15,6 @@ class FormPage extends StatefulWidget {
     this.name = 'Empty Form Name',
     this.icon = Icons.article,
     this.color = Colors.blue,
-    this.isSpecialForm = false,
     Map<int, (Question, dynamic)>? questions,
     this.isChangable = false,
     Future<Map<String, dynamic>> Function()? onSave,
@@ -28,7 +27,6 @@ class FormPage extends StatefulWidget {
   String name;
   IconData icon;
   Color color;
-  bool isSpecialForm;
 
   Map<int, (Question, dynamic)> questions;
   bool isChangable;
@@ -47,7 +45,6 @@ class FormPage extends StatefulWidget {
     'name': name,
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
-    'isSpecialForm': isSpecialForm,
   };
 
   factory FormPage.fromJson(
@@ -96,7 +93,7 @@ class FormPage extends StatefulWidget {
       onSave: getJson,
       previosPage: previosPage,
       nextPage: nextPage,
-    )..isSpecialForm = json['isSpecialForm'] as bool? ?? false;
+    );
   }
 
   load(

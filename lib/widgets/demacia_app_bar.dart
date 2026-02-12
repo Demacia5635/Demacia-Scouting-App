@@ -128,25 +128,27 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
           content: SizedBox(
             height: 200,
             width: 500,
-            child: Column(
-              spacing: 10,
-              children: MainApp.saves
-                  .map(
-                    (p0) => p0.build(context, () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('current_save');
-                      await prefs.remove('app_data_${p0.index}');
-                      MainApp.currentSave = MainApp.saves[0];
-                      if (context.mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (p0) => HomePage()),
-                          (Route<dynamic> route) => false,
-                        );
-                      }
-                    }),
-                  )
-                  .toList(),
+            child: SingleChildScrollView(
+              child: Column(
+                spacing: 10,
+                children: MainApp.saves
+                    .map(
+                      (p0) => p0.build(context, () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove('current_save');
+                        await prefs.remove('app_data_${p0.index}');
+                        MainApp.currentSave = MainApp.saves[0];
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (p0) => HomePage()),
+                            (Route<dynamic> route) => false,
+                          );
+                        }
+                      }),
+                    )
+                    .toList(),
+              ),
             ),
           ),
         );

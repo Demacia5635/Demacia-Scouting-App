@@ -32,7 +32,7 @@ void main() async {
 
       // Convert JSON data to Save objects
       MainApp.saves = savesData.map((saveJson) {
-        print('Parsing save JSON: $saveJson');
+        //print('Parsing save JSON: $saveJson');
         return Save.fromJson(saveJson);
       }).toList();
 
@@ -127,7 +127,7 @@ class MainApp extends StatelessWidget {
   }
 }
 
-/// Helper function to load form from Supabase and convert it to FormPage
+/// Helper function to load form from Supabase and convert it to FormPage - No ones using this
 Future<FormPage?> loadFormPageFromSupabase() async {
   try {
     final databaseService = DatabaseService();

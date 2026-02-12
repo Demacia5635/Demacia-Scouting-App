@@ -7,30 +7,21 @@ import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/form_page.dart';
 
 class ScreenManagerPage extends StatefulWidget {
-  ScreenManagerPage({
-    super.key,
-    Map<int, FormPage>? screens,
-    bool? isSpecialForm,
-  }) : screens = screens ?? {},
-       isSpecialForm = isSpecialForm ?? false;
+  ScreenManagerPage({super.key, Map<int, FormPage>? screens})
+    : screens = screens ?? {};
 
   Map<int, FormPage> screens;
-  bool isSpecialForm;
 
   @override
   State<ScreenManagerPage> createState() => _ScreenManagerPageState();
 
   Map<String, dynamic> toJson() => {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
-    'isSpecialForm': isSpecialForm,
   };
 
   factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
     Map<int, FormPage> screens = {};
-    ScreenManagerPage widget = ScreenManagerPage(
-      screens: screens,
-      isSpecialForm: json['isSpecialForm'] as bool? ?? false,
-    );
+    ScreenManagerPage widget = ScreenManagerPage(screens: screens);
 
     print('screen is null?: ${json['screens'] == null}');
     if (json['screens'] == null) {
@@ -67,7 +58,6 @@ class ScreenManagerPage extends StatefulWidget {
     return widget;
   }
 }
-
 
 class _ScreenManagerPageState extends State<ScreenManagerPage> {
   int currentIndex = -1;
@@ -110,7 +100,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     );
     IconData pickingIcon = screen.icon;
     Color pickingColor = screen.color;
-    
+
     // Get screen size for responsive dialog
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
@@ -159,16 +149,14 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
-                        child: IconPicker(
-                          onChanged: (p0) => pickingIcon = p0,
-                        ),
+                        child: IconPicker(onChanged: (p0) => pickingIcon = p0),
                       ),
                     ],
                   ),
                   // Color picker section
                   Row(
-                    mainAxisAlignment: isPhone 
-                        ? MainAxisAlignment.spaceBetween 
+                    mainAxisAlignment: isPhone
+                        ? MainAxisAlignment.spaceBetween
                         : MainAxisAlignment.center,
                     spacing: 10,
                     children: [
@@ -216,20 +204,27 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
   Widget build(BuildContext context) {
     // Get screen size for responsive grid
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth < 400 ? 2 : 
-                           screenWidth < 600 ? 2 : 
-                           screenWidth < 900 ? 3 :
-                           screenWidth < 1200 ? 4 : 5;
-    
+    final crossAxisCount = screenWidth < 400
+        ? 2
+        : screenWidth < 600
+        ? 2
+        : screenWidth < 900
+        ? 3
+        : screenWidth < 1200
+        ? 4
+        : 5;
+
     return Scaffold(
       appBar: DemaciaAppBar(
-        onSave: () async {
-          save(widget.toJson(), MainApp.currentSave);
-          await DatabaseService().uploadData(
-            table: 'data',
-            data: {'form': widget.toJson()},
-          );
-        } as void Function(),
+        onSave:
+            () async {
+                  save(widget.toJson(), MainApp.currentSave);
+                  await DatabaseService().uploadData(
+                    table: 'data',
+                    data: {'form': widget.toJson()},
+                  );
+                }
+                as void Function(),
         onLongSave: () async =>
             longSave(widget.toJson(), context, () => setState(() {})),
       ),
@@ -263,7 +258,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
               ),
             );
           }
-          
+
           final screenList = widget.screens.values.toList();
           screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
           final screen = screenList[index];
@@ -289,7 +284,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             child: InkWell(
               borderRadius: BorderRadius.circular(12.0),
               onTap: () => _navigateToScreen(screen),
-              onLongPress: screenWidth < 600 ? () => _showRenameDialog(screen) : null,
+              onLongPress: screenWidth < 600
+                  ? () => _showRenameDialog(screen)
+                  : null,
               child: Stack(
                 children: [
                   Padding(
@@ -342,7 +339,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       left: 0,
                       child: IconButton(
                         icon: Icon(
-                          Icons.edit, 
+                          Icons.edit,
                           color: Colors.grey,
                           size: screenWidth < 600 ? 20 : 24,
                         ),
@@ -358,14 +355,14 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     child: IconButton(
                       onPressed: () {
                         setState(() {
-                          screen.isSpecialForm = !screen.isSpecialForm;
+                          //screen.isSpecialForm = !screen.isSpecialForm;
                         });
                       },
                       icon: Icon(
                         Icons.star,
-                        color: screen.isSpecialForm
-                            ? Colors.yellow
-                            : Colors.grey,
+                        // color: screen.isSpecialForm
+                        //     ? Colors.yellow
+                        //     : Colors.grey,
                         size: screenWidth < 600 ? 20 : 24,
                       ),
                       padding: EdgeInsets.all(4),
@@ -390,18 +387,15 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                   child: card(true),
                 ),
               ),
-              childWhenDragging: Opacity(
-                opacity: 0.3,
-                child: card(false),
-              ),
+              childWhenDragging: Opacity(opacity: 0.3, child: card(false)),
               child: DragTarget<FormPage>(
                 onAcceptWithDetails: (details) {
                   setState(() {
                     if (details.data.index == screen.index) return;
-                    
+
                     final oldIndex = details.data.index;
                     final newIndex = screen.index;
-                    
+
                     if (oldIndex < newIndex) {
                       for (var s in screenList) {
                         if (s.index > oldIndex && s.index <= newIndex) {
@@ -415,14 +409,18 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                         }
                       }
                     }
-                    
+
                     details.data.index = newIndex;
                     screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
-                    
+
                     for (int i = 0; i < screenList.length; i++) {
                       screenList[i].index = i;
-                      screenList[i].previosPage = i > 0 ? () => screenList[i - 1] : null;
-                      screenList[i].nextPage = i < screenList.length - 1 ? () => screenList[i + 1] : null;
+                      screenList[i].previosPage = i > 0
+                          ? () => screenList[i - 1]
+                          : null;
+                      screenList[i].nextPage = i < screenList.length - 1
+                          ? () => screenList[i + 1]
+                          : null;
                     }
                   });
                 },
@@ -454,7 +452,8 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                   },
                   builder: (context, candidateData, rejectedData) {
                     if (candidateData.isNotEmpty || rejectedData.isNotEmpty) {
-                      if (candidateData.first!.index != screenList.first.index) {
+                      if (candidateData.first!.index !=
+                          screenList.first.index) {
                         return Container(
                           margin: EdgeInsets.symmetric(horizontal: 10),
                           width: 25,
@@ -480,11 +479,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                   feedback: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 200,
-                      height: 300,
-                      child: card(true),
-                    ),
+                    child: SizedBox(width: 200, height: 300, child: card(true)),
                   ),
                   childWhenDragging: Opacity(opacity: 0.3, child: card(false)),
                   child: card(false),
