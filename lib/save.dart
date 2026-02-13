@@ -8,9 +8,9 @@ import 'package:scouting_qr_maker/database_service.dart';
 
 class Save {
   Save({required this.index, String? title, Color? color, IconData? icon})
-    : title = title ??= index.toString(),
-      color = color ??= Colors.blue,
-      icon = icon ??= Icons.save_alt;
+    : title = title ?? index.toString(),
+      color = color ?? Colors.blue,
+      icon = icon ?? Icons.save_alt;
 
   int index;
   String title;
@@ -65,10 +65,10 @@ class Save {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadiusGeometry.circular(15),
+            borderRadius: BorderRadius.circular(15),
           ),
           title: Text('Edit: $title'),
           content: SizedBox(
@@ -113,13 +113,12 @@ class Save {
                     ),
                     IconButton(
                       onPressed: () {
-                        icon = Icons.save_alt;
+                        pickingIcon = Icons.save_alt;
                       },
                       icon: Icon(Icons.delete),
                     ),
                   ],
                 ),
-
                 Row(
                   spacing: 4,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -130,8 +129,8 @@ class Save {
                     ),
                     ColorInput(
                       initValue: () => color,
-                      onChanged: (color) {
-                        pickingColor = color;
+                      onChanged: (newColor) {
+                        pickingColor = newColor;
                       },
                     ),
                   ],
@@ -143,7 +142,9 @@ class Save {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
               },
             ),
             ElevatedButton(
@@ -157,7 +158,9 @@ class Save {
                 print('save to supabase');
                 await saveSaves();
 
-                Navigator.of(context).pop();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
               },
             ),
           ],
@@ -171,11 +174,11 @@ class Save {
     try {
       final databaseService = DatabaseService();
 
-      //Update save in Supabase
+      // Update save in Supabase
       print('JSON: \n${toJson()}');
       await databaseService.updateSave(index: index, saveData: toJson());
 
-      //save current save to SharedPreferences for quick access
+      // Save current save to SharedPreferences for quick access
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('current_save', index);
 
@@ -191,7 +194,11 @@ class Save {
         onPressed();
         await saveSaves();
         MainApp.currentSave = this;
-        Navigator.pop(context);
+
+        // Check if context is still valid before popping
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
       },
       child: ListTile(
         title: Text(title),

@@ -15,7 +15,6 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  // Initialize Supabase
   await Supabase.initialize(
     url: 'https://jnqbzzttvrjeudzbonix.supabase.co',
     anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
@@ -25,29 +24,19 @@ void main() async {
 
   // Load saves from Supabase
   try {
-    final savesData = await databaseService.getAllForms();
-    print('Fetched saves data: $savesData');
+    final savesData = await databaseService.getAllSaves();
     if (savesData.isNotEmpty) {
-      print('Successfully loaded ${savesData.length} saves from Supabase');
-
-      // Convert JSON data to Save objects
-      MainApp.saves = savesData.map((saveJson) {
-        //print('Parsing save JSON: $saveJson');
-        return Save.fromJson(saveJson);
-      }).toList();
-
-      print('Loaded saves: ${MainApp.saves.map((s) => s.title).join(", ")}');
-    } else {
-      print('No saves found in Supabase, using default saves');
-      // Keep the default saves if nothing in database
+      MainApp.saves = savesData
+          .map((saveJson) => Save.fromJson(saveJson))
+          .toList();
+      print('Loaded ${MainApp.saves.length} saves from Supabase');
     }
   } catch (e) {
     print('Error loading saves from Supabase: $e');
-    print('Using default saves');
-    // Keep the default saves on error
+    // Keep default saves on error
   }
 
-  // Load current save preference from SharedPreferences
+  // Load current save preference
   if (prefs.containsKey('current_save')) {
     int saveIndex = prefs.getInt('current_save')!;
     if (saveIndex < MainApp.saves.length) {
@@ -55,7 +44,6 @@ void main() async {
     }
   }
 
-  // Get package info
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   MainApp.version = packageInfo.version;
 

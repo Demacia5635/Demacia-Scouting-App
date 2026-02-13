@@ -63,17 +63,11 @@ class DatabaseService {
           .select()
           .order('created_at', ascending: false)
           .limit(6);
-      //.not('form', 'is', null)
-      //.order('created_at', ascending: false);
-
       List<Map<String, dynamic>> forms = [];
-
-      for (var row in response) {
-        if (row['form'] != null) {
-          final normalized = _normalizeFormData(row['form']);
-          if (normalized != null) {
-            forms.add(normalized);
-          }
+      for (var item in response) {
+        Map<String, dynamic>? form = item['form'];
+        if (form != null) {
+          forms.add(form);
         }
       }
 
@@ -88,7 +82,7 @@ class DatabaseService {
     final response = await _supabase
         .from('data')
         .select()
-        .eq('created_at', '2026-02-12 21:39:28.629788+00')
+        .order('created_at', ascending: false)
         .single();
     final form = response['form'];
     print('MY MY MY form: $form');

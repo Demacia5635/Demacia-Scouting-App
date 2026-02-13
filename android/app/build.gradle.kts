@@ -9,33 +9,28 @@ plugins {
 
 android {
     namespace = "com.example.scouting_qr_maker"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"//flutter.ndkVersion
-
+    compileSdk = 34  // Changed from flutter.compileSdkVersion
+    ndkVersion = "25.1.8937393"
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
+    
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
-
+    
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.scouting_qr_maker"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 21  // Changed from flutter.minSdkVersion
+        targetSdk = 34  // Changed from flutter.targetSdkVersion
+        versionCode = 1  // Changed from flutter.versionCode
+        versionName = "1.0"  // Changed from flutter.versionName
     }
-
+    
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
