@@ -7,21 +7,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
 class Save {
-  Save({required this.index, String? title, Color? color, IconData? icon})
-    : title = title ?? index.toString(),
-      color = color ?? Colors.blue,
-      icon = icon ?? Icons.save_alt;
+  Save({
+    required this.index,
+    String? title,
+    Color? color,
+    IconData? icon,
+    this.formId,
+  }) : title = title ?? index.toString(),
+       color = color ?? Colors.blue,
+       icon = icon ?? Icons.save_alt;
 
   int index;
   String title;
   Color color;
   IconData icon;
+  int? formId; // Add this to link to a specific form in the database
 
   Map<String, dynamic> toJson() => {
     'index': index,
     'title': title,
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
+    'form_id': formId, // Add this
   };
 
   factory Save.fromJson(Map<String, dynamic> json) {
@@ -38,7 +45,6 @@ class Save {
       parsedColor = Colors.blue;
     }
 
-    // Handle icon
     IconData parsedIcon;
     if (json['icon'] is Map) {
       final iconMap = json['icon'] as Map<String, dynamic>;
@@ -55,9 +61,11 @@ class Save {
       title: json['title'] as String? ?? 'Untitled',
       color: parsedColor,
       icon: parsedIcon,
+      formId: json['form_id'] as int?, // Add this
     );
   }
 
+  // Rest of the class remains the same...
   void editSave(BuildContext context) {
     String pickingName = title;
     Color pickingColor = color;
@@ -154,8 +162,6 @@ class Save {
                 icon = pickingIcon;
                 color = pickingColor;
 
-                // Save to Supabase
-                print('save to supabase');
                 await saveSaves();
 
                 if (dialogContext.mounted) {
@@ -174,11 +180,9 @@ class Save {
     try {
       final databaseService = DatabaseService();
 
-      // Update save in Supabase
       print('JSON: \n${toJson()}');
       await databaseService.updateSave(index: index, saveData: toJson());
 
-      // Save current save to SharedPreferences for quick access
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('current_save', index);
 
@@ -195,7 +199,6 @@ class Save {
         await saveSaves();
         MainApp.currentSave = this;
 
-        // Check if context is still valid before popping
         if (context.mounted) {
           Navigator.pop(context);
         }

@@ -38,32 +38,32 @@ class HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       DatabaseService databaseService = DatabaseService();
 
-      // Load all saves from Supabase
-      final savesData = await databaseService.getAllSaves();
-      print('Fetched saves data: $savesData');
+      // Reload the three latest saves with their forms
+      final savesWithForms = await databaseService
+          .getThreeLatestSavesWithForms();
 
-      if (savesData.isNotEmpty) {
-        print('Successfully loaded ${savesData.length} saves from Supabase');
+      if (savesWithForms.isNotEmpty) {
+        MainApp.saves = savesWithForms.map((saveData) {
+          final save = Save.fromJson(saveData);
 
-        // Convert JSON data to Save objects
-        MainApp.saves = savesData.map((saveJson) {
-          print('Parsing save JSON: $saveJson');
-          return Save.fromJson(saveJson);
+          // Store the form data in SharedPreferences for this save
+          final formData = saveData['form'];
+          if (formData != null) {
+            prefs.setString('app_data_${save.index}', jsonEncode(formData));
+          }
+
+          return save;
         }).toList();
 
-        print('Loaded saves: ${MainApp.saves.map((s) => s.title).join(", ")}');
-      } else {
-        print('No saves found in Supabase, using default saves');
+        print('Reloaded ${MainApp.saves.length} saves');
       }
 
-      // Load the form data for the current save
+      // Load the form data for the CURRENT save from SharedPreferences
       Map<String, dynamic>? formData;
 
-      // First try SharedPreferences
-      if (prefs.containsKey('app_data_${MainApp.currentSave.index}')) {
-        final savedJson = prefs.getString(
-          'app_data_${MainApp.currentSave.index}',
-        );
+      final saveKey = 'app_data_${MainApp.currentSave.index}';
+      if (prefs.containsKey(saveKey)) {
+        final savedJson = prefs.getString(saveKey);
         if (savedJson != null && savedJson.isNotEmpty) {
           formData = jsonDecode(savedJson);
           print(
@@ -72,10 +72,10 @@ class HomePageState extends State<HomePage> {
         }
       }
 
-      // If not in SharedPreferences, load from Supabase
+      // If not found, use latest as fallback
       if (formData == null) {
-        formData = await databaseService.getForm();
-        print('Loaded form from Supabase');
+        formData = await databaseService.getLatestFormData();
+        print('Loaded latest form as fallback');
       }
 
       setState(() {

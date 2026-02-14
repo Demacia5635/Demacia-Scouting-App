@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DatabaseService {
@@ -9,13 +10,13 @@ class DatabaseService {
   Future<Map<String, dynamic>?> uploadData({
     required String table,
     required Map<String, dynamic> data,
-    String? onConflict, // Add this parameter
+    String? onConflict,
   }) async {
     print('upload data: $data');
     try {
       final response = await _supabase
           .from(table)
-          .upsert(data, onConflict: onConflict) // Use upsert instead of insert
+          .upsert(data, onConflict: onConflict)
           .select()
           .single();
       print('response: $response');
@@ -27,7 +28,6 @@ class DatabaseService {
   }
 
   /// Get the latest valid form data from Supabase
-  /// Handles multiple data formats and returns parsed FormPage data
   Future<Map<String, dynamic>?> getLatestFormData() async {
     try {
       print('get latest form data');
@@ -45,11 +45,28 @@ class DatabaseService {
       }
 
       final formData = response['form'];
-
-      // Handle different data formats
       return _normalizeFormData(formData);
     } catch (e) {
       print('Error fetching latest form: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getFormById(int id) async {
+    try {
+      print('get form by database id: $id');
+      final response = await _supabase
+          .from('data')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+
+      if (response != null && response['form'] != null) {
+        return response['form'];
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching form by id: $e');
       return null;
     }
   }
@@ -61,8 +78,10 @@ class DatabaseService {
       final response = await _supabase
           .from('data')
           .select()
+          .not('form', 'is', null)
           .order('created_at', ascending: false)
           .limit(6);
+
       List<Map<String, dynamic>> forms = [];
       for (var item in response) {
         Map<String, dynamic>? form = item['form'];
@@ -78,15 +97,74 @@ class DatabaseService {
     }
   }
 
-  Future<Map<String, dynamic>> getForm() async {
-    final response = await _supabase
-        .from('data')
-        .select()
-        .order('created_at', ascending: false)
-        .single();
-    final form = response['form'];
-    print('MY MY MY form: $form');
-    return form;
+  /// Get the three most recent saves with their associated form data
+  Future<List<Map<String, dynamic>>> getThreeLatestSavesWithForms() async {
+    try {
+      print('Getting three latest saves with forms');
+
+      // Get the 3 most recent data entries
+      final response = await _supabase
+          .from('data')
+          .select()
+          .not('form', 'is', null)
+          .order('created_at', ascending: false)
+          .limit(3);
+
+      List<Map<String, dynamic>> savesWithForms = [];
+
+      for (int i = 0; i < response.length; i++) {
+        savesWithForms.add({
+          'index': i,
+          'title': 'Save #${i + 1}',
+          'color': i == 0
+              ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
+              : i == 1
+              ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
+              : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
+          'icon': {
+            'codePoint': i == 0
+                ? Icons.filter_1.codePoint
+                : i == 1
+                ? Icons.filter_2.codePoint
+                : Icons.filter_3.codePoint,
+            'fontFamily': 'MaterialIcons',
+          },
+          'form': response[i]['form'],
+          'created_at': response[i]['created_at'],
+        });
+      }
+
+      print('Fetched ${savesWithForms.length} saves with forms');
+      return savesWithForms;
+    } catch (e) {
+      print('Error fetching latest saves with forms: $e');
+      return [];
+    }
+  }
+
+  /// Get the latest form from Supabase
+  Future<Map<String, dynamic>?> getForm() async {
+    try {
+      final response = await _supabase
+          .from('data')
+          .select()
+          .not('form', 'is', null)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) {
+        print('No form found in database');
+        return null;
+      }
+
+      final form = response['form'];
+      print('Latest form retrieved: $form');
+      return form;
+    } catch (e) {
+      print('Error getting latest form: $e');
+      return null;
+    }
   }
 
   /// Normalize different data formats into a consistent structure
@@ -97,11 +175,9 @@ class DatabaseService {
 
       Map<String, dynamic> data;
 
-      // If it's already a Map, use it directly
       if (formData is Map<String, dynamic>) {
         data = formData;
       } else if (formData is String) {
-        // If it's a string, it might be JSON encoded
         return null;
       } else {
         return null;
@@ -109,23 +185,15 @@ class DatabaseService {
 
       // Check if data has "screens" wrapper
       if (data.containsKey('screens')) {
-        // Handle {"screens":[{"questions":[],"index":9,"name":"..."}]}
-        final screens = data['screens'];
-        if (screens is List && screens.isNotEmpty) {
-          // Return the first screen as the form data
-          if (screens[0] is Map<String, dynamic>) {
-            return screens[0] as Map<String, dynamic>;
-          }
-        }
+        return data; // Return the whole structure with screens
       }
 
       // Check if data has "questions" at root level
       if (data.containsKey('questions')) {
-        // Handle {"questions":[{"index":1,"question":{"label":"..."},...}]}
         return data;
       }
 
-      // If it has index, name, and other FormPage fields, it's already normalized
+      // If it has index, name, and other FormPage fields
       if (data.containsKey('index') &&
           (data.containsKey('name') || data.containsKey('questions'))) {
         return data;

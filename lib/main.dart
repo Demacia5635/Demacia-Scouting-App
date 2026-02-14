@@ -22,26 +22,34 @@ void main() async {
 
   DatabaseService databaseService = DatabaseService();
 
-  // Load saves from Supabase
+  // Load the three latest saves with their forms
   try {
-    final savesData = await databaseService.getAllSaves();
-    if (savesData.isNotEmpty) {
-      MainApp.saves = savesData
-          .map((saveJson) => Save.fromJson(saveJson))
-          .toList();
-      print('Loaded ${MainApp.saves.length} saves from Supabase');
+    final savesWithForms = await databaseService.getThreeLatestSavesWithForms();
+
+    if (savesWithForms.isNotEmpty) {
+      // Create Save objects from the data
+      MainApp.saves = savesWithForms.map((saveData) {
+        final save = Save.fromJson(saveData);
+
+        // Store the form data in SharedPreferences for this save
+        final formData = saveData['form'];
+        if (formData != null) {
+          prefs.setString('app_data_${save.index}', jsonEncode(formData));
+        }
+
+        return save;
+      }).toList();
+
+      print('Loaded ${MainApp.saves.length} saves with their forms');
+
+      // Set current save to the first one (which is the latest)
+      MainApp.currentSave = MainApp.saves[0];
+      await prefs.setInt('current_save', 0);
+      print('Set current save to the latest form (Save #1)');
     }
   } catch (e) {
-    print('Error loading saves from Supabase: $e');
+    print('Error loading saves: $e');
     // Keep default saves on error
-  }
-
-  // Load current save preference
-  if (prefs.containsKey('current_save')) {
-    int saveIndex = prefs.getInt('current_save')!;
-    if (saveIndex < MainApp.saves.length) {
-      MainApp.currentSave = MainApp.saves[saveIndex];
-    }
   }
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -53,6 +61,20 @@ void main() async {
 void save(Map<String, dynamic> json, Save file) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('app_data_${file.index}', jsonEncode(json));
+
+  // Upload to Supabase and get the form ID
+  final databaseService = DatabaseService();
+  final result = await databaseService.uploadData(
+    table: 'data',
+    data: {'form': json},
+  );
+
+  // Link the form to this save
+  if (result != null && result['id'] != null) {
+    file.formId = result['id'] as int;
+    await file.saveSaves(); // Save the updated save with form_id
+  }
+
   MainApp.currentSave = file;
 }
 
