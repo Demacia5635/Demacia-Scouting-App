@@ -37,19 +37,32 @@ class ColorInput extends QuestionType {
     Key? key,
     void Function(Color color)? onChanged,
     dynamic init,
-  }) => ColorInput(
-    key: key,
-    label: json['label'] as String,
-    initValue: init != null && init() != null && init is Color Function()?
-        ? init
-        : () => Color.from(
-            alpha: json['initValue']['a'],
-            red: json['initValue']['r'],
-            green: json['initValue']['g'],
-            blue: json['initValue']['b'],
-          ),
-    onChanged: onChanged,
-  );
+  }) {
+    // Dart erases generic types at runtime so `init is Color Function()?`
+    // always fails. Call init() and check if the result is a Color instead.
+    Color Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is Color) {
+          resolvedInit = () => init() as Color;
+        }
+      }
+    } catch (_) {}
+
+    return ColorInput(
+      key: key,
+      label: json['label'] as String,
+      initValue: resolvedInit ??
+          () => Color.from(
+                alpha: json['initValue']['a'],
+                red: json['initValue']['r'],
+                green: json['initValue']['g'],
+                blue: json['initValue']['b'],
+              ),
+      onChanged: onChanged,
+    );
+  }
 }
 
 class ColorInputState extends State<ColorInput> {
@@ -60,6 +73,12 @@ class ColorInputState extends State<ColorInput> {
     super.initState();
 
     pickerColor = widget.initValue();
+
+    // Fire onChanged immediately so _previewData is seeded even if the
+    // user never interacts with this question after re-entering the screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(pickerColor);
+    });
   }
 
   Future<void> colorDialog(BuildContext context) {

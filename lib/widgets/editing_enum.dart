@@ -30,15 +30,12 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
   void initState() {
     super.initState();
 
-    // Reverted initState to the version you provided
     entries = {};
     for (int i = 0; i < widget.init.length; i++) {
       entries.addAll({i: widget.init[i]});
     }
     currentIndex = widget.init.last.index;
   }
-
-  // _reindexEntries helper function is removed as it's not compatible with the old drag logic.
 
   Future<void> editingDialog(
     BuildContext context,
@@ -53,12 +50,9 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
         child: Wrap(
           spacing: 8,
           runSpacing: 8,
-          // 'spacing' is not a direct property of Column. Use SizedBox for spacing.
-          // crossAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
               children: [
                 Text("Rename: ", style: TextStyle(fontWeight: FontWeight.bold)),
                 StringInput(
@@ -73,11 +67,10 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 ),
               ],
             ),
-            SizedBox(height: 14), // Added SizedBox for spacing
+            SizedBox(height: 14),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
               children: [
                 Text(
                   "Rename Sheet Name: ",
@@ -95,11 +88,10 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 ),
               ],
             ),
-            SizedBox(height: 14), // Added SizedBox for spacing
+            SizedBox(height: 14),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
               children: [
                 Text(
                   "Change/Add Icon: ",
@@ -127,10 +119,9 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 ),
               ],
             ),
-            SizedBox(height: 14), // Added SizedBox for spacing
+            SizedBox(height: 14),
 
             Row(
-              // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
@@ -153,30 +144,25 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
       ),
       actions: [
         Row(
-          // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
           children: [
             ElevatedButton(
               onPressed: () {
-                // Removed unnecessary curly braces around onDelete and pop
                 onDelete();
-                widget.onChanged(
-                  entries.values.toList(),
-                ); // Original call location
+                widget.onChanged(entries.values.toList());
                 Navigator.of(context).pop();
               },
               child: SizedBox(
                 width: 100,
                 child: Row(
-                  // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
                   children: [
                     Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 5), // Added SizedBox for spacing
+                    SizedBox(width: 5),
                     Text("Delete"),
                   ],
                 ),
               ),
             ),
-            SizedBox(width: 500), // Original fixed SizedBox
+            SizedBox(width: 500),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -185,7 +171,6 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 width: 100,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  // 'spacing' is not a direct property of Row. Use SizedBox for spacing.
                   children: [
                     Text("Go Back"),
                     Icon(Icons.subdirectory_arrow_right),
@@ -201,7 +186,6 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
 
   @override
   Widget build(BuildContext context) {
-    // Reverted to local entriesList for sorting, as in your provided file
     final entriesList = entries.values.toList();
     entriesList.sort((p0, p1) => p0.index.compareTo(p1.index));
 
@@ -211,12 +195,11 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          // Make the Wrap scrollable vertically
           Expanded(
             child: SingleChildScrollView(
               child: Wrap(
-                spacing: 1.0, // Space between items horizontally
-                runSpacing: 8.0, // Space between lines vertically
+                spacing: 1.0,
+                runSpacing: 8.0,
                 children: () {
                   final list = entriesList.map((item) {
                     Widget itemWidget = Container(
@@ -252,13 +235,10 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                     );
 
                     return [
-                      if (item.index ==
-                          0) // This DragTarget logic is from your provided file
+                      if (item.index == 0)
                         DragTarget<Entry>(
                           onAcceptWithDetails: (details) {
                             setState(() {
-                              // *** WARNING: This logic directly modifies a local `entriesList`,
-                              // *** not the state's `entries` map. This may lead to inconsistencies.
                               entriesList.forEach((p0) => p0.index++);
                               details.data.index = 0;
                               entriesList.sort(
@@ -294,7 +274,6 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                       else
                         Container(),
 
-                      // Container(width: 50, height: 50,), // Commented out as it's not needed for the horizontal flow
                       Draggable<Entry>(
                         data: item,
                         feedback: IgnorePointer(
@@ -310,14 +289,11 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                       DragTarget<Entry>(
                         onAcceptWithDetails: (details) {
                           setState(() {
-                            // *** WARNING: This logic directly modifies a local `entriesList`,
-                            // *** not the state's `entries` map. This may lead to inconsistencies.
                             if (details.data.index == item.index) return;
                             entriesList
                                 .where((p0) => p0.index > item.index)
                                 .forEach((p0) => p0.index++);
                             details.data.index = item.index + 1;
-
                             entriesList.sort(
                               (p0, p1) => p0.index.compareTo(p1.index),
                             );
@@ -345,7 +321,6 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                               );
                             }
                           }
-
                           return Container(width: value, height: value);
                         },
                       ),
@@ -383,9 +358,7 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                           ++currentIndex: Entry(index: currentIndex),
                         });
                       }
-                      widget.onChanged(
-                        entries.values.toList(),
-                      ); // Original call location
+                      widget.onChanged(entries.values.toList());
                       _newItemController.clear();
                     });
                   },
@@ -408,9 +381,7 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                         ++currentIndex: Entry(index: currentIndex),
                       });
                     }
-                    widget.onChanged(
-                      entries.values.toList(),
-                    ); // Original call location
+                    widget.onChanged(entries.values.toList());
                     _newItemController.clear();
                   });
                 },
@@ -441,20 +412,22 @@ class Entry {
   Color color;
   IconData? icon;
 
+  /// Two Entry objects are equal when they share the same [index].
+  /// This makes Set<Entry> membership and SegmentedButton.selected work
+  /// correctly across JSON round-trips and init() restorations.
+  @override
+  bool operator ==(Object other) => other is Entry && other.index == index;
+
+  @override
+  int get hashCode => index.hashCode;
+
   Map<String, dynamic> toJson() => {
     'index': index,
     'title': title,
     'sheetsTitle': sheetsTitle,
-    'color': {
-      'a': color.a,
-      'r': color.r,
-      'g': color.g,
-      'b': color.b,
-    }, // As in your provided file
+    'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {
-      'codePoint':
-          icon?.codePoint ??
-          '', // As in your provided file (expecting String, not int 0 for null)
+      'codePoint': icon?.codePoint ?? '',
       'fontFamily': icon?.fontFamily ?? '',
     },
   };
@@ -464,15 +437,12 @@ class Entry {
     title: json['title'] as String,
     sheetsTitle: json['sheetsTitle'] as String,
     color: Color.from(
-      // As in your provided file (Color.from and double casts)
       alpha: json['color']['a'] as double,
       red: json['color']['r'] as double,
       green: json['color']['g'] as double,
       blue: json['color']['b'] as double,
     ),
-    icon:
-        (json['icon']['codePoint'] !=
-            '') // As in your provided file (checking for empty string)
+    icon: (json['icon']['codePoint'] != '')
         ? IconData(
             json['icon']['codePoint'] as int,
             fontFamily: json['icon']['fontFamily'] as String,

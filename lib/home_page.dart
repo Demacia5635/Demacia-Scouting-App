@@ -23,6 +23,10 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   bool _isLoading = true;
 
+  // Lifted up so answers survive navigating back to home.
+  // Outer key = screen index, inner key = question's JSON index.
+  Map<int, Map<int, dynamic>> _previewData = {};
+
   @override
   void initState() {
     super.initState();
@@ -38,27 +42,22 @@ class HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       DatabaseService databaseService = DatabaseService();
 
-      // Reload the three latest saves with their forms
       final savesWithForms = await databaseService
           .getThreeLatestSavesWithForms();
 
       if (savesWithForms.isNotEmpty) {
         MainApp.saves = savesWithForms.map((saveData) {
           final save = Save.fromJson(saveData);
-
-          // Store the form data in SharedPreferences for this save
           final formData = saveData['form'];
           if (formData != null) {
             prefs.setString('app_data_${save.index}', jsonEncode(formData));
           }
-
           return save;
         }).toList();
 
         print('Reloaded ${MainApp.saves.length} saves');
       }
 
-      // Load the form data for the CURRENT save from SharedPreferences
       Map<String, dynamic>? formData;
 
       final saveKey = 'app_data_${MainApp.currentSave.index}';
@@ -72,7 +71,6 @@ class HomePageState extends State<HomePage> {
         }
       }
 
-      // If not found, use latest as fallback
       if (formData == null) {
         formData = await databaseService.getLatestFormData();
         print('Loaded latest form as fallback');
@@ -81,6 +79,7 @@ class HomePageState extends State<HomePage> {
       setState(() {
         widget.json = formData;
         _isLoading = false;
+        _initPreviewData();
       });
 
       print('Final json state: ${widget.json != null ? "loaded" : "null"}');
@@ -94,6 +93,31 @@ class HomePageState extends State<HomePage> {
         _isLoading = false;
       });
     }
+  }
+
+  /// Builds _previewData keyed by each question's actual JSON index,
+  /// preserving any answers already filled in.
+  void _initPreviewData() {
+    if (widget.json == null || !widget.json!.containsKey('screens')) {
+      _previewData = {};
+      return;
+    }
+
+    final screens = widget.json!['screens'] as List;
+    final updated = <int, Map<int, dynamic>>{};
+
+    for (int i = 0; i < screens.length; i++) {
+      final questions = screens[i]['questions'] as List;
+      updated[i] = {};
+      for (final q in questions) {
+        // Use the question's real JSON index as the key — this is what
+        // onChanged fires with, so the two must always match.
+        final qIndex = q['index'] as int;
+        updated[i]![qIndex] = _previewData[i]?[qIndex] ?? null;
+      }
+    }
+
+    _previewData = updated;
   }
 
   @override
@@ -119,7 +143,6 @@ class HomePageState extends State<HomePage> {
           }
         },
         onLoadSave: () {
-          // Reload data when a save is loaded
           loadData();
         },
       ),
@@ -145,6 +168,7 @@ class HomePageState extends State<HomePage> {
                     child: Column(
                       spacing: isPhone ? 16 : 40,
                       children: [
+                        // ── Editing Room ──────────────────────────────────
                         ElevatedButton(
                           onPressed:
                               widget.json != null && widget.json!.isNotEmpty
@@ -186,6 +210,8 @@ class HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
+
+                        // ── Preview Room ──────────────────────────────────
                         ElevatedButton(
                           onPressed:
                               widget.json != null && widget.json!.isNotEmpty
@@ -194,24 +220,41 @@ class HomePageState extends State<HomePage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) {
-                                        if (widget.json!.containsKey(
+                                        if (!widget.json!.containsKey(
                                           'screens',
                                         )) {
-                                          List<FormPage> screens = [];
-                                          Map<int, Map<int, dynamic>> data = {};
+                                          return FormPage(index: 0);
+                                        }
 
-                                          Map<int, dynamic Function()?>? func(
-                                            int i,
-                                          ) {
-                                            return data[i]?.map<
-                                              int,
-                                              dynamic Function()?
-                                            >((qIndex, savedValue) {
-                                              return MapEntry(qIndex, () {
-                                                if (savedValue != null) {
-                                                  if (savedValue
-                                                      is Set<Entry>) {
-                                                    widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =
+                                        List<FormPage> screens = [];
+
+                                        // func returns the init map for screen i,
+                                        // keyed by each question's real JSON index.
+                                        Map<int, dynamic Function()?>? func(
+                                          int i,
+                                        ) {
+                                          return _previewData[i]?.map<
+                                            int,
+                                            dynamic Function()?
+                                          >((qIndex, savedValue) {
+                                            return MapEntry(qIndex, () {
+                                              if (savedValue != null) {
+                                                // Mirror the saved value back into
+                                                // JSON so fromJson picks it up as
+                                                // initValue on re-entry.
+                                                final screenJson =
+                                                    widget.json!['screens'][i];
+                                                final questionJson =
+                                                    (screenJson['questions']
+                                                            as List)
+                                                        .firstWhere(
+                                                  (q) =>
+                                                      q['index'] == qIndex,
+                                                  orElse: () => null,
+                                                );
+                                                if (questionJson != null) {
+                                                  if (savedValue is Set) {
+                                                    questionJson['question']['initValue'] =
                                                         savedValue
                                                             .map(
                                                               (option) => option
@@ -219,10 +262,11 @@ class HomePageState extends State<HomePage> {
                                                             )
                                                             .toList();
                                                   } else {
-                                                    switch (savedValue
-                                                        .runtimeType) {
+                                                    switch (
+                                                      savedValue.runtimeType
+                                                    ) {
                                                       case Color:
-                                                        widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =
+                                                        questionJson['question']['initValue'] =
                                                             {
                                                               'a': savedValue.a,
                                                               'r': savedValue.r,
@@ -230,123 +274,117 @@ class HomePageState extends State<HomePage> {
                                                               'b': savedValue.b,
                                                             };
                                                       case IconData:
-                                                        widget
-                                                            .json!['screens'][i]['questions'][qIndex]['question']['initValue'] = {
-                                                          'codePoint':
-                                                              savedValue
-                                                                  .codePoint,
-                                                          'fontFamily':
-                                                              savedValue
-                                                                  .fontFamily,
-                                                        };
+                                                        questionJson['question']['initValue'] =
+                                                            {
+                                                              'codePoint':
+                                                                  savedValue
+                                                                      .codePoint,
+                                                              'fontFamily':
+                                                                  savedValue
+                                                                      .fontFamily,
+                                                            };
                                                       default:
-                                                        widget.json!['screens'][i]['questions'][qIndex]['question']['initValue'] =
+                                                        questionJson['question']['initValue'] =
                                                             savedValue;
                                                     }
                                                   }
                                                 }
-                                                return data[i]![qIndex];
-                                              });
+                                              }
+                                              return _previewData[i]![qIndex];
                                             });
-                                          }
-
-                                          for (
-                                            int i = 0;
-                                            i < widget.json!['screens'].length;
-                                            i++
-                                          ) {
-                                            data[i] = {};
-                                            for (
-                                              int j = 0;
-                                              j <
-                                                  widget
-                                                      .json!['screens'][i]['questions']
-                                                      .length;
-                                              j++
-                                            ) {
-                                              data[i]!.addAll({j: null});
-                                            }
-
-                                            screens.add(
-                                              FormPage.fromJson(
-                                                widget.json!['screens'][i],
-                                                isChangable: false,
-                                                getJson: () async =>
-                                                    widget.json!,
-                                                onChanged: (p0, p1) {
-                                                  setState(() {
-                                                    data[i]![p0] = p1;
-                                                  });
-                                                },
-                                                init: () => func(i),
-                                              ),
-                                            );
-                                          }
-
-                                          for (
-                                            int i = 0;
-                                            i < screens.length;
-                                            i++
-                                          ) {
-                                            screens[i].previosPage = (i != 0)
-                                                ? () {
-                                                    screens[i - 1].load(
-                                                      widget
-                                                          .json!['screens'][i -
-                                                          1],
-                                                      (p0, p1) {
-                                                        setState(() {
-                                                          data[i]![p0] = p1;
-                                                        });
-                                                      },
-                                                      () => func(i - 1),
-                                                    );
-                                                    return screens[i - 1];
-                                                  }
-                                                : null;
-                                            screens[i].nextPage =
-                                                (i + 1 != screens.length)
-                                                ? () {
-                                                    screens[i + 1].load(
-                                                      widget
-                                                          .json!['screens'][i +
-                                                          1],
-                                                      (p0, p1) {
-                                                        setState(() {
-                                                          data[i + 1]![p0] = p1;
-                                                        });
-                                                      },
-                                                      () => func(i + 1),
-                                                    );
-                                                    return screens[i + 1];
-                                                  }
-                                                : () => QrCode(
-                                                    data: data,
-                                                    previosPage: () {
-                                                      screens.last.load(
-                                                        widget
-                                                            .json!['screens'][screens
-                                                                .length -
-                                                            1],
-                                                        (p0, p1) {
-                                                          setState(() {
-                                                            data[screens.length -
-                                                                    1]![p0] =
-                                                                p1;
-                                                          });
-                                                        },
-                                                        () => func(
-                                                          screens.length - 1,
-                                                        ),
-                                                      );
-                                                      return screens.last;
-                                                    },
-                                                  );
-                                          }
-
-                                          return screens[0];
+                                          });
                                         }
-                                        return FormPage(index: 0);
+
+                                        for (
+                                          int i = 0;
+                                          i < widget.json!['screens'].length;
+                                          i++
+                                        ) {
+                                          screens.add(
+                                            FormPage.fromJson(
+                                              widget.json!['screens'][i],
+                                              isChangable: false,
+                                              getJson: () async =>
+                                                  widget.json!,
+                                              onChanged: (qIndex, value) {
+                                                // qIndex is the question's real
+                                                // JSON index — matches our map key.
+                                                setState(() {
+                                                  _previewData[i]![qIndex] =
+                                                      value;
+                                                });
+                                              },
+                                              init: () => func(i),
+                                            ),
+                                          );
+                                        }
+
+                                        for (
+                                          int i = 0;
+                                          i < screens.length;
+                                          i++
+                                        ) {
+                                          screens[i].previosPage = (i != 0)
+                                              ? () {
+                                                  screens[i - 1].load(
+                                                    widget
+                                                        .json!['screens'][i -
+                                                        1],
+                                                    (qIndex, value) {
+                                                      setState(() {
+                                                        _previewData[i -
+                                                            1]![qIndex] = value;
+                                                      });
+                                                    },
+                                                    () => func(i - 1),
+                                                  );
+                                                  return screens[i - 1];
+                                                }
+                                              : null;
+
+                                          screens[i].nextPage =
+                                              (i + 1 != screens.length)
+                                              ? () {
+                                                  screens[i + 1].load(
+                                                    widget
+                                                        .json!['screens'][i +
+                                                        1],
+                                                    (qIndex, value) {
+                                                      setState(() {
+                                                        _previewData[i +
+                                                            1]![qIndex] = value;
+                                                      });
+                                                    },
+                                                    () => func(i + 1),
+                                                  );
+                                                  return screens[i + 1];
+                                                }
+                                              : () => QrCode(
+                                                  data: _previewData,
+                                                  previosPage: () {
+                                                    screens.last.load(
+                                                      widget
+                                                          .json!['screens'][screens
+                                                              .length -
+                                                          1],
+                                                      (qIndex, value) {
+                                                        setState(() {
+                                                          _previewData[screens
+                                                              .length -
+                                                              1]![qIndex] =
+                                                              value;
+                                                        });
+                                                      },
+                                                      () => func(
+                                                        screens.length - 1,
+                                                      ),
+                                                    );
+                                                    return screens.last;
+                                                  },
+                                                );
+                                        }
+
+                                        return screens[0];
                                       },
                                     ),
                                   );

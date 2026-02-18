@@ -50,29 +50,41 @@ class BooleanSwitch extends QuestionType {
   factory BooleanSwitch.fromJson(
     Map<String, dynamic> json, {
     Key? key,
-    void Function(bool vaue)? onChanged,
+    void Function(bool value)? onChanged,
     bool isChangable = false,
     dynamic init,
   }) {
+    // Dart erases generic types at runtime so `init is bool Function()?`
+    // always fails. Call init() and check if the result is a bool instead.
+    bool Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is bool) {
+          resolvedInit = () => init() as bool;
+        }
+      }
+    } catch (_) {}
+
     return BooleanSwitch(
-    key: key,
-    label: json['label'] as String,
-    textColor: Color.from(
-      alpha: json['textColor']['a'] as double,
-      red: json['textColor']['r'] as double,
-      green: json['textColor']['g'] as double,
-      blue: json['textColor']['b'] as double,
-    ),
-    selectedColor: Color.from(
-      alpha: json['selectedColor']['a'] as double,
-      red: json['selectedColor']['r'] as double,
-      green: json['selectedColor']['g'] as double,
-      blue: json['selectedColor']['b'] as double,
-    ),
-    initValue: init != null && init() != null && init is bool Function()? ? init : (() => json['initValue'] as bool),
-    onChanged: onChanged,
-    isChangable: isChangable,
-  );
+      key: key,
+      label: json['label'] as String,
+      textColor: Color.from(
+        alpha: json['textColor']['a'] as double,
+        red: json['textColor']['r'] as double,
+        green: json['textColor']['g'] as double,
+        blue: json['textColor']['b'] as double,
+      ),
+      selectedColor: Color.from(
+        alpha: json['selectedColor']['a'] as double,
+        red: json['selectedColor']['r'] as double,
+        green: json['selectedColor']['g'] as double,
+        blue: json['selectedColor']['b'] as double,
+      ),
+      initValue: resolvedInit ?? (() => json['initValue'] as bool),
+      onChanged: onChanged,
+      isChangable: isChangable,
+    );
   }
 }
 
@@ -88,6 +100,12 @@ class BooleanSwitchChangableState extends State<BooleanSwitch> {
     light = widget.initValue();
 
     labelController.text = widget.label;
+
+    // Seed _previewData immediately so the value is preserved even if
+    // the user navigates away without touching this switch again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(light);
+    });
   }
 
   static const WidgetStateProperty<Icon> thumbIcon =
@@ -137,6 +155,12 @@ class BooleanSwitchState extends State<BooleanSwitch> {
     super.initState();
 
     light = widget.initValue();
+
+    // Seed _previewData immediately so the value is preserved even if
+    // the user navigates away without touching this switch again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(light);
+    });
   }
 
   static const WidgetStateProperty<Icon> thumbIcon =

@@ -23,7 +23,7 @@ android {
     
     defaultConfig {
         applicationId = "com.example.scouting_qr_maker"
-        minSdk = 21  // Changed from flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion  // Changed from flutter.minSdkVersion
         targetSdk = 34  // Changed from flutter.targetSdkVersion
         versionCode = 1  // Changed from flutter.versionCode
         versionName = "1.0"  // Changed from flutter.versionName

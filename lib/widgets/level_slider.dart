@@ -74,36 +74,48 @@ class LevelSlider extends QuestionType {
     void Function(double)? onChanged,
     bool isChangable = false,
     dynamic init,
-  }) => LevelSlider(
-    key: key,
-    label: json['label'] as String,
-    textColor: Color.from(
-      alpha: json['textColor']['a'] as double,
-      red: json['textColor']['r'] as double,
-      green: json['textColor']['g'] as double,
-      blue: json['textColor']['b'] as double,
-    ),
-    sliderColor: Color.from(
-      alpha: json['sliderColor']['a'] as double,
-      red: json['sliderColor']['r'] as double,
-      green: json['sliderColor']['g'] as double,
-      blue: json['sliderColor']['b'] as double,
-    ),
-    thumbColor: Color.from(
-      alpha: json['thumbColor']['a'] as double,
-      red: json['thumbColor']['r'] as double,
-      green: json['thumbColor']['g'] as double,
-      blue: json['thumbColor']['b'] as double,
-    ),
-    min: json['min'] as double,
-    max: json['max'] as double,
-    divisions: json['divisions'] as int,
-    initValue: init != null && init() != null && init is double Function()?
-        ? init
-        : (() => json['initValue'] as double),
-    onChanged: onChanged,
-    isChangable: isChangable,
-  );
+  }) {
+    // Dart erases generic types at runtime so `init is double Function()?`
+    // always fails. Call init() and check if the result is a double instead.
+    double Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is double) {
+          resolvedInit = () => init() as double;
+        }
+      }
+    } catch (_) {}
+
+    return LevelSlider(
+      key: key,
+      label: json['label'] as String,
+      textColor: Color.from(
+        alpha: json['textColor']['a'] as double,
+        red: json['textColor']['r'] as double,
+        green: json['textColor']['g'] as double,
+        blue: json['textColor']['b'] as double,
+      ),
+      sliderColor: Color.from(
+        alpha: json['sliderColor']['a'] as double,
+        red: json['sliderColor']['r'] as double,
+        green: json['sliderColor']['g'] as double,
+        blue: json['sliderColor']['b'] as double,
+      ),
+      thumbColor: Color.from(
+        alpha: json['thumbColor']['a'] as double,
+        red: json['thumbColor']['r'] as double,
+        green: json['thumbColor']['g'] as double,
+        blue: json['thumbColor']['b'] as double,
+      ),
+      min: json['min'] as double,
+      max: json['max'] as double,
+      divisions: json['divisions'] as int,
+      initValue: resolvedInit ?? (() => json['initValue'] as double),
+      onChanged: onChanged,
+      isChangable: isChangable,
+    );
+  }
 }
 
 class LevelSliderChangableState extends State<LevelSlider> {
@@ -118,6 +130,12 @@ class LevelSliderChangableState extends State<LevelSlider> {
     value = widget.initValue();
 
     labelController.text = widget.label;
+
+    // Seed _previewData immediately so the value is preserved even if
+    // the user navigates away without touching this slider again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(value);
+    });
   }
 
   @override
@@ -164,6 +182,12 @@ class LevelSliderState extends State<LevelSlider> {
     super.initState();
 
     value = widget.initValue();
+
+    // Seed _previewData immediately so the value is preserved even if
+    // the user navigates away without touching this slider again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(value);
+    });
   }
 
   @override

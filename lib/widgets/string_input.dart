@@ -52,27 +52,39 @@ class StringInput extends QuestionType {
     Key? key,
     void Function(String)? onChanged,
     bool isChangable = false,
-    dynamic init
+    dynamic init,
   }) {
+    // Dart erases generic types at runtime so `init is String Function()?`
+    // always fails. Call init() and check if the result is a String instead.
+    String Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is String) {
+          resolvedInit = () => init() as String;
+        }
+      }
+    } catch (_) {}
+
     return StringInput(
-    key: key,
-    label: json['label'] as String,
-    initValue: init != null && init() != null && init is String Function()? ? init : (() => json['initValue']),
-    textColor: Color.from(
-      alpha: json['textColor']['a'] as double,
-      red: json['textColor']['r'] as double,
-      green: json['textColor']['g'] as double,
-      blue: json['textColor']['b'] as double,
-    ),
-    labelColor: Color.from(
-      alpha: json['labelColor']['a'] as double,
-      red: json['labelColor']['r'] as double,
-      green: json['labelColor']['g'] as double,
-      blue: json['labelColor']['b'] as double,
-    ),
-    onChanged: onChanged,
-    isChangable: isChangable,
-  );
+      key: key,
+      label: json['label'] as String,
+      initValue: resolvedInit ?? (() => json['initValue'] as String),
+      textColor: Color.from(
+        alpha: json['textColor']['a'] as double,
+        red: json['textColor']['r'] as double,
+        green: json['textColor']['g'] as double,
+        blue: json['textColor']['b'] as double,
+      ),
+      labelColor: Color.from(
+        alpha: json['labelColor']['a'] as double,
+        red: json['labelColor']['r'] as double,
+        green: json['labelColor']['g'] as double,
+        blue: json['labelColor']['b'] as double,
+      ),
+      onChanged: onChanged,
+      isChangable: isChangable,
+    );
   }
 }
 
@@ -89,7 +101,6 @@ class StringInputChangableState extends State<StringInput> {
   @override
   Widget build(BuildContext context) => Container(
     constraints: BoxConstraints(maxWidth: 450, maxHeight: 300),
-
     child: TextField(
       controller: controller,
       onChanged: (value) {
@@ -112,12 +123,17 @@ class StringInputState extends State<StringInput> {
     super.initState();
 
     controller.text = widget.initValue();
+
+    // Seed _previewData immediately so the value is preserved even if
+    // the user navigates away without typing in this field again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(controller.text);
+    });
   }
 
   @override
   Widget build(BuildContext context) => Container(
     constraints: BoxConstraints(maxWidth: 400, maxHeight: 300),
-
     child: TextField(
       controller: controller,
       onChanged: (value) => widget.onChanged(value),

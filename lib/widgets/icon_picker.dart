@@ -3,8 +3,11 @@ import 'package:scouting_qr_maker/widgets/icons_list.dart';
 import 'package:scouting_qr_maker/widgets/question_type.dart';
 
 class IconPicker extends QuestionType {
-  IconPicker({super.key, void Function(IconData icon)? onChanged, this.initValue})
-    : onChanged = onChanged ?? ((p0) {});
+  IconPicker({
+    super.key,
+    void Function(IconData icon)? onChanged,
+    this.initValue,
+  }) : onChanged = onChanged ?? ((p0) {});
 
   void Function(IconData icon) onChanged;
   IconData Function()? initValue;
@@ -17,46 +20,79 @@ class IconPicker extends QuestionType {
     'initValue': {
       'codePoint': initValue != null ? initValue!().codePoint : '',
       'fontFamily': initValue != null ? initValue!().fontFamily : '',
-    }
+    },
   };
 
   factory IconPicker.fromJson(
     Map<String, dynamic> json, {
     Key? key,
     void Function(IconData)? onChanged,
-    dynamic init
-  }) => IconPicker(
-    key: key, 
-    onChanged: onChanged,
-    initValue: init != null && init() != null && init is IconData Function()? 
-    ? init 
-    : (json['initValue']['codePoint'] != '')
-      ? () => IconData(
-          json['icon']['codePoint'] as int,
-          fontFamily: json['icon']['codePoint'] as String,
-        )
-      : null,
-  );
+    dynamic init,
+  }) {
+    // Dart erases generic types at runtime so `init is IconData Function()?`
+    // always fails. Call init() and check if the result is an IconData instead.
+    IconData Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is IconData) {
+          resolvedInit = () => init() as IconData;
+        }
+      }
+    } catch (_) {}
+
+    return IconPicker(
+      key: key,
+      onChanged: onChanged,
+      initValue: resolvedInit ??
+          (json['initValue']['codePoint'] != ''
+              ? () => IconData(
+                    json['initValue']['codePoint'] as int,
+                    fontFamily: json['initValue']['fontFamily'] as String,
+                  )
+              : null),
+    );
+  }
 
   @override
   Widget settings(void Function(IconPicker p1) onChanged) => Container();
 }
 
 class _IconPickerState extends State<IconPicker> {
+  // Own the SearchController here so we can set its text safely in initState,
+  // before any build pass runs. Never mutate a controller inside builder().
+  late final SearchController _searchController;
+
   @override
   void initState() {
     super.initState();
+
+    _searchController = SearchController();
+
+    // Set the initial text once, outside of any build callback.
+    if (widget.initValue != null) {
+      _searchController.text =
+          icons.entries
+              .where((p0) => p0.value == widget.initValue!())
+              .firstOrNull
+              ?.key ??
+          '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return SearchAnchor(
+      searchController: _searchController,
       builder: (context, controller) {
-        if (widget.initValue != null) {
-          setState(() {
-            controller.text = icons.entries.where((p0) => p0.value == widget.initValue!).firstOrNull?.key ?? '';
-          });
-        }
+        // Never mutate controller.text here — it triggers AnimatedBuilder
+        // during build and causes the "setState during build" error.
         return SearchBar(
           controller: controller,
           padding: const WidgetStatePropertyAll(
@@ -89,10 +125,8 @@ class _IconPickerState extends State<IconPicker> {
                 final e = filteredIcons[index];
                 return GestureDetector(
                   onTap: () {
-                    setState(() {
-                      controller.closeView(e.key);
-                      widget.onChanged(e.value);
-                    });
+                    controller.closeView(e.key);
+                    widget.onChanged(e.value);
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

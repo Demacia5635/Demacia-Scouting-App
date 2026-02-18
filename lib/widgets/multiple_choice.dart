@@ -86,54 +86,67 @@ class MultipleChoice extends QuestionType {
     Key? key,
     void Function(double)? onChanged,
     bool isChangable = false,
-    dynamic init
+    dynamic init,
   }) {
+    // Dart erases generic types at runtime so `init is double Function()?`
+    // always fails. Call init() and check if the result is a double.
+    double Function() resolvedInit;
+    try {
+      final candidate = init != null ? init() : null;
+      if (candidate is double) {
+        resolvedInit = () => init() as double;
+      } else {
+        resolvedInit = () => json['initValue'] as double;
+      }
+    } catch (_) {
+      resolvedInit = () => json['initValue'] as double;
+    }
 
     return MultipleChoice(
-    key: key,
-    label: json['label'] as String,
-    icon: IconData(
-      json['icon']['codePoint'] as int,
-      fontFamily: json['icon']['fontFamily'] as String,
-    ),
-    plus: Color.from(
-      alpha: json['plus']['a'] as double,
-      red: json['plus']['r'] as double,
-      green: json['plus']['g'] as double,
-      blue: json['plus']['b'] as double,
-    ),
-    minus: Color.from(
-      alpha: json['minus']['a'] as double,
-      red: json['minus']['r'] as double,
-      green: json['minus']['g'] as double,
-      blue: json['minus']['b'] as double,
-    ),
-    textColor: Color.from(
-      alpha: json['textColor']['a'] as double,
-      red: json['textColor']['r'] as double,
-      green: json['textColor']['g'] as double,
-      blue: json['textColor']['b'] as double,
-    ),
-    numberColor: Color.from(
-      alpha: json['numberColor']['a'] as double,
-      red: json['numberColor']['r'] as double,
-      green: json['numberColor']['g'] as double,
-      blue: json['numberColor']['b'] as double,
-    ),
-    iconColor: Color.from(
-      alpha: json['iconColor']['a'] as double,
-      red: json['iconColor']['r'] as double,
-      green: json['iconColor']['g'] as double,
-      blue: json['iconColor']['b'] as double,
-    ),
-    stepValue: json['stepValue'] as double,
-    max: json['max'] as double,
-    min: json['min'] as double,
-    longPressedValue: json['longPressedValue'] as double,
-    initValue: init != null && init() != null && init is double Function()? ? init : (() => json['initValue'] as double),
-    onChanged: onChanged,
-    isChangable: isChangable,
-  );
+      key: key,
+      label: json['label'] as String,
+      icon: IconData(
+        json['icon']['codePoint'] as int,
+        fontFamily: json['icon']['fontFamily'] as String,
+      ),
+      plus: Color.from(
+        alpha: json['plus']['a'] as double,
+        red: json['plus']['r'] as double,
+        green: json['plus']['g'] as double,
+        blue: json['plus']['b'] as double,
+      ),
+      minus: Color.from(
+        alpha: json['minus']['a'] as double,
+        red: json['minus']['r'] as double,
+        green: json['minus']['g'] as double,
+        blue: json['minus']['b'] as double,
+      ),
+      textColor: Color.from(
+        alpha: json['textColor']['a'] as double,
+        red: json['textColor']['r'] as double,
+        green: json['textColor']['g'] as double,
+        blue: json['textColor']['b'] as double,
+      ),
+      numberColor: Color.from(
+        alpha: json['numberColor']['a'] as double,
+        red: json['numberColor']['r'] as double,
+        green: json['numberColor']['g'] as double,
+        blue: json['numberColor']['b'] as double,
+      ),
+      iconColor: Color.from(
+        alpha: json['iconColor']['a'] as double,
+        red: json['iconColor']['r'] as double,
+        green: json['iconColor']['g'] as double,
+        blue: json['iconColor']['b'] as double,
+      ),
+      stepValue: json['stepValue'] as double,
+      max: json['max'] as double,
+      min: json['min'] as double,
+      longPressedValue: json['longPressedValue'] as double,
+      initValue: resolvedInit,
+      onChanged: onChanged,
+      isChangable: isChangable,
+    );
   }
 }
 
@@ -197,8 +210,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -214,8 +226,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -231,8 +242,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -248,8 +258,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -290,8 +299,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(min(widget.max, count + 5));
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -307,8 +315,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(min(widget.max, count + 10));
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -324,8 +331,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(min(widget.max, count + 15));
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -341,9 +347,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                   });
                   widget.onChanged(min(widget.max, count + 20));
                 },
-                onLongPress: () {
-
-                },
+                onLongPress: () {},
               ),
             ),
           ],
@@ -377,6 +381,7 @@ class RoundedIconButton extends StatelessWidget {
     child: Icon(icon, color: Colors.white, size: 40),
   );
 }
+
 class RoundedTextButton extends StatelessWidget {
   const RoundedTextButton({
     super.key,
@@ -398,7 +403,10 @@ class RoundedTextButton extends StatelessWidget {
     onLongPress: onLongPress,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     fillColor: color,
-    child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 20)),
+    child: Text(
+      text,
+      style: const TextStyle(color: Colors.white, fontSize: 20),
+    ),
   );
 }
 
@@ -451,11 +459,10 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
-              Expanded(
+            Expanded(
               flex: 6,
               child: RoundedTextButton(
                 color: widget.minus,
@@ -466,8 +473,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -481,8 +487,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -496,8 +501,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -519,8 +523,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -534,11 +537,10 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
-              Expanded(
+            Expanded(
               flex: 6,
               child: RoundedTextButton(
                 color: widget.plus,
@@ -549,8 +551,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
             Expanded(
@@ -564,8 +565,7 @@ class MultipleChoiceState extends State<MultipleChoice> {
                   });
                   widget.onChanged(count);
                 },
-                onLongPress: () {
-                },
+                onLongPress: () {},
               ),
             ),
           ],

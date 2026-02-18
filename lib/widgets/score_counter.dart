@@ -81,6 +81,7 @@ class ScoreCounter extends QuestionType {
     'initValue': initValue(),
   };
 
+
   factory ScoreCounter.fromJson(
     Map<String, dynamic> json, {
     Key? key,
@@ -88,6 +89,17 @@ class ScoreCounter extends QuestionType {
     bool isChangable = false,
     dynamic init
   }) {
+    double Function() resolvedInit;
+    try {
+      final candidate = init != null ? init() : null;
+      if (candidate is double) {
+        resolvedInit = () => init() as double;
+      } else {
+        resolvedInit = () => json['initValue'] as double;
+      }
+    } catch (_) {
+      resolvedInit = () => json['initValue'] as double;
+    }
 
     return ScoreCounter(
     key: key,
@@ -130,7 +142,7 @@ class ScoreCounter extends QuestionType {
     max: json['max'] as double,
     min: json['min'] as double,
     longPressedValue: json['longPressedValue'] as double,
-    initValue: init != null && init() != null && init is double Function()? ? init : (() => json['initValue'] as double),
+    initValue: resolvedInit,
     onChanged: onChanged,
     isChangable: isChangable,
   );

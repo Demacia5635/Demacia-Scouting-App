@@ -78,10 +78,42 @@ class Selection extends QuestionType {
       options.add(Entry.fromJson(entry));
     }
 
-    Set<Entry> initValue = {};
+    Set<Entry> jsonInitValue = {};
     for (var entry in json['initValue']) {
-      initValue.add(Entry.fromJson(entry));
+      jsonInitValue.add(Entry.fromJson(entry));
     }
+
+    // Build an index → Entry lookup from the canonical options list so we can
+    // swap any stale Entry (reconstructed from JSON or from a saved Set) for
+    // the live instance that widget.options holds. This ensures SegmentedButton
+    // receives the exact same object instances it uses for its segments,
+    // so selection highlights render correctly.
+    final optionsByIndex = {for (final e in options) e.index: e};
+
+    /// Converts a raw Set<Entry> (possibly stale objects from JSON round-trips)
+    /// into a set of live Entry instances taken from [options], matched by index.
+    Set<Entry> normalise(Set<Entry> raw) =>
+        raw
+            .map((e) => optionsByIndex[e.index])
+            .whereType<Entry>()
+            .toSet();
+
+    // Dart erases generic types at runtime so `init is Set<Entry> Function()?`
+    // always fails. Call init() and check the result type instead.
+    Set<Entry> Function()? resolvedInit;
+    try {
+      if (init != null) {
+        final candidate = init();
+        if (candidate is Set<Entry>) {
+          // Wrap with normalise() so returned entries are always the live
+          // options instances, not detached JSON-reconstructed objects.
+          resolvedInit = () => normalise(init() as Set<Entry>);
+        }
+      }
+    } catch (_) {}
+
+    // Also normalise the JSON-derived fallback so it is consistent.
+    final normalisedJsonInit = normalise(jsonInitValue);
 
     return Selection(
       key: key,
@@ -97,10 +129,7 @@ class Selection extends QuestionType {
       selectionOption: SelectionOptions.values.elementAt(
         json['selectionOption'] as int,
       ),
-      initValue:
-          init != null && init() != null && init is Set<Entry> Function()?
-          ? init
-          : (() => initValue),
+      initValue: resolvedInit ?? () => normalisedJsonInit,
       isMultiSelect: json['isMultiSelect'] as bool,
       onChanged: onChanged,
       isChangable: isChangable,
@@ -122,7 +151,19 @@ class SelectionChangableState extends State<Selection> {
     if (!widget.isMultiSelect && selected != null && selected!.length > 1) {
       selected = {selected!.first};
     }
-    // value = selected?.firstOrNull;
+
+    // Seed value for the Selector widget so it shows the restored answer.
+    if (selected != null && selected!.isNotEmpty) {
+      value = selected!.first;
+    }
+
+    // Fire onChanged immediately so _previewData is populated even if the
+    // user never interacts with this question after re-entering the screen.
+    if (selected != null && selected!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onChanged(selected);
+      });
+    }
 
     labelController.text = widget.label;
   }
@@ -213,7 +254,19 @@ class SelectionState extends State<Selection> {
     if (!widget.isMultiSelect && selected != null && selected!.length > 1) {
       selected = {selected!.first};
     }
-    // value = selected?.firstOrNull;
+
+    // Seed value for the Selector widget so it shows the restored answer.
+    if (selected != null && selected!.isNotEmpty) {
+      value = selected!.first;
+    }
+
+    // Fire onChanged immediately so _previewData is populated even if the
+    // user never interacts with this question after re-entering the screen.
+    if (selected != null && selected!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onChanged(selected);
+      });
+    }
   }
 
   @override

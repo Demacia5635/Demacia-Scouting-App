@@ -59,16 +59,24 @@ class FormPage extends StatefulWidget {
     Map<int, (Question, dynamic)> questions = {};
 
     for (var question in json['questions']) {
+      final qIndex = question['index'] as int;
+
+      // init() returns Map<int, dynamic Function()?>
+      // init()[qIndex] is a   dynamic Function()?   — i.e. calling it gives the saved value.
+      // We must call that inner function and hand the RAW VALUE to the widget,
+      // not wrap it in yet another closure.
+      final initMap = init();
+      final innerFn = initMap?[qIndex];
+
       questions.addAll({
-        question['index'] as int: (
+        qIndex: (
           Question.fromJson(
             question,
             isChangable: isChangable,
             onChanged: onChanged,
-            init: init() != null && init()![question['index']] != null
-                ? () => init()![question['index']]
-                : () => null,
-            // init: init()?[question['index']] != null ? () => init() != null? init()[question['index'] as int] : null : null,
+            // Pass a closure that returns the actual saved value (or null).
+            // The widget's fromJson will call init() and check the result type.
+            init: innerFn != null ? () => innerFn() : () => null,
           ),
           '\u200B',
         ),
@@ -103,16 +111,18 @@ class FormPage extends StatefulWidget {
   ) {
     questions = {};
     for (var question in json['questions']) {
+      final qIndex = question['index'] as int;
+
+      final initMap = init();
+      final innerFn = initMap?[qIndex];
+
       questions.addAll({
-        question['index'] as int: (
+        qIndex: (
           Question.fromJson(
             question,
             isChangable: false,
             onChanged: onChanged,
-            init: init() != null && init()![question['index']] != null
-                ? () => init()![question['index']]
-                : () => null,
-            // init: init()?[question['index']] != null ? () => init() != null? init()[question['index'] as int] : null : null,
+            init: innerFn != null ? () => innerFn() : () => null,
           ),
           '\u200B',
         ),
@@ -254,18 +264,15 @@ class FormPageState extends State<FormPage> {
 
   /// Handles raw keyboard events.
   void handleKeyEvent(RawKeyEvent event) {
-    // Check if the event is a key down event and the pressed key is the Escape key.
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape) {
-      // Check if there's a route to pop (i.e., not the very first screen)
       if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); // Pop the current route
+        Navigator.of(context).pop();
       }
     }
 
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.arrowRight) {
-      // Check if there's a route to pop (i.e., not the very first screen)
       if (widget.nextPage != null) {
         Navigator.pushReplacement(
           context,
@@ -276,7 +283,6 @@ class FormPageState extends State<FormPage> {
 
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      // Check if there's a route to pop (i.e., not the very first screen)
       if (widget.previosPage != null) {
         Navigator.pushReplacement(
           context,
