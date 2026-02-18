@@ -14,7 +14,6 @@ import 'package:scouting_qr_maker/database_service.dart';
 class QrCode extends StatefulWidget {
   QrCode({super.key, required this.data, required this.previosPage});
 
-  // Map<int, List<String>> data;
   Map<int, Map<int, dynamic>> data;
   Widget Function() previosPage;
 
@@ -76,28 +75,29 @@ class QrCodeState extends State<QrCode> {
       qrData += ',';
     }
 
-    Map<String, Map<String, String>> dataMap = {}; // Changed to String keys
+    // Check if widget is still mounted before calling setState
+    if (mounted) {
+      setState(() {}); // Trigger rebuild after data loads
+    }
+  }
+
+  Future<void> _uploadData() async {
+    Map<String, Map<String, String>> dataMap = {};
     for (var entry in widget.data.entries) {
-      Map<String, String> screenMap = {}; // Changed to String keys
+      Map<String, String> screenMap = {};
       for (var screenEntry in entry.value.entries) {
         String value = valueToString(screenEntry.value);
         if (value != '\u200B') {
-          screenMap[screenEntry.key.toString()] =
-              value; // Convert key to string
+          screenMap[screenEntry.key.toString()] = value;
         }
       }
-      dataMap[entry.key.toString()] = screenMap; // Convert key to string
+      dataMap[entry.key.toString()] = screenMap;
     }
 
     await DatabaseService().uploadData(
       table: 'answor',
       data: {'answer': dataMap},
     );
-
-    // Check if widget is still mounted before calling setState
-    if (mounted) {
-      setState(() {}); // Trigger rebuild after data loads
-    }
   }
 
   /// Handles raw keyboard events.
@@ -129,8 +129,6 @@ class QrCodeState extends State<QrCode> {
     child: Scaffold(
       appBar: DemaciaAppBar(
         onSave: () {},
-        // onSave: () => save(widget.data, MainApp.currentSave),
-        // onLongSave: () => longSave(widget.data, context, () => setState(() {})),
       ),
       body: Stack(
         children: [
@@ -169,11 +167,18 @@ class QrCodeState extends State<QrCode> {
                       child: Icon(Icons.navigate_before),
                     ),
                     ElevatedButton(
+                      onPressed: () async {
+                        await _uploadData();
+                      },
+                      child: Icon(Icons.upload),
+                    ),
+                    ElevatedButton(
                       onPressed: null,
                       child: Icon(Icons.navigate_next),
                     ),
                   ],
                 ),
+                
               ],
             ),
           ),
