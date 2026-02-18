@@ -57,7 +57,7 @@ class StringInput extends QuestionType {
     return StringInput(
     key: key,
     label: json['label'] as String,
-    initValue: init != null && init() != null && init is String Function()? ? init : (() => json['initValue']),
+    initValue: () => init ?? (json['initValue'] ?? '').toString(),
     textColor: Color.from(
       alpha: json['textColor']['a'] as double,
       red: json['textColor']['r'] as double,

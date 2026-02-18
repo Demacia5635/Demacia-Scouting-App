@@ -110,11 +110,9 @@ class Question extends StatefulWidget {
       ),
       Types.string => StringInput.fromJson(
         json['question'],
-        onChanged: (p0) => {
-          if (onChanged != null) onChanged(json['index'], p0),
-        },
+        onChanged: (p0) => { if (onChanged != null) onChanged(json['index'], p0) },
         isChangable: isChangable,
-        init: init(),
+        init: init(), // init() מחזיר String? במקרה הזה
       ),
       Types.selectable => Selection.fromJson(
         json['question'],

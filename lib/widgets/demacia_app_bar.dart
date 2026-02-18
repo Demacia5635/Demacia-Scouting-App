@@ -10,8 +10,10 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
     Future<void> Function()? onLongSave,
     required this.onSave,
     this.onLoadSave,
+    this.onSaveAsNew, // << add
   }) : onLongSave = onLongSave ?? _defaultOnLongSave;
 
+  final VoidCallback? onSaveAsNew;
   final void Function() onSave;
   final void Function() onLongSave;
   final VoidCallback? onLoadSave; // Add this callback
@@ -27,6 +29,18 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       actions: [
+        // Save-As-New Button
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
+          child: ElevatedButton(
+            onPressed: onSaveAsNew,
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              minimumSize: const Size(0, 0),
+            ),
+            child: Icon(Icons.save_as, size: isSmallScreen ? 20 : 24),
+          ),
+        ),
         // Current Save Title Button
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),

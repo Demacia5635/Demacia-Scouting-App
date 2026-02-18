@@ -40,12 +40,47 @@ class FormPage extends StatefulWidget {
   State<StatefulWidget> createState() => FormPageState();
 
   Map<String, dynamic> toJson() => {
-    'questions': questions.values.map((p0) => p0.$1.toJson()).toList(),
+    'questions': questions.values.map((p0) {
+      final q = p0.$1.toJson();
+      q['answer'] = _encodeAnswer(p0.$2);
+      return q;
+    }).toList(),
     'index': index,
     'name': name,
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
   };
+
+  static dynamic _encodeAnswer(dynamic v) {
+    if (v == null) return null;
+    if (v is Color) return {'__t': 'color', 'a': v.a, 'r': v.r, 'g': v.g, 'b': v.b};
+    if (v is IconData) return {'__t': 'icon', 'codePoint': v.codePoint, 'fontFamily': v.fontFamily};
+    // Selection: אצלך זה לפעמים Set<Entry>
+    if (v is Set<Entry>) {
+      return {'__t': 'entrySet', 'items': v.map((e) => e.toJson()).toList()};
+    }
+    return v; // int/bool/double/String/List/Map וכו'
+  }
+
+  static dynamic _decodeAnswer(dynamic v) {
+    if (v == null) return null;
+    if (v is Map && v['__t'] == 'color') {
+      return Color.fromARGB(
+        ((v['a'] as num).clamp(0, 1) * 255).round(),
+        ((v['r'] as num).clamp(0, 1) * 255).round(),
+        ((v['g'] as num).clamp(0, 1) * 255).round(),
+        ((v['b'] as num).clamp(0, 1) * 255).round(),
+      );
+    }
+    if (v is Map && v['__t'] == 'icon') {
+      return IconData(v['codePoint'], fontFamily: v['fontFamily']);
+    }
+    if (v is Map && v['__t'] == 'entrySet') {
+      final items = (v['items'] as List).cast<Map<String, dynamic>>();
+      return items.map((e) => Entry.fromJson(e)).toSet();
+    }
+    return v;
+  }
 
   factory FormPage.fromJson(
     Map<String, dynamic> json, {
@@ -58,22 +93,30 @@ class FormPage extends StatefulWidget {
   }) {
     Map<int, (Question, dynamic)> questions = {};
 
-    for (var question in json['questions']) {
-      questions.addAll({
-        question['index'] as int: (
-          Question.fromJson(
-            question,
-            isChangable: isChangable,
-            onChanged: onChanged,
-            init: init() != null && init()![question['index']] != null
-                ? () => init()![question['index']]
-                : () => null,
-            // init: init()?[question['index']] != null ? () => init() != null? init()[question['index'] as int] : null : null,
-          ),
-          '\u200B',
-        ),
-      });
+    for (var qJson in json['questions']) {
+  final qIndex = qJson['index'] as int;
+  final rawAnswer = qJson['answer'];
+  final decoded = _decodeAnswer(rawAnswer);
+
+  // זה ה-callback שיעדכן גם את "העולם החיצוני" (אם יש)
+  // וגם את המפה המקומית כדי ש-toJson תמיד יכיל answer מעודכן
+  void handleChanged(int idx, dynamic value) {
+    onChanged?.call(idx, value);
+    final existing = questions[idx];
+    if (existing != null) {
+      questions[idx] = (existing.$1, value);
     }
+  }
+
+  final questionWidget = Question.fromJson(
+    qJson,
+    isChangable: isChangable,
+    onChanged: handleChanged,
+    init: () => decoded,
+  );
+
+  questions[qIndex] = (questionWidget, decoded);
+}
 
     return FormPage(
       questions: questions,
@@ -96,28 +139,35 @@ class FormPage extends StatefulWidget {
     );
   }
 
-  load(
-    json,
-    void Function(int, dynamic)? onChanged,
-    Map<int, dynamic Function()?>? Function() init,
+  void load(
+    Map<String, dynamic> json,
+    void Function(int, dynamic)? onChanged, Map<int, Function()?>? Function() param2,
   ) {
-    questions = {};
-    for (var question in json['questions']) {
-      questions.addAll({
-        question['index'] as int: (
-          Question.fromJson(
-            question,
-            isChangable: false,
-            onChanged: onChanged,
-            init: init() != null && init()![question['index']] != null
-                ? () => init()![question['index']]
-                : () => null,
-            // init: init()?[question['index']] != null ? () => init() != null? init()[question['index'] as int] : null : null,
-          ),
-          '\u200B',
-        ),
-      });
+    final Map<int, (Question, dynamic)> newQuestions = {};
+
+    void handleChanged(int idx, dynamic value) {
+      onChanged?.call(idx, value);
+      final existing = newQuestions[idx];
+      if (existing != null) {
+        newQuestions[idx] = (existing.$1, value);
+      }
     }
+
+    for (var qJson in json['questions']) {
+      final qIndex = qJson['index'] as int;
+      final decoded = _decodeAnswer(qJson['answer']);
+
+      final questionWidget = Question.fromJson(
+        qJson,
+        isChangable: false,
+        onChanged: handleChanged,
+        init: () => decoded,
+      );
+
+      newQuestions[qIndex] = (questionWidget, decoded);
+    }
+
+    questions = newQuestions;
   }
 }
 
