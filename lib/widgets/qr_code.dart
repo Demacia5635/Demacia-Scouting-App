@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,22 +5,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 
-
-void main(){
-  runApp(MaterialApp(home: qr_code()));
+void main() {
+  runApp(MaterialApp(home: QRCode()));
 }
 
-class qr_code extends StatefulWidget {
+class QRCode extends StatefulWidget {
   @override
-  _qr_code_state createState() => _qr_code_state();
+  QRCodeState createState() => QRCodeState();
 }
 
-class _qr_code_state extends State<qr_code> {
+class QRCodeState extends State<QRCode> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   Barcode? resolt;
   QRViewController? controller;
 
-    @override
+  @override
   void reassemble() {
     if (Platform.isAndroid) {
       controller!.pauseCamera();
@@ -30,15 +28,13 @@ class _qr_code_state extends State<qr_code> {
     }
   }
 
-  
-  void _onQRViewCreated(QRViewController controller){
+  void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    controller.scannedDataStream.listen((scanData){
-      setState((){
+    controller.scannedDataStream.listen((scanData) {
+      setState(() {
         resolt = scanData;
       });
     });
-
   }
 
   Future<void> flipeCmera() async {
@@ -48,23 +44,25 @@ class _qr_code_state extends State<qr_code> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('qr code')  
-      ),
+      appBar: AppBar(title: const Text('qr code')),
       body: Column(
         children: [
           Expanded(
             flex: 5,
-            child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated)
-            ),
+            child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated),
+          ),
           Expanded(
             flex: 5,
-          child: Center(
-            child: (resolt != null)
-              ? Text( 'Barcode Type: ${describeEnum(resolt!.format)}   Data: ${resolt!.code}') : Text('Scan a code')),
-          )
-        ]
-    ),
-      );
+            child: Center(
+              child: (resolt != null)
+                  ? Text(
+                      'Barcode Type: ${describeEnum(resolt!.format)}   Data: ${resolt!.code}',
+                    )
+                  : Text('Scan a code'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

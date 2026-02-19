@@ -11,10 +11,6 @@ import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
-void main() {
-  runApp();
-}
-
 class QrCode extends StatefulWidget {
   QrCode({super.key, required this.data, required this.previosPage});
 
@@ -33,20 +29,14 @@ class QrCodeState extends State<QrCode> {
   String valueToString(dynamic value) {
     switch (value.runtimeType) {
       case bool:
-        break;
       case double:
-        break;
       case int:
-        break;
       case String:
         return value.toString();
-        break;
       case IconData:
         return '${(value as IconData).codePoint},${(value).fontFamily}';
-        break;
       case Color:
         return (value as Color).toHexString(includeHashSign: true);
-        break;
       default:
         if (value is Set<Entry>) {
           String x = '';
