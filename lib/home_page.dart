@@ -110,8 +110,6 @@ class HomePageState extends State<HomePage> {
       final questions = screens[i]['questions'] as List;
       updated[i] = {};
       for (final q in questions) {
-        // Use the question's real JSON index as the key — this is what
-        // onChanged fires with, so the two must always match.
         final qIndex = q['index'] as int;
         updated[i]![qIndex] = _previewData[i]?[qIndex] ?? null;
       }
@@ -129,13 +127,7 @@ class HomePageState extends State<HomePage> {
       resizeToAvoidBottomInset: false,
       appBar: DemaciaAppBar(
         onSave: () async {
-          if (widget.json != null) {
-            save(widget.json!, MainApp.currentSave);
-            await DatabaseService().uploadData(
-              table: 'data',
-              data: {'form': widget.json!},
-            );
-          }
+          if (widget.json != null) {}
         },
         onLongSave: () async {
           if (widget.json != null) {
@@ -183,11 +175,25 @@ class HomePageState extends State<HomePage> {
                                         if (widget.json!.containsKey(
                                           'screens',
                                         )) {
+                                          // KEY FIX: Pass a ValueKey based on the
+                                          // current save index so Flutter fully
+                                          // discards and recreates the widget
+                                          // (and its State) whenever a different
+                                          // save is loaded. Without this, the old
+                                          // State from initState() is reused even
+                                          // though the JSON has changed.
                                           return ScreenManagerPage.fromJson(
                                             widget.json!,
+                                            key: ValueKey(
+                                              MainApp.currentSave.index,
+                                            ),
                                           );
                                         }
-                                        return ScreenManagerPage();
+                                        return ScreenManagerPage(
+                                          key: ValueKey(
+                                            MainApp.currentSave.index,
+                                          ),
+                                        );
                                       },
                                     ),
                                   ).then((_) {
@@ -231,8 +237,6 @@ class HomePageState extends State<HomePage> {
 
                                         List<FormPage> screens = [];
 
-                                        // func returns the init map for screen i,
-                                        // keyed by each question's real JSON index.
                                         Map<int, dynamic Function()?>? func(
                                           int i,
                                         ) {
@@ -242,9 +246,6 @@ class HomePageState extends State<HomePage> {
                                           >((qIndex, savedValue) {
                                             return MapEntry(qIndex, () {
                                               if (savedValue != null) {
-                                                // Mirror the saved value back into
-                                                // JSON so fromJson picks it up as
-                                                // initValue on re-entry.
                                                 final screenJson =
                                                     widget.json!['screens'][i];
                                                 final questionJson =
@@ -308,8 +309,6 @@ class HomePageState extends State<HomePage> {
                                               isChangable: false,
                                               getJson: () async => widget.json!,
                                               onChanged: (qIndex, value) {
-                                                // qIndex is the question's real
-                                                // JSON index — matches our map key.
                                                 setState(() {
                                                   _previewData[i]![qIndex] =
                                                       value;

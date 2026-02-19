@@ -86,7 +86,7 @@ class Question extends StatefulWidget {
         json['question'],
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
-        },  
+        },
         isChangable: isChangable,
         init: init(),
       ),
@@ -165,7 +165,7 @@ const List<(Types, String)> segments = <(Types, String)>[
   (Types.icon, 'Icon'),
   (Types.string, 'String'),
   (Types.selectable, 'Selection'),
-  (Types.multipleChoice, 'Multiple Choice'), 
+  (Types.multipleChoice, 'Multiple Choice'),
 ];
 
 class QuestionState extends State<Question> {
@@ -234,7 +234,7 @@ class QuestionState extends State<Question> {
                           },
                           scoreCounter: scoreCounter,
                         );
-                        case Types.multipleChoice:
+                      case Types.multipleChoice:
                         MultipleChoice multipleChoice = MultipleChoice(
                           label: "Label",
                           icon: Icons.check_box,
@@ -361,60 +361,67 @@ class QuestionState extends State<Question> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            widget.isChangable
-                ? Container(
-                    margin: EdgeInsets.all(16),
-                    padding: EdgeInsets.all(10),
-                    constraints: BoxConstraints(
-                      // maxWidth: 700
+            // Settings panel on the left
+            if (widget.isChangable)
+              Flexible(
+                flex: 1,
+                child: Container(
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(10),
+                  child: Form(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: settings,
                     ),
-                    child: Form(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: settings,
-                      ),
-                    ),
-                  )
-                : Container(),
+                  ),
+                ),
+              ),
 
-            Container(
-              constraints: BoxConstraints(maxHeight: 1000, maxWidth: 450),
-              child: widget.question,
+            // FIX: Wrap the question preview in Flexible so it obeys the Row's
+            // constraints instead of trying to expand to infinite width.
+            // Previously this was an unconstrained Container inside the Row,
+            // which caused LevelSlider's FittedBox(fit: BoxFit.fitWidth) to
+            // measure at infinite width → RenderFlex overflow → Stack Overflow.
+            Flexible(
+              flex: 1,
+              child: Container(
+                constraints: BoxConstraints(maxHeight: 1000, maxWidth: 450),
+                child: widget.question,
+              ),
             ),
 
-            widget.isChangable
-                ? PopupMenuButton(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      switch (value) {
-                        case Options.delete:
-                          setState(() {
-                            widget.onDelete(widget.index);
-                          });
-                        case Options.duplicate:
-                          setState(() {
-                            widget.onDuplicate(widget.index);
-                          });
-                      }
-                    },
-                    itemBuilder: (context) => <PopupMenuEntry<Options>>[
-                      const PopupMenuItem<Options>(
-                        value: Options.delete,
-                        child: ListTile(
-                          leading: Icon(Icons.delete_outline),
-                          title: Text("Delete"),
-                        ),
-                      ),
-                      const PopupMenuItem<Options>(
-                        value: Options.duplicate,
-                        child: ListTile(
-                          leading: Icon(Icons.control_point_duplicate),
-                          title: Text("Duplicate"),
-                        ),
-                      ),
-                    ],
-                  )
-                : Container(),
+            if (widget.isChangable)
+              PopupMenuButton(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  switch (value) {
+                    case Options.delete:
+                      setState(() {
+                        widget.onDelete(widget.index);
+                      });
+                    case Options.duplicate:
+                      setState(() {
+                        widget.onDuplicate(widget.index);
+                      });
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuEntry<Options>>[
+                  const PopupMenuItem<Options>(
+                    value: Options.delete,
+                    child: ListTile(
+                      leading: Icon(Icons.delete_outline),
+                      title: Text("Delete"),
+                    ),
+                  ),
+                  const PopupMenuItem<Options>(
+                    value: Options.duplicate,
+                    child: ListTile(
+                      leading: Icon(Icons.control_point_duplicate),
+                      title: Text("Duplicate"),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ],

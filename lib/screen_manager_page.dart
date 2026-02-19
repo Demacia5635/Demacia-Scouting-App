@@ -19,9 +19,13 @@ class ScreenManagerPage extends StatefulWidget {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
   };
 
-  factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
+  // FIX: Accept an optional key so that HomePage can pass a ValueKey(saveIndex),
+  // forcing Flutter to fully tear down and recreate this widget+state whenever
+  // a different save is loaded. Without a changing key, the old State built in
+  // initState() would be reused even though the JSON has changed.
+  factory ScreenManagerPage.fromJson(Map<String, dynamic> json, {Key? key}) {
     Map<int, FormPage> screens = {};
-    ScreenManagerPage widget = ScreenManagerPage(screens: screens);
+    ScreenManagerPage widget = ScreenManagerPage(key: key, screens: screens);
 
     print('screen is null?: ${json['screens'] == null}');
     if (json['screens'] == null) {
@@ -101,7 +105,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     IconData pickingIcon = screen.icon;
     Color pickingColor = screen.color;
 
-    // Get screen size for responsive dialog
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
 
@@ -123,7 +126,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       label: Text("Enter new Screen name"),
                     ),
                   ),
-                  // Icon picker section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,7 +155,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       ),
                     ],
                   ),
-                  // Color picker section
                   Row(
                     mainAxisAlignment: isPhone
                         ? MainAxisAlignment.spaceBetween
@@ -202,7 +203,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsive grid
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth < 400
         ? 2
@@ -219,14 +219,17 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
         onSave:
             () async {
                   save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
                 }
                 as void Function(),
         onLongSave: () async =>
             longSave(widget.toJson(), context, () => setState(() {})),
+        // FIX: When the user picks a different save to load while inside the
+        // Editing Room, pop all the way back to HomePage so it calls loadData()
+        // and rebuilds with the newly selected save's JSON. Without this, the
+        // Editing Room stays on the stack showing stale data.
+        onLoadSave: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
       ),
       body: GridView.builder(
         padding: EdgeInsets.all(screenWidth < 600 ? 8.0 : 16.0),
@@ -354,17 +357,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     right: 0,
                     child: IconButton(
                       onPressed: () {
-                        setState(() {
-                          //screen.isSpecialForm = !screen.isSpecialForm;
-                        });
+                        setState(() {});
                       },
-                      icon: Icon(
-                        Icons.star,
-                        // color: screen.isSpecialForm
-                        //     ? Colors.yellow
-                        //     : Colors.grey,
-                        size: screenWidth < 600 ? 20 : 24,
-                      ),
+                      icon: Icon(Icons.star, size: screenWidth < 600 ? 20 : 24),
                       padding: EdgeInsets.all(4),
                       constraints: BoxConstraints(),
                     ),
@@ -374,7 +369,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             ),
           );
 
-          // Simplified drag-and-drop for phones
           if (screenWidth < 600) {
             return LongPressDraggable<FormPage>(
               data: screen,
@@ -431,7 +425,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             );
           }
 
-          // Desktop drag-and-drop with drop zones
           return Row(
             children: [
               if (index == 0)

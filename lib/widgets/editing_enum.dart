@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/widgets/string_input.dart';
-// Removed 'dart:math' as max is no longer used for currentIndex calculation
 
 class EditableEnumSelector extends StatefulWidget {
   const EditableEnumSelector({
@@ -22,7 +21,7 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
   Map<int, Entry> entries = {};
   int currentIndex = 0;
 
-  final double value = 25;
+  final double dropZoneSize = 25;
 
   final TextEditingController _newItemController = TextEditingController();
 
@@ -34,7 +33,9 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
     for (int i = 0; i < widget.init.length; i++) {
       entries.addAll({i: widget.init[i]});
     }
-    currentIndex = widget.init.last.index;
+    if (widget.init.isNotEmpty) {
+      currentIndex = widget.init.last.index;
+    }
   }
 
   Future<void> editingDialog(
@@ -235,6 +236,9 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                     );
 
                     return [
+                      // FIX: The "before first item" drop target now uses
+                      // SizedBox.shrink() in its idle state so it takes up
+                      // zero space, making item 0 look identical to items 1, 2, etc.
                       if (item.index == 0)
                         DragTarget<Entry>(
                           onAcceptWithDetails: (details) {
@@ -254,10 +258,11 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                                 rejectedData.isNotEmpty) {
                               if (candidateData.first!.index !=
                                   entriesList.first.index) {
+                                // Only show the drop indicator while dragging
                                 return Container(
                                   margin: EdgeInsets.all(5),
-                                  width: value,
-                                  height: value,
+                                  width: dropZoneSize,
+                                  height: dropZoneSize,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
@@ -268,7 +273,8 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                                 );
                               }
                             }
-                            return Container(width: value, height: value);
+                            // FIX: zero-size idle state instead of 25x25
+                            return SizedBox.shrink();
                           },
                         )
                       else
@@ -309,8 +315,8 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                                 candidateData.first!.index != item.index + 1) {
                               return Container(
                                 margin: EdgeInsets.all(5),
-                                height: value,
-                                width: value,
+                                height: dropZoneSize,
+                                width: dropZoneSize,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
@@ -321,7 +327,10 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                               );
                             }
                           }
-                          return Container(width: value, height: value);
+                          return Container(
+                            width: dropZoneSize,
+                            height: dropZoneSize,
+                          );
                         },
                       ),
                     ];
@@ -412,9 +421,6 @@ class Entry {
   Color color;
   IconData? icon;
 
-  /// Two Entry objects are equal when they share the same [index].
-  /// This makes Set<Entry> membership and SegmentedButton.selected work
-  /// correctly across JSON round-trips and init() restorations.
   @override
   bool operator ==(Object other) => other is Entry && other.index == index;
 

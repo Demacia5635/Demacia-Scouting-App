@@ -75,43 +75,49 @@ class LevelSlider extends QuestionType {
     bool isChangable = false,
     dynamic init,
   }) {
-    // Dart erases generic types at runtime so `init is double Function()?`
-    // always fails. Call init() and check if the result is a double instead.
     double Function()? resolvedInit;
     try {
       if (init != null) {
-        final candidate = init();
-        if (candidate is double) {
-          resolvedInit = () => init() as double;
+        final candidate = init(); // call ONCE, capture result
+        if (candidate is num) {
+          final captured = candidate.toDouble(); // never call init() again
+          resolvedInit = () => captured;
         }
       }
     } catch (_) {}
+
+    // Safely parse min/max as double regardless of whether stored as int or double
+    final min = (json['min'] as num).toDouble();
+    final max = (json['max'] as num).toDouble();
+    final initValRaw = (json['initValue'] as num).toDouble();
 
     return LevelSlider(
       key: key,
       label: json['label'] as String,
       textColor: Color.from(
-        alpha: json['textColor']['a'] as double,
-        red: json['textColor']['r'] as double,
-        green: json['textColor']['g'] as double,
-        blue: json['textColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       sliderColor: Color.from(
-        alpha: json['sliderColor']['a'] as double,
-        red: json['sliderColor']['r'] as double,
-        green: json['sliderColor']['g'] as double,
-        blue: json['sliderColor']['b'] as double,
+        alpha: (json['sliderColor']['a'] as num).toDouble(),
+        red: (json['sliderColor']['r'] as num).toDouble(),
+        green: (json['sliderColor']['g'] as num).toDouble(),
+        blue: (json['sliderColor']['b'] as num).toDouble(),
       ),
       thumbColor: Color.from(
-        alpha: json['thumbColor']['a'] as double,
-        red: json['thumbColor']['r'] as double,
-        green: json['thumbColor']['g'] as double,
-        blue: json['thumbColor']['b'] as double,
+        alpha: (json['thumbColor']['a'] as num).toDouble(),
+        red: (json['thumbColor']['r'] as num).toDouble(),
+        green: (json['thumbColor']['g'] as num).toDouble(),
+        blue: (json['thumbColor']['b'] as num).toDouble(),
       ),
-      min: json['min'] as double,
-      max: json['max'] as double,
+      min: min,
+      max: max,
       divisions: json['divisions'] as int,
-      initValue: resolvedInit ?? (() => json['initValue'] as double),
+      // Clamp the stored initValue to [min, max] so the slider never starts
+      // out of range after the user changes min/max in settings.
+      initValue: resolvedInit ?? (() => initValRaw.clamp(min, max)),
       onChanged: onChanged,
       isChangable: isChangable,
     );
@@ -126,22 +132,33 @@ class LevelSliderChangableState extends State<LevelSlider> {
   @override
   void initState() {
     super.initState();
-
-    value = widget.initValue();
-
+    value = widget.initValue().clamp(widget.min, widget.max);
     labelController.text = widget.label;
-
-    // Seed _previewData immediately so the value is preserved even if
-    // the user navigates away without touching this slider again.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onChanged(value);
     });
   }
 
   @override
-  Widget build(final BuildContext context) => FittedBox(
-    fit: BoxFit.fitWidth,
+  void didUpdateWidget(LevelSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When min/max changes from settings, clamp the current value so the
+    // Slider never receives a value outside its [min, max] range.
+    if (oldWidget.min != widget.min || oldWidget.max != widget.max) {
+      setState(() {
+        value = value.clamp(widget.min, widget.max);
+      });
+    }
+  }
+
+  @override
+  Widget build(final BuildContext context) => SizedBox(
+    // FIX: Replace FittedBox(fit: BoxFit.fitWidth) with a fixed-width SizedBox.
+    // FittedBox required an unbounded width measurement which caused a
+    // RenderFlex overflow and Stack Overflow when nested inside a Row.
+    width: 300,
     child: Column(
+      mainAxisSize: MainAxisSize.min,
       spacing: 4,
       children: <Widget>[
         Container(
@@ -180,20 +197,28 @@ class LevelSliderState extends State<LevelSlider> {
   @override
   void initState() {
     super.initState();
-
-    value = widget.initValue();
-
-    // Seed _previewData immediately so the value is preserved even if
-    // the user navigates away without touching this slider again.
+    value = widget.initValue().clamp(widget.min, widget.max);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onChanged(value);
     });
   }
 
   @override
-  Widget build(final BuildContext context) => FittedBox(
-    fit: BoxFit.fitWidth,
+  void didUpdateWidget(LevelSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.min != widget.min || oldWidget.max != widget.max) {
+      setState(() {
+        value = value.clamp(widget.min, widget.max);
+      });
+    }
+  }
+
+  @override
+  Widget build(final BuildContext context) => SizedBox(
+    // FIX: Same as above — fixed width instead of FittedBox.
+    width: 300,
     child: Column(
+      mainAxisSize: MainAxisSize.min,
       spacing: 4,
       children: <Widget>[
         Text(
@@ -207,7 +232,7 @@ class LevelSliderState extends State<LevelSlider> {
           min: widget.min,
           max: widget.max,
           divisions: widget.divisions,
-          value: value,
+          value: value.clamp(widget.min, widget.max),
           label: value.round().toString(),
           onChanged: (p0) {
             setState(() {
@@ -243,13 +268,56 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
   @override
   void initState() {
     super.initState();
-
     minController.text = widget.levelSlider.min.toString();
     maxController.text = widget.levelSlider.max.toString();
-    divisionsController.text = widget.levelSlider.divisions.toString();
-    if (divisionsController.text == 'null') {
-      divisionsController.text = '0';
+    divisionsController.text = (widget.levelSlider.divisions ?? 0).toString();
+  }
+
+  /// Safely parses [text] as a double, returning [fallback] on failure.
+  double _parseDouble(String text, double fallback) {
+    try {
+      return double.parse(text);
+    } catch (_) {
+      return fallback;
     }
+  }
+
+  /// Safely parses [text] as an int, returning [fallback] on failure.
+  int? _parseInt(String text, int? fallback) {
+    try {
+      final v = int.parse(text);
+      return v == 0 ? null : v;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Rebuilds the LevelSlider from current field values and notifies parent.
+  void _rebuild() {
+    final newMin = _parseDouble(minController.text, widget.levelSlider.min);
+    final newMax = _parseDouble(maxController.text, widget.levelSlider.max);
+
+    // Guard: min must be less than max
+    if (newMin >= newMax) return;
+
+    final clampedInit = widget.levelSlider.initValue().clamp(newMin, newMax);
+
+    widget.levelSlider = LevelSlider(
+      label: widget.levelSlider.label,
+      textColor: widget.levelSlider.textColor,
+      sliderColor: widget.levelSlider.sliderColor,
+      thumbColor: widget.levelSlider.thumbColor,
+      min: newMin,
+      max: newMax,
+      divisions: _parseInt(
+        divisionsController.text,
+        widget.levelSlider.divisions,
+      ),
+      initValue: () => clampedInit,
+      onChanged: widget.levelSlider.onChanged,
+      isChangable: true,
+    );
+    widget.onChanged(widget.levelSlider);
   }
 
   @override
@@ -311,6 +379,7 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
           ),
         ],
       ),
+
       Row(
         spacing: 10,
         children: [
@@ -346,9 +415,9 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
             "Select the Min and Max value: ",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-
-          Container(
-            constraints: BoxConstraints(maxWidth: 100),
+          // Min field
+          SizedBox(
+            width: 80,
             child: TextField(
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
@@ -356,88 +425,14 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: minController,
-              onChanged: (String text) {
-                widget.levelSlider = LevelSlider(
-                  label: widget.levelSlider.label,
-                  textColor: widget.levelSlider.textColor,
-                  sliderColor: widget.levelSlider.sliderColor,
-                  thumbColor: widget.levelSlider.thumbColor,
-                  min: () {
-                    try {
-                      if (double.parse(text) > widget.levelSlider.max) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.min;
-                    }
-                  }.call(),
-                  max: () {
-                    try {
-                      if (double.parse(maxController.text) <
-                          () {
-                            try {
-                              if (double.parse(text) > widget.levelSlider.max) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.levelSlider.min;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(maxController.text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.max;
-                    }
-                  }.call(),
-                  divisions: widget.levelSlider.divisions,
-                  initValue: () => clampDouble(
-                    widget.levelSlider.initValue(),
-                    () {
-                      try {
-                        if (double.parse(text) > widget.levelSlider.max) {
-                          throw Exception();
-                        }
-                        return double.parse(text);
-                      } on Exception catch (_) {
-                        return widget.levelSlider.min;
-                      }
-                    }.call(),
-                    () {
-                      try {
-                        if (double.parse(maxController.text) <
-                            () {
-                              try {
-                                if (double.parse(text) >
-                                    widget.levelSlider.max) {
-                                  throw Exception();
-                                }
-                                return double.parse(text);
-                              } on Exception catch (_) {
-                                return widget.levelSlider.min;
-                              }
-                            }.call()) {
-                          throw Exception();
-                        }
-                        return double.parse(maxController.text);
-                      } on Exception catch (_) {
-                        return widget.levelSlider.max;
-                      }
-                    }.call(),
-                  ),
-                  onChanged: widget.levelSlider.onChanged,
-                  isChangable: true,
-                );
-                widget.onChanged(widget.levelSlider);
-              },
+              onChanged: (_) => _rebuild(),
               style: TextStyle(fontSize: 20),
+              decoration: InputDecoration(labelText: 'Min'),
             ),
           ),
-
-          Container(
-            constraints: BoxConstraints(maxWidth: 100),
+          // Max field
+          SizedBox(
+            width: 80,
             child: TextField(
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
@@ -445,83 +440,9 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: maxController,
-              onChanged: (String text) {
-                widget.levelSlider = LevelSlider(
-                  label: widget.levelSlider.label,
-                  textColor: widget.levelSlider.textColor,
-                  sliderColor: widget.levelSlider.sliderColor,
-                  thumbColor: widget.levelSlider.thumbColor,
-                  min: () {
-                    try {
-                      if (double.parse(minController.text) >
-                          () {
-                            try {
-                              if (double.parse(text) < widget.levelSlider.min) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.levelSlider.max;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(minController.text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.min;
-                    }
-                  }.call(),
-                  max: () {
-                    try {
-                      if (double.parse(text) < widget.levelSlider.min) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.max;
-                    }
-                  }.call(),
-                  divisions: widget.levelSlider.divisions,
-                  initValue: () => clampDouble(
-                    widget.levelSlider.initValue(),
-                    () {
-                      try {
-                        if (double.parse(minController.text) >
-                            () {
-                              try {
-                                if (double.parse(text) <
-                                    widget.levelSlider.min) {
-                                  throw Exception();
-                                }
-                                return double.parse(text);
-                              } on Exception catch (_) {
-                                return widget.levelSlider.max;
-                              }
-                            }.call()) {
-                          throw Exception();
-                        }
-                        return double.parse(minController.text);
-                      } on Exception catch (_) {
-                        return widget.levelSlider.min;
-                      }
-                    }.call(),
-                    () {
-                      try {
-                        if (double.parse(text) < widget.levelSlider.min) {
-                          throw Exception();
-                        }
-                        return double.parse(text);
-                      } on Exception catch (_) {
-                        return widget.levelSlider.max;
-                      }
-                    }.call(),
-                  ),
-                  onChanged: widget.levelSlider.onChanged,
-                  isChangable: true,
-                );
-                widget.onChanged(widget.levelSlider);
-              },
+              onChanged: (_) => _rebuild(),
               style: TextStyle(fontSize: 20),
+              decoration: InputDecoration(labelText: 'Max'),
             ),
           ),
         ],
@@ -531,46 +452,20 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
         spacing: 10,
         children: [
           Text(
-            "Select how much Divisons: ",
+            "Select how much Divisions: ",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-
-          Container(
-            constraints: BoxConstraints(maxWidth: 100),
+          SizedBox(
+            width: 80,
             child: TextField(
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               controller: divisionsController,
-              onChanged: (String text) {
-                widget.levelSlider = LevelSlider(
-                  label: widget.levelSlider.label,
-                  textColor: widget.levelSlider.textColor,
-                  sliderColor: widget.levelSlider.sliderColor,
-                  thumbColor: widget.levelSlider.thumbColor,
-                  min: widget.levelSlider.min,
-                  max: widget.levelSlider.max,
-                  divisions: () {
-                    try {
-                      if (int.parse(text) == 0) {
-                        return null;
-                      } else {
-                        return int.parse(text);
-                      }
-                    } on Exception catch (_) {
-                      return widget.levelSlider.divisions;
-                    }
-                  }.call(),
-                  initValue: widget.levelSlider.initValue,
-                  onChanged: widget.levelSlider.onChanged,
-                  isChangable: true,
-                );
-                widget.onChanged(widget.levelSlider);
-              },
+              onChanged: (_) => _rebuild(),
               style: TextStyle(fontSize: 20),
             ),
           ),
-
           Text("Set to 0 for none"),
         ],
       ),
