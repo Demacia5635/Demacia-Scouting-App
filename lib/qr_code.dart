@@ -33,14 +33,20 @@ class QrCodeState extends State<QrCode> {
   String valueToString(dynamic value) {
     switch (value.runtimeType) {
       case bool:
+        break;
       case double:
+        break;
       case int:
+        break;
       case String:
         return value.toString();
+        break;
       case IconData:
         return '${(value as IconData).codePoint},${(value).fontFamily}';
+        break;
       case Color:
         return (value as Color).toHexString(includeHashSign: true);
+        break;
       default:
         if (value is Set<Entry>) {
           String x = '';
