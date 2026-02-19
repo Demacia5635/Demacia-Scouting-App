@@ -11,6 +11,10 @@ import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
+void main() {
+  runApp();
+}
+
 class QrCode extends StatefulWidget {
   QrCode({super.key, required this.data, required this.previosPage});
 
@@ -127,9 +131,7 @@ class QrCodeState extends State<QrCode> {
     onKey: handleKeyEvent,
     autofocus: true,
     child: Scaffold(
-      appBar: DemaciaAppBar(
-        onSave: () {},
-      ),
+      appBar: DemaciaAppBar(onSave: () {}),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -178,7 +180,6 @@ class QrCodeState extends State<QrCode> {
                     ),
                   ],
                 ),
-                
               ],
             ),
           ),
