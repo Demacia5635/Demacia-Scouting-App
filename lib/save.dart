@@ -196,7 +196,7 @@ class Save {
     return ElevatedButton(
       onPressed: () async {
         onPressed();
-        await saveSaves();
+        saveSaves();
         MainApp.currentSave = this;
 
         if (context.mounted) {

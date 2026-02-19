@@ -29,15 +29,19 @@ void main() async {
     if (savesWithForms.isNotEmpty) {
       // Create Save objects from the data
       MainApp.saves = savesWithForms.map((saveData) {
-        final save = Save.fromJson(saveData);
+        print('saves data: ${saveData}');
+        final currentSave = Save.fromJson(saveData);
 
         // Store the form data in SharedPreferences for this save
         final formData = saveData['form'];
-        if (formData != null) {
-          prefs.setString('app_data_${save.index}', jsonEncode(formData));
+        if (formData != null && formData != "") {
+          save(formData, currentSave);
+          // prefs.setString('app_data_${save.index}', jsonEncode(formData));
+        } else {
+          save({}, currentSave);
         }
 
-        return save;
+        return currentSave;
       }).toList();
 
       print('Loaded ${MainApp.saves.length} saves with their forms');

@@ -53,8 +53,14 @@ class FormPage extends StatefulWidget {
 
   static dynamic _encodeAnswer(dynamic v) {
     if (v == null) return null;
-    if (v is Color) return {'__t': 'color', 'a': v.a, 'r': v.r, 'g': v.g, 'b': v.b};
-    if (v is IconData) return {'__t': 'icon', 'codePoint': v.codePoint, 'fontFamily': v.fontFamily};
+    if (v is Color)
+      return {'__t': 'color', 'a': v.a, 'r': v.r, 'g': v.g, 'b': v.b};
+    if (v is IconData)
+      return {
+        '__t': 'icon',
+        'codePoint': v.codePoint,
+        'fontFamily': v.fontFamily,
+      };
     // Selection: אצלך זה לפעמים Set<Entry>
     if (v is Set<Entry>) {
       return {'__t': 'entrySet', 'items': v.map((e) => e.toJson()).toList()};
@@ -64,6 +70,7 @@ class FormPage extends StatefulWidget {
 
   static dynamic _decodeAnswer(dynamic v) {
     if (v == null) return null;
+    if (v is String && v.isEmpty) return;
     if (v is Map && v['__t'] == 'color') {
       return Color.fromARGB(
         ((v['a'] as num).clamp(0, 1) * 255).round(),
@@ -94,29 +101,29 @@ class FormPage extends StatefulWidget {
     Map<int, (Question, dynamic)> questions = {};
 
     for (var qJson in json['questions']) {
-  final qIndex = qJson['index'] as int;
-  final rawAnswer = qJson['answer'];
-  final decoded = _decodeAnswer(rawAnswer);
+      final qIndex = qJson['index'] as int;
+      final rawAnswer = qJson['answer'];
+      final decoded = _decodeAnswer(rawAnswer);
 
-  // זה ה-callback שיעדכן גם את "העולם החיצוני" (אם יש)
-  // וגם את המפה המקומית כדי ש-toJson תמיד יכיל answer מעודכן
-  void handleChanged(int idx, dynamic value) {
-    onChanged?.call(idx, value);
-    final existing = questions[idx];
-    if (existing != null) {
-      questions[idx] = (existing.$1, value);
+      // זה ה-callback שיעדכן גם את "העולם החיצוני" (אם יש)
+      // וגם את המפה המקומית כדי ש-toJson תמיד יכיל answer מעודכן
+      void handleChanged(int idx, dynamic value) {
+        onChanged?.call(idx, value);
+        final existing = questions[idx];
+        if (existing != null) {
+          questions[idx] = (existing.$1, value);
+        }
+      }
+
+      final questionWidget = Question.fromJson(
+        qJson,
+        isChangable: isChangable,
+        onChanged: handleChanged,
+        init: () => decoded,
+      );
+
+      questions[qIndex] = (questionWidget, decoded);
     }
-  }
-
-  final questionWidget = Question.fromJson(
-    qJson,
-    isChangable: isChangable,
-    onChanged: handleChanged,
-    init: () => decoded,
-  );
-
-  questions[qIndex] = (questionWidget, decoded);
-}
 
     return FormPage(
       questions: questions,
@@ -141,7 +148,8 @@ class FormPage extends StatefulWidget {
 
   void load(
     Map<String, dynamic> json,
-    void Function(int, dynamic)? onChanged, Map<int, Function()?>? Function() param2,
+    void Function(int, dynamic)? onChanged,
+    Map<int, Function()?>? Function() param2,
   ) {
     final Map<int, (Question, dynamic)> newQuestions = {};
 

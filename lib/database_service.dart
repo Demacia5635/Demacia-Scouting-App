@@ -108,9 +108,37 @@ class DatabaseService {
           .select()
           .not('form', 'is', null)
           .order('created_at', ascending: false)
-          .limit(3);
+          .limit(3)
+          .timeout(Duration(seconds: 3), onTimeout: () => []);
 
       List<Map<String, dynamic>> savesWithForms = [];
+
+      /* if the database does not return */
+      if (response.isEmpty) {
+        for (int i = 0; i < 3; i++) {
+          savesWithForms.add({
+            'index': i,
+            'title': 'Save #${i + 1}',
+            'color': i == 0
+                ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
+                : i == 1
+                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
+                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
+            'icon': {
+              'codePoint': i == 0
+                  ? Icons.filter_1.codePoint
+                  : i == 1
+                  ? Icons.filter_2.codePoint
+                  : Icons.filter_3.codePoint,
+              'fontFamily': 'MaterialIcons',
+            },
+            'form': "",
+            'created_at': DateTime.now().toString(),
+          });
+        }
+
+        return savesWithForms;
+      }
 
       for (int i = 0; i < response.length; i++) {
         savesWithForms.add({
