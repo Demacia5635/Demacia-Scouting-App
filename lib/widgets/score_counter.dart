@@ -22,6 +22,7 @@ class ScoreCounter extends QuestionType {
     this.longPressedValue = 2,
     this.max = 100,
     this.min = 0,
+    this.isSmallScreen,
     double Function()? initValue,
     this.isChangable = false,
   }) : onChanged = onChanged ?? ((p0) {}),
@@ -41,6 +42,7 @@ class ScoreCounter extends QuestionType {
   double Function() initValue;
   void Function(double) onChanged;
   bool isChangable;
+  bool? isSmallScreen;
 
   @override
   State<StatefulWidget> createState() =>
@@ -81,13 +83,12 @@ class ScoreCounter extends QuestionType {
     'initValue': initValue(),
   };
 
-
   factory ScoreCounter.fromJson(
     Map<String, dynamic> json, {
     Key? key,
     void Function(double)? onChanged,
     bool isChangable = false,
-    dynamic init
+    dynamic init,
   }) {
     double Function() resolvedInit;
     try {
@@ -102,50 +103,50 @@ class ScoreCounter extends QuestionType {
     }
 
     return ScoreCounter(
-    key: key,
-    label: json['label'] as String,
-    icon: IconData(
-      json['icon']['codePoint'] as int,
-      fontFamily: json['icon']['fontFamily'] as String,
-    ),
-    plus: Color.from(
-      alpha: json['plus']['a'] as double,
-      red: json['plus']['r'] as double,
-      green: json['plus']['g'] as double,
-      blue: json['plus']['b'] as double,
-    ),
-    minus: Color.from(
-      alpha: json['minus']['a'] as double,
-      red: json['minus']['r'] as double,
-      green: json['minus']['g'] as double,
-      blue: json['minus']['b'] as double,
-    ),
-    textColor: Color.from(
-      alpha: json['textColor']['a'] as double,
-      red: json['textColor']['r'] as double,
-      green: json['textColor']['g'] as double,
-      blue: json['textColor']['b'] as double,
-    ),
-    numberColor: Color.from(
-      alpha: json['numberColor']['a'] as double,
-      red: json['numberColor']['r'] as double,
-      green: json['numberColor']['g'] as double,
-      blue: json['numberColor']['b'] as double,
-    ),
-    iconColor: Color.from(
-      alpha: json['iconColor']['a'] as double,
-      red: json['iconColor']['r'] as double,
-      green: json['iconColor']['g'] as double,
-      blue: json['iconColor']['b'] as double,
-    ),
-    stepValue: json['stepValue'] as double,
-    max: json['max'] as double,
-    min: json['min'] as double,
-    longPressedValue: json['longPressedValue'] as double,
-    initValue: resolvedInit,
-    onChanged: onChanged,
-    isChangable: isChangable,
-  );
+      key: key,
+      label: json['label'] as String,
+      icon: IconData(
+        json['icon']['codePoint'] as int,
+        fontFamily: json['icon']['fontFamily'] as String,
+      ),
+      plus: Color.from(
+        alpha: json['plus']['a'] as double,
+        red: json['plus']['r'] as double,
+        green: json['plus']['g'] as double,
+        blue: json['plus']['b'] as double,
+      ),
+      minus: Color.from(
+        alpha: json['minus']['a'] as double,
+        red: json['minus']['r'] as double,
+        green: json['minus']['g'] as double,
+        blue: json['minus']['b'] as double,
+      ),
+      textColor: Color.from(
+        alpha: json['textColor']['a'] as double,
+        red: json['textColor']['r'] as double,
+        green: json['textColor']['g'] as double,
+        blue: json['textColor']['b'] as double,
+      ),
+      numberColor: Color.from(
+        alpha: json['numberColor']['a'] as double,
+        red: json['numberColor']['r'] as double,
+        green: json['numberColor']['g'] as double,
+        blue: json['numberColor']['b'] as double,
+      ),
+      iconColor: Color.from(
+        alpha: json['iconColor']['a'] as double,
+        red: json['iconColor']['r'] as double,
+        green: json['iconColor']['g'] as double,
+        blue: json['iconColor']['b'] as double,
+      ),
+      stepValue: json['stepValue'] as double,
+      max: json['max'] as double,
+      min: json['min'] as double,
+      longPressedValue: json['longPressedValue'] as double,
+      initValue: resolvedInit,
+      onChanged: onChanged,
+      isChangable: isChangable,
+    );
   }
 }
 
@@ -297,7 +298,7 @@ class RoundedIconButton extends StatelessWidget {
     onLongPress: onLongPress,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     fillColor: color,
-    child: Icon(icon, color: Colors.white, size: 40),
+    child: Icon(icon, color: Colors.white, size: 20),
   );
 }
 
@@ -337,55 +338,59 @@ class ScoreCounterState extends State<ScoreCounter> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              flex: 6,
-              child: RoundedIconButton(
-                color: widget.minus,
-                icon: Icons.remove,
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - widget.stepValue);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {
-                  setState(() {
-                    count = max(widget.min, count - widget.longPressedValue);
-                  });
-                  widget.onChanged(count);
-                },
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: <Widget>[
+              SizedBox(
+                width: constraints.maxWidth * 0.38,
+                child: RoundedIconButton(
+                  color: widget.minus,
+                  icon: Icons.remove,
+                  onPress: () {
+                    setState(() {
+                      count = max(widget.min, count - widget.stepValue);
+                    });
+                    widget.onChanged(count);
+                  },
+                  onLongPress: () {
+                    setState(() {
+                      count = max(widget.min, count - widget.longPressedValue);
+                    });
+                    widget.onChanged(count);
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              flex: 4,
-              child: Text(
-                count.toString(),
-                style: const TextStyle(fontSize: 40),
-                textAlign: TextAlign.center,
+              SizedBox(
+                width: constraints.maxWidth * 0.24,
+                child: Text(
+                  count.toString(),
+                  style: const TextStyle(fontSize: 40),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow
+                      .ellipsis, // prevents overflow if number is long
+                ),
               ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedIconButton(
-                color: widget.plus,
-                icon: Icons.add,
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + widget.stepValue);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {
-                  setState(() {
-                    count = min(widget.max, count + widget.longPressedValue);
-                  });
-                  widget.onChanged(count);
-                },
+              SizedBox(
+                width: constraints.maxWidth * 0.38,
+                child: RoundedIconButton(
+                  color: widget.plus,
+                  icon: Icons.add,
+                  onPress: () {
+                    setState(() {
+                      count = min(widget.max, count + widget.stepValue);
+                    });
+                    widget.onChanged(count);
+                  },
+                  onLongPress: () {
+                    setState(() {
+                      count = min(widget.max, count + widget.longPressedValue);
+                    });
+                    widget.onChanged(count);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ],

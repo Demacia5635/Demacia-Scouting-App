@@ -293,125 +293,132 @@ class FormPageState extends State<FormPage> {
   }
 
   @override
-  Widget build(BuildContext context) => RawKeyboardListener(
-    focusNode: focusNode,
-    onKey: handleKeyEvent,
-    autofocus: true,
-    child: Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: DemaciaAppBar(
-        onSave:
-            () async {
-                  save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
-                }
-                as void Function(),
-        onLongSave: () async =>
-            longSave(await widget.onSave(), context, () => setState(() {})),
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                children: [
-                  SectionDivider(label: widget.name, lineColor: widget.color),
+  Widget build(BuildContext context) {
+    print('in form page');
+    return RawKeyboardListener(
+      focusNode: focusNode,
+      onKey: handleKeyEvent,
+      autofocus: true,
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        appBar: DemaciaAppBar(
+          onSave:
+              () async {
+                    save(widget.toJson(), MainApp.currentSave);
+                    await DatabaseService().uploadData(
+                      table: 'data',
+                      data: {'form': widget.toJson()},
+                    );
+                  }
+                  as void Function(),
+          onLongSave: () async =>
+              longSave(await widget.onSave(), context, () => setState(() {})),
+        ),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: Column(
+                  children: [
+                    SectionDivider(label: widget.name, lineColor: widget.color),
 
-                  ...getQuestions(),
+                    ...getQuestions(),
 
-                  Row(
-                    spacing: 10,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      widget.isChangable
-                          ? ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  currentIndex++;
-                                  widget.questions.addAll({
-                                    currentIndex: (
-                                      Question(
-                                        key: Key((currentIndex).toString()),
-                                        index: currentIndex,
-                                        onDelete: (int index) {
-                                          setState(() {
-                                            widget.questions.remove(index);
-                                          });
-                                        },
-                                        onDuplicate: (index) {
-                                          setState(() {
-                                            widget.questions.addAll({
-                                              ++currentIndex: (
-                                                Question.duplicate(
-                                                  widget.questions[index]!.$1,
-                                                  currentIndex,
-                                                ),
-                                                '',
-                                              ),
+                    Row(
+                      spacing: 10,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        widget.isChangable
+                            ? ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    currentIndex++;
+                                    widget.questions.addAll({
+                                      currentIndex: (
+                                        Question(
+                                          key: Key((currentIndex).toString()),
+                                          index: currentIndex,
+                                          onDelete: (int index) {
+                                            setState(() {
+                                              widget.questions.remove(index);
                                             });
-                                          });
-                                        },
-                                        isChangable: widget.isChangable,
-                                        onChanged: (index, value) {
-                                          widget.questions[index] = (
-                                            widget.questions[index]!.$1,
-                                            value,
-                                          );
-                                        },
+                                          },
+                                          onDuplicate: (index) {
+                                            setState(() {
+                                              widget.questions.addAll({
+                                                ++currentIndex: (
+                                                  Question.duplicate(
+                                                    widget.questions[index]!.$1,
+                                                    currentIndex,
+                                                  ),
+                                                  '',
+                                                ),
+                                              });
+                                            });
+                                          },
+                                          isChangable: widget.isChangable,
+                                          onChanged: (index, value) {
+                                            widget.questions[index] = (
+                                              widget.questions[index]!.$1,
+                                              value,
+                                            );
+                                          },
+                                        ),
+                                        '\u200B',
                                       ),
-                                      '\u200B',
-                                    ),
+                                    });
                                   });
-                                });
-                              },
-                              child: Icon(Icons.add),
-                            )
-                          : Container(),
-                    ],
-                  ),
-                  SizedBox(height: 50),
-                  Row(
-                    spacing: 100,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: widget.previosPage != null
-                            ? () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => widget.previosPage!(),
-                                  ),
-                                );
-                              }
-                            : null,
-                        child: Icon(Icons.navigate_before),
-                      ),
-                      ElevatedButton(
-                        onPressed: widget.nextPage != null
-                            ? () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => widget.nextPage!(),
-                                  ),
-                                );
-                              }
-                            : null,
-                        child: Icon(Icons.navigate_next),
-                      ),
-                    ],
-                  ),
-                ],
+                                },
+                                child: Icon(Icons.add),
+                              )
+                            : Container(),
+                      ],
+                    ),
+                    SizedBox(height: 50),
+                    Row(
+                      spacing: 100,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: widget.previosPage != null
+                              ? () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          widget.previosPage!(),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Icon(Icons.navigate_before),
+                        ),
+                        ElevatedButton(
+                          onPressed: widget.nextPage != null
+                              ? () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => widget.nextPage!(),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Icon(Icons.navigate_next),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

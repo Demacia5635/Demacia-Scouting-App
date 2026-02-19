@@ -177,6 +177,9 @@ class HomePageState extends State<HomePage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) {
+                                        print(
+                                          'contains key?: ${widget.json!.containsKey('screens')}',
+                                        );
                                         if (widget.json!.containsKey(
                                           'screens',
                                         )) {
@@ -248,10 +251,11 @@ class HomePageState extends State<HomePage> {
                                                     (screenJson['questions']
                                                             as List)
                                                         .firstWhere(
-                                                  (q) =>
-                                                      q['index'] == qIndex,
-                                                  orElse: () => null,
-                                                );
+                                                          (q) =>
+                                                              q['index'] ==
+                                                              qIndex,
+                                                          orElse: () => null,
+                                                        );
                                                 if (questionJson != null) {
                                                   if (savedValue is Set) {
                                                     questionJson['question']['initValue'] =
@@ -262,9 +266,8 @@ class HomePageState extends State<HomePage> {
                                                             )
                                                             .toList();
                                                   } else {
-                                                    switch (
-                                                      savedValue.runtimeType
-                                                    ) {
+                                                    switch (savedValue
+                                                        .runtimeType) {
                                                       case Color:
                                                         questionJson['question']['initValue'] =
                                                             {
@@ -274,15 +277,14 @@ class HomePageState extends State<HomePage> {
                                                               'b': savedValue.b,
                                                             };
                                                       case IconData:
-                                                        questionJson['question']['initValue'] =
-                                                            {
-                                                              'codePoint':
-                                                                  savedValue
-                                                                      .codePoint,
-                                                              'fontFamily':
-                                                                  savedValue
-                                                                      .fontFamily,
-                                                            };
+                                                        questionJson['question']['initValue'] = {
+                                                          'codePoint':
+                                                              savedValue
+                                                                  .codePoint,
+                                                          'fontFamily':
+                                                              savedValue
+                                                                  .fontFamily,
+                                                        };
                                                       default:
                                                         questionJson['question']['initValue'] =
                                                             savedValue;
@@ -304,8 +306,7 @@ class HomePageState extends State<HomePage> {
                                             FormPage.fromJson(
                                               widget.json!['screens'][i],
                                               isChangable: false,
-                                              getJson: () async =>
-                                                  widget.json!,
+                                              getJson: () async => widget.json!,
                                               onChanged: (qIndex, value) {
                                                 // qIndex is the question's real
                                                 // JSON index — matches our map key.
@@ -327,13 +328,13 @@ class HomePageState extends State<HomePage> {
                                           screens[i].previosPage = (i != 0)
                                               ? () {
                                                   screens[i - 1].load(
-                                                    widget
-                                                        .json!['screens'][i -
+                                                    widget.json!['screens'][i -
                                                         1],
                                                     (qIndex, value) {
                                                       setState(() {
                                                         _previewData[i -
-                                                            1]![qIndex] = value;
+                                                                1]![qIndex] =
+                                                            value;
                                                       });
                                                     },
                                                     () => func(i - 1),
@@ -346,13 +347,13 @@ class HomePageState extends State<HomePage> {
                                               (i + 1 != screens.length)
                                               ? () {
                                                   screens[i + 1].load(
-                                                    widget
-                                                        .json!['screens'][i +
+                                                    widget.json!['screens'][i +
                                                         1],
                                                     (qIndex, value) {
                                                       setState(() {
                                                         _previewData[i +
-                                                            1]![qIndex] = value;
+                                                                1]![qIndex] =
+                                                            value;
                                                       });
                                                     },
                                                     () => func(i + 1),
@@ -370,8 +371,8 @@ class HomePageState extends State<HomePage> {
                                                       (qIndex, value) {
                                                         setState(() {
                                                           _previewData[screens
-                                                              .length -
-                                                              1]![qIndex] =
+                                                                      .length -
+                                                                  1]![qIndex] =
                                                               value;
                                                         });
                                                       },

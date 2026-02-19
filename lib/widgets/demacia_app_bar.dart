@@ -5,16 +5,18 @@ import 'package:scouting_qr_maker/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const DemaciaAppBar({
+  DemaciaAppBar({
     super.key,
     Future<void> Function()? onLongSave,
     required this.onSave,
     this.onLoadSave,
+    this.isSmallScreens,
   }) : onLongSave = onLongSave ?? _defaultOnLongSave;
 
   final void Function() onSave;
   final void Function() onLongSave;
   final VoidCallback? onLoadSave; // Add this callback
+  bool? isSmallScreens;
 
   static Future<void> _defaultOnLongSave() async {}
 
@@ -105,7 +107,9 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       elevation: 7,
       title: Text(
-        isSmallScreen ? "Demacia" : "Demacia Scouting Maker",
+        (isSmallScreens != null) && (isSmallScreens == true)
+            ? "Demacia"
+            : "Demacia Scouting Maker",
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,

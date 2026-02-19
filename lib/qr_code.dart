@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -11,6 +10,8 @@ import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
+
+void main() {}
 
 class QrCode extends StatefulWidget {
   QrCode({super.key, required this.data, required this.previosPage});
@@ -36,8 +37,10 @@ class QrCodeState extends State<QrCode> {
         return value.toString();
       case IconData:
         return '${(value as IconData).codePoint},${(value).fontFamily}';
+        break;
       case Color:
         return (value as Color).toHexString(includeHashSign: true);
+        break;
       default:
         if (value is Set<Entry>) {
           String x = '';
@@ -81,40 +84,6 @@ class QrCodeState extends State<QrCode> {
       setState(() {}); // Trigger rebuild after data loads
     }
   }
-  Future<void> _saveToSharedPreferences() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      Map<String, Map<String, String>> dataMap = {};
-      for (var entry in widget.data.entries) {
-        Map<String, String> screenMap = {};
-         for (var screenEntry in entry.value.entries) {
-           String value = valueToString(screenEntry.value);
-           if (value != '\u200B') {
-            screenMap[screenEntry.key.toString()] = value;
-        }
-      }
-      dataMap[entry.key.toString()] = screenMap;
-    }
-
-      String encodedData = jsonEncode(dataMap);
-      await prefs.setString('last_scouted_data', encodedData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Progress saved locally!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
 
   Future<void> _uploadData() async {
     Map<String, Map<String, String>> dataMap = {};
@@ -128,31 +97,11 @@ class QrCodeState extends State<QrCode> {
       }
       dataMap[entry.key.toString()] = screenMap;
     }
+
     await DatabaseService().uploadData(
       table: 'answor',
       data: {'answer': dataMap},
     );
-  }
-    Future<void> _uploadDataFromSharedPreferences() async {
-     final prefs = await SharedPreferences.getInstance();
-     final String? encodedData = prefs.getString('last_scouted_data');
-     if(encodedData == ''){
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No saved data found!'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }else if (encodedData != null) {
-       final Map<String, dynamic> dataMap = jsonDecode(encodedData);
-       await DatabaseService().uploadData(
-        table: 'answor',
-        data: {'answer': dataMap},
-      );
-       await prefs.setString('last_scouted_data', '');
-      } 
-     }
   }
 
   /// Handles raw keyboard events.
@@ -182,9 +131,7 @@ class QrCodeState extends State<QrCode> {
     onKey: handleKeyEvent,
     autofocus: true,
     child: Scaffold(
-      appBar: DemaciaAppBar(
-        onSave: () {},
-      ),
+      appBar: DemaciaAppBar(onSave: () {}, isSmallScreens: true),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -207,7 +154,7 @@ class QrCodeState extends State<QrCode> {
                 ),
 
                 Row(
-                  spacing: 100,
+                  spacing: 50,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
@@ -221,13 +168,6 @@ class QrCodeState extends State<QrCode> {
                       },
                       child: Icon(Icons.navigate_before),
                     ),
-                      ElevatedButton(
-                      onPressed: () async {
-                        _saveToSharedPreferences();
-
-                      },
-                      child: Icon(Icons.save_as),
-                    ),
                     ElevatedButton(
                       onPressed: () async {
                         await _uploadData();
@@ -235,15 +175,11 @@ class QrCodeState extends State<QrCode> {
                       child: Icon(Icons.upload),
                     ),
                     ElevatedButton(
-                      onPressed: () async {
-                        await _uploadDataFromSharedPreferences();
-                      },
-                      child: Icon(Icons.upload_file),
+                      onPressed: null,
+                      child: Icon(Icons.navigate_next),
                     ),
-                  
                   ],
                 ),
-                
               ],
             ),
           ),
@@ -252,4 +188,3 @@ class QrCodeState extends State<QrCode> {
     ),
   );
 }
-
