@@ -48,6 +48,16 @@ class QRCodeState extends State<QRCode> {
       appBar: AppBar(
         title: const Text('QR Code Scanner'),
         backgroundColor: Colors.deepPurple.shade700,
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                resolt = null;
+              });
+            },
+            icon: Icon(Icons.delete, color: Colors.red),
+          ),
+        ],
       ),
       backgroundColor: Colors.deepPurple.shade700,
       body: Column(
