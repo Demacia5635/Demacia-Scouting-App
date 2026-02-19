@@ -147,15 +147,16 @@ class SelectionChangableState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: Text(widget.placeHolder),
+          placeholder: widget.placeHolder,
           value: value,
-          makeItem: (Entry t) => Row(
-            spacing: 4,
-            children: [
-              t.icon != null ? Icon(t.icon, color: t.color) : Container(),
-              Text(t.title, style: TextStyle(color: t.color)),
-            ],
-          ),
+          makeItem: (Entry t) => t.title,
+          // makeItem: (Entry t) => Row(
+          //   spacing: 4,
+          //   children: [
+          //     t.icon != null ? Icon(t.icon, color: t.color) : Container(),
+          //     Text(t.title, style: TextStyle(color: t.color)),
+          //   ],
+          // ),
           onChange: (Entry t) {
             setState(() {
               value = t;
@@ -237,15 +238,16 @@ class SelectionState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: Text(widget.placeHolder),
+          placeholder: widget.placeHolder,
           value: value,
-          makeItem: (Entry t) => Row(
-            spacing: 4,
-            children: [
-              t.icon != null ? Icon(t.icon, color: t.color) : Container(),
-              Text(t.title, style: TextStyle(color: t.color)),
-            ],
-          ),
+          makeItem: (Entry t) => t.title,
+          // makeItem: (Entry t) => Row(
+          //   spacing: 4,
+          //   children: [
+          //     t.icon != null ? Icon(t.icon, color: t.color) : Container(),
+          //     Text(t.title, style: TextStyle(color: t.color)),
+          //   ],
+          // ),
           onChange: (Entry t) {
             setState(() {
               value = t;
