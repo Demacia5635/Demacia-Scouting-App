@@ -20,32 +20,27 @@ void main() async {
     anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
   );
 
-  DatabaseService databaseService = DatabaseService();
+  //DatabaseService databaseService = DatabaseService();//TODO
+  final db = DatabaseService(); 
 
   // Load the three latest saves with their forms
   try {
-    final savesWithForms = await databaseService.getThreeLatestSavesWithForms();
+    final savesWithForms = await db.getAllSavesWithForms();
 
     if (savesWithForms.isNotEmpty) {
-      // Create Save objects from the data
-      MainApp.saves = savesWithForms.map((saveData) {
-        final save = Save.fromJson(saveData);
+      MainApp.saves = savesWithForms.map((m) => Save.fromJson(m)).toList();
+    }
+    
+    final savedCurrent = prefs.getInt('current_save');
 
-        // Store the form data in SharedPreferences for this save
-        final formData = saveData['form'];
-        if (formData != null) {
-          prefs.setString('app_data_${save.index}', jsonEncode(formData));
-        }
-
-        return save;
-      }).toList();
-
-      print('Loaded ${MainApp.saves.length} saves with their forms');
-
-      // Set current save to the first one (which is the latest)
-      MainApp.currentSave = MainApp.saves[0];
-      await prefs.setInt('current_save', 0);
-      print('Set current save to the latest form (Save #1)');
+    if (MainApp.saves.isNotEmpty) {
+      MainApp.currentSave = (savedCurrent == null)
+          ? MainApp.saves.first
+          : (MainApp.saves.firstWhere(
+              (s) => s.index == savedCurrent,
+              orElse: () => MainApp.saves.first,
+            ));
+      await prefs.setInt('current_save', MainApp.currentSave.index);
     }
   } catch (e) {
     print('Error loading saves: $e');

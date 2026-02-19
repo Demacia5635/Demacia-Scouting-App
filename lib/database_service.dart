@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 
 class DatabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -54,17 +55,13 @@ class DatabaseService {
 
   Future<Map<String, dynamic>?> getFormById(int id) async {
     try {
-      print('get form by database id: $id');
       final response = await _supabase
           .from('data')
-          .select()
+          .select('form')
           .eq('id', id)
           .maybeSingle();
 
-      if (response != null && response['form'] != null) {
-        return response['form'];
-      }
-      return null;
+      return _normalizeFormData(response?['form']);
     } catch (e) {
       print('Error fetching form by id: $e');
       return null;
@@ -97,47 +94,38 @@ class DatabaseService {
     }
   }
 
-  /// Get the three most recent saves with their associated form data
-  Future<List<Map<String, dynamic>>> getThreeLatestSavesWithForms() async {
+  Future<List<Map<String, dynamic>>> getAllSavesWithForms() async {
     try {
-      print('Getting three latest saves with forms');
-
-      // Get the 3 most recent data entries
-      final response = await _supabase
-          .from('data')
+      final saves = await _supabase
+          .from('saves')
           .select()
-          .not('form', 'is', null)
-          .order('created_at', ascending: false)
-          .limit(3);
+          .order('index', ascending: true);
 
-      List<Map<String, dynamic>> savesWithForms = [];
+      final List<Map<String, dynamic>> result = [];
 
-      for (int i = 0; i < response.length; i++) {
-        savesWithForms.add({
-          'index': i,
-          'title': 'Save #${i + 1}',
-          'color': i == 0
-              ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
-              : i == 1
-              ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
-              : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
-          'icon': {
-            'codePoint': i == 0
-                ? Icons.filter_1.codePoint
-                : i == 1
-                ? Icons.filter_2.codePoint
-                : Icons.filter_3.codePoint,
-            'fontFamily': 'MaterialIcons',
-          },
-          'form': response[i]['form'],
-          'created_at': response[i]['created_at'],
-        });
+      for (final s in saves) {
+        final saveRow = Map<String, dynamic>.from(s);
+        final formId = saveRow['form_id'];
+
+        Map<String, dynamic>? form;
+        if (formId != null) {
+          final row = await _supabase
+              .from('data')
+              .select('form,created_at')
+              .eq('id', formId)
+              .maybeSingle();
+
+          form = _normalizeFormData(row?['form']);
+          saveRow['created_at'] = row?['created_at'];
+        }
+
+        saveRow['form'] = form;
+        result.add(saveRow);
       }
 
-      print('Fetched ${savesWithForms.length} saves with forms');
-      return savesWithForms;
+      return result;
     } catch (e) {
-      print('Error fetching latest saves with forms: $e');
+      print('Error fetching saves with forms: $e');
       return [];
     }
   }
@@ -167,39 +155,27 @@ class DatabaseService {
     }
   }
 
-  /// Normalize different data formats into a consistent structure
   Map<String, dynamic>? _normalizeFormData(dynamic formData) {
     try {
-      print('normalize form data');
       if (formData == null) return null;
 
-      Map<String, dynamic> data;
+      dynamic decoded = formData;
 
-      if (formData is Map<String, dynamic>) {
-        data = formData;
-      } else if (formData is String) {
-        return null;
-      } else {
-        return null;
+      // אם קיבלת JSON כמחרוזת (קורה לפעמים אחרי שינויים/מיגרציות)
+      if (decoded is String) {
+        decoded = jsonDecode(decoded);
       }
 
-      // Check if data has "screens" wrapper
-      if (data.containsKey('screens')) {
-        return data; // Return the whole structure with screens
-      }
+      if (decoded is! Map) return null;
 
-      // Check if data has "questions" at root level
-      if (data.containsKey('questions')) {
+      final data = Map<String, dynamic>.from(decoded as Map);
+
+      if (data.containsKey('screens')) return data;
+      if (data.containsKey('questions')) return data;
+      if (data.containsKey('index') && (data.containsKey('name') || data.containsKey('questions'))) {
         return data;
       }
 
-      // If it has index, name, and other FormPage fields
-      if (data.containsKey('index') &&
-          (data.containsKey('name') || data.containsKey('questions'))) {
-        return data;
-      }
-
-      print('Unrecognized data format: ${data.keys}');
       return null;
     } catch (e) {
       print('Error normalizing form data: $e');

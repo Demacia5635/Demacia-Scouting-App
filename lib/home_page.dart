@@ -99,19 +99,16 @@ class HomePageState extends State<HomePage> {
       DatabaseService databaseService = DatabaseService();
 
       // Reload the three latest saves with their forms
-      final savesWithForms = await databaseService
-          .getThreeLatestSavesWithForms();
+      final savesWithForms = await databaseService.getAllSavesWithForms();
 
       if (savesWithForms.isNotEmpty) {
         MainApp.saves = savesWithForms.map((saveData) {
           final save = Save.fromJson(saveData);
 
-          // Store the form data in SharedPreferences for this save
           final formData = saveData['form'];
           if (formData != null) {
             prefs.setString('app_data_${save.index}', jsonEncode(formData));
           }
-
           return save;
         }).toList();
 
@@ -121,22 +118,26 @@ class HomePageState extends State<HomePage> {
       // Load the form data for the CURRENT save from SharedPreferences
       Map<String, dynamic>? formData;
 
+      // 1) מה־prefs של הסייב הנוכחי
       final saveKey = 'app_data_${MainApp.currentSave.index}';
       if (prefs.containsKey(saveKey)) {
         final savedJson = prefs.getString(saveKey);
         if (savedJson != null && savedJson.isNotEmpty) {
           formData = jsonDecode(savedJson);
-          print(
-            'Loaded form from SharedPreferences for save ${MainApp.currentSave.index}',
-          );
         }
       }
 
-      // If not found, use latest as fallback
-      if (formData == null) {
-        formData = await databaseService.getLatestFormData();
-        print('Loaded latest form as fallback');
-      }
+            
+      // 2) אם יש form_id בסייב — תביא מה־DB לפי id
+      formData ??= (MainApp.currentSave.formId != null)
+          ? await databaseService.getFormById(MainApp.currentSave.formId!)
+          : null;
+
+      // 3) fallback אחרון — latest form
+      formData ??= await databaseService.getLatestFormData();
+
+      // 4) אם עדיין null => טופס ריק כדי שהאפליקציה תמשיך לעבוד
+      formData ??= {'screens': []};
 
       setState(() {
         widget.json = formData;
