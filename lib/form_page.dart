@@ -344,15 +344,9 @@ class FormPageState extends State<FormPage> {
     child: Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: DemaciaAppBar(
-        onSave:
-            () async {
-                  save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
-                }
-                as void Function(),
+        onSave: () async {
+          save(widget.toJson(), MainApp.currentSave);
+        },
         onLongSave: () async =>
             longSave(await widget.onSave(), context, () => setState(() {})),
       ),

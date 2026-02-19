@@ -216,15 +216,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
     return Scaffold(
       appBar: DemaciaAppBar(
-        onSave:
-            () async {
-                  save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
-                }
-                as void Function(),
+        onSave: () async {
+          save(widget.toJson(), MainApp.currentSave);
+        },
         onLongSave: () async =>
             longSave(widget.toJson(), context, () => setState(() {})),
       ),

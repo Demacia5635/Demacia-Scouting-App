@@ -168,10 +168,6 @@ class HomePageState extends State<HomePage> {
         onSave: () async {
           if (widget.json != null) {
             save(widget.json!, MainApp.currentSave);
-            await DatabaseService().uploadData(
-              table: 'data',
-              data: {'form': widget.json!},
-            );
           }
         },
         onLongSave: () async {
@@ -208,28 +204,15 @@ class HomePageState extends State<HomePage> {
                       spacing: isPhone ? 16 : 40,
                       children: [
                         ElevatedButton(
-                          onPressed:
-                              widget.json != null && widget.json!.isNotEmpty
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) {
-                                        if (widget.json!.containsKey(
-                                          'screens',
-                                        )) {
-                                          return ScreenManagerPage.fromJson(
-                                            widget.json!,
-                                          );
-                                        }
-                                        return ScreenManagerPage();
-                                      },
-                                    ),
-                                  ).then((_) {
-                                    loadData();
-                                  });
-                                }
-                              : null,
+                          onPressed: () {
+                            final json = widget.json ?? {'screens': []};
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ScreenManagerPage.fromJson(json),
+                              ),
+                            ).then((_) => loadData());
+                          },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.zero,
                             minimumSize: Size(

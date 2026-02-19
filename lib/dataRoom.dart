@@ -36,7 +36,7 @@ class _DataRoomState extends State<DataRoom> {
   SupabaseClient get _supabase => Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> getAllForms() async {
-    final res = await _supabase.from('forms').select();
+    final res = await _supabase.from('data').select().not('form', 'is', null);
     return List<Map<String, dynamic>>.from(res);
   }
 
