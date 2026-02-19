@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DatabaseService {
@@ -97,7 +98,7 @@ class DatabaseService {
     }
   }
 
-  /// Get the three most recent saves with their associated form data
+  /// Get the three most recent s with their associated form data
   Future<List<Map<String, dynamic>>> getThreeLatestSavesWithForms() async {
     try {
       print('Getting three latest saves with forms');
@@ -106,13 +107,39 @@ class DatabaseService {
       final response = await _supabase
           .from('data')
           .select()
-          .not('form', 'is', null)
           .order('created_at', ascending: false)
           .limit(3);
 
       List<Map<String, dynamic>> savesWithForms = [];
 
+      
       for (int i = 0; i < response.length; i++) {
+        print(response[i]['form']['form'] == {});
+        if (response[i]['form'] is Map<String, dynamic> && response[i]['form'].isEmpty) {
+          print(response[i]['form'] == {});
+          SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+          savesWithForms.add({
+            'index': i,
+            'title': 'Save #${i + 1}',
+            'color': i == 0
+                ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
+                : i == 1
+                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
+                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
+            'icon': {
+              'codePoint': i == 0
+                  ? Icons.filter_1.codePoint
+                  : i == 1
+                  ? Icons.filter_2.codePoint
+                  : Icons.filter_3.codePoint,
+              'fontFamily': 'MaterialIcons',
+            },
+            'form': sharedPreferences.getString('app_data_$i') != null
+                ? (sharedPreferences.getString('app_data_$i')!)
+                : "",
+            'created_at': DateTime.now(),
+        });
+        } else {
         savesWithForms.add({
           'index': i,
           'title': 'Save #${i + 1}',
@@ -132,6 +159,9 @@ class DatabaseService {
           'form': response[i]['form'],
           'created_at': response[i]['created_at'],
         });
+      }
+       print ('form i: $i, ${response[i]['form']}');
+       print('is empty ${response[i]['form'] == {}}');
       }
 
       print('Fetched ${savesWithForms.length} saves with forms');
