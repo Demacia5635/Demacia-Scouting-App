@@ -136,28 +136,3 @@ class MainApp extends StatelessWidget {
     );
   }
 }
-
-/// Helper function to load form from Supabase and convert it to FormPage - No ones using this
-Future<FormPage?> loadFormPageFromSupabase() async {
-  try {
-    final databaseService = DatabaseService();
-    final formData = await databaseService.getLatestFormData();
-
-    if (formData == null) {
-      print('No form data found in Supabase');
-      return null;
-    }
-
-    // Convert the form data to FormPage
-    final formPage = FormPage.fromJson(
-      formData,
-      isChangable: false, // Set to true if you want to edit
-      init: () => null,
-    );
-
-    return formPage;
-  } catch (e) {
-    print('Error loading FormPage from Supabase: $e');
-    return null;
-  }
-}

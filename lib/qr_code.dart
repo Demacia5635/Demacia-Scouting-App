@@ -131,7 +131,7 @@ class QrCodeState extends State<QrCode> {
     onKey: handleKeyEvent,
     autofocus: true,
     child: Scaffold(
-      appBar: DemaciaAppBar(onSave: () {}, isSmallScreens: true),
+      appBar: DemaciaAppBar(onSave: () {}, isInPreview: true),
       body: Stack(
         children: [
           SingleChildScrollView(

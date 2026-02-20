@@ -82,22 +82,30 @@ class SectionDividerChangabelState extends State<SectionDivider> {
   }
 
   @override
-  Widget build(final BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: <Widget>[
-      widget.thickness != 0 ? line : Container(),
-      Container(
-        constraints: BoxConstraints(maxWidth: 100),
-        child: TextField(
-          textAlign: TextAlign.center,
-          controller: labelController,
-          onChanged: (String text) => widget.label = text,
-          style: TextStyle(color: widget.textColor, fontSize: 20),
+  Widget build(final BuildContext context) {
+    print(
+      'height: ${MediaQuery.sizeOf(context).height} width: ${MediaQuery.sizeOf(context).width}',
+    );
+    print(
+      'is small phone: ${MediaQuery.sizeOf(context).width > 600} and ${MediaQuery.sizeOf(context).height}',
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        widget.thickness != 0 ? line : Container(),
+        Container(
+          constraints: BoxConstraints(maxWidth: 100),
+          child: TextField(
+            textAlign: TextAlign.center,
+            controller: labelController,
+            onChanged: (String text) => widget.label = text,
+            style: TextStyle(color: widget.textColor, fontSize: 20),
+          ),
         ),
-      ),
-      widget.thickness != 0 ? line : Container(),
-    ],
-  );
+        widget.thickness != 0 ? line : Container(),
+      ],
+    );
+  }
 
   Expanded horizontalLine() => Expanded(
     child: Container(

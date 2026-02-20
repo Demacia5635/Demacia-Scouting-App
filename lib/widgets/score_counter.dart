@@ -167,114 +167,253 @@ class ScoreCounterChangableState extends State<ScoreCounter> {
   }
 
   @override
-  Widget build(final BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Row(
-        children: <Widget>[
-          const Spacer(),
-          Expanded(child: Icon(widget.icon, color: widget.iconColor, size: 30)),
-          Expanded(
-            child: FittedBox(
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: 100),
-                  child: TextField(
-                    textAlign: TextAlign.center,
-                    controller: labelController,
-                    onChanged: (String text) => widget.label = text,
-                    style: TextStyle(color: widget.textColor, fontSize: 20),
+  Widget build(final BuildContext context) {
+    print(
+      'height: ${MediaQuery.sizeOf(context).height} width: ${MediaQuery.sizeOf(context).width}',
+    );
+    return MediaQuery.sizeOf(context).width <= 600
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Spacer(),
+                  Expanded(
+                    child: Icon(widget.icon, color: widget.iconColor, size: 30),
+                  ),
+                  Expanded(
+                    child: FittedBox(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: 100),
+                          child: TextField(
+                            textAlign: TextAlign.center,
+                            controller: labelController,
+                            onChanged: (String text) => widget.label = text,
+                            style: TextStyle(
+                              color: widget.textColor,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      flex: 6,
+                      child: RoundedIconButton(
+                        color: widget.minus,
+                        icon: Icons.remove,
+                        onPress: () {
+                          setState(() {
+                            count = max(widget.min, count - widget.stepValue);
+                            widget.initValue = () => count;
+                            initValueController.text = count.toString();
+                          });
+                          widget.onChanged(count);
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            count = max(
+                              widget.min,
+                              count - widget.longPressedValue,
+                            );
+                            initValueController.text = count.toString();
+                            widget.initValue = () => count;
+                          });
+                          widget.onChanged(count);
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: Container(
+                        constraints: BoxConstraints(maxWidth: 100),
+                        child: TextField(
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[0-9.]"),
+                            ),
+                          ],
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textAlign: TextAlign.center,
+                          controller: initValueController,
+                          onChanged: (String text) {
+                            count = (String text) {
+                              try {
+                                return double.parse(text);
+                              } on Exception catch (_) {
+                                return count;
+                              }
+                            }.call(text);
+                            widget.initValue = () => count;
+                          },
+                          style: TextStyle(
+                            color: widget.numberColor,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: RoundedIconButton(
+                        color: widget.plus,
+                        icon: Icons.add,
+                        onPress: () {
+                          setState(() {
+                            count = min(widget.max, count + widget.stepValue);
+                            initValueController.text = count.toString();
+                            widget.initValue = () => count;
+                          });
+                          widget.onChanged(
+                            min(widget.max, count + widget.stepValue),
+                          );
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            count = min(
+                              widget.max,
+                              count + widget.longPressedValue,
+                            );
+                            initValueController.text = count.toString();
+                            widget.initValue = () => count;
+                          });
+                          widget.onChanged(
+                            min(widget.max, count + widget.longPressedValue),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Icon(widget.icon, color: widget.iconColor, size: 30),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      controller: labelController,
+                      onChanged: (String text) => widget.label = text,
+                      style: TextStyle(color: widget.textColor, fontSize: 20),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Row(
+                    children: <Widget>[
+                      SizedBox(
+                        width: constraints.maxWidth * 0.38,
+                        child: RoundedIconButton(
+                          color: widget.minus,
+                          icon: Icons.remove,
+                          onPress: () {
+                            setState(() {
+                              count = max(widget.min, count - widget.stepValue);
+                              widget.initValue = () => count;
+                              initValueController.text = count.toString();
+                            });
+                            widget.onChanged(count);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = max(
+                                widget.min,
+                                count - widget.longPressedValue,
+                              );
+                              initValueController.text = count.toString();
+                              widget.initValue = () => count;
+                            });
+                            widget.onChanged(count);
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.24,
+                        child: TextField(
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[0-9.]"),
+                            ),
+                          ],
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textAlign: TextAlign.center,
+                          controller: initValueController,
+                          onChanged: (String text) {
+                            count = (String text) {
+                              try {
+                                return double.parse(text);
+                              } on Exception catch (_) {
+                                return count;
+                              }
+                            }.call(text);
+                            widget.initValue = () => count;
+                          },
+                          style: TextStyle(
+                            color: widget.numberColor,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.38,
+                        child: RoundedIconButton(
+                          color: widget.plus,
+                          icon: Icons.add,
+                          onPress: () {
+                            setState(() {
+                              count = min(widget.max, count + widget.stepValue);
+                              initValueController.text = count.toString();
+                              widget.initValue = () => count;
+                            });
+                            widget.onChanged(
+                              min(widget.max, count + widget.stepValue),
+                            );
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = min(
+                                widget.max,
+                                count + widget.longPressedValue,
+                              );
+                              initValueController.text = count.toString();
+                              widget.initValue = () => count;
+                            });
+                            widget.onChanged(
+                              min(widget.max, count + widget.longPressedValue),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          const Spacer(flex: 2),
-        ],
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              flex: 6,
-              child: RoundedIconButton(
-                color: widget.minus,
-                icon: Icons.remove,
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - widget.stepValue);
-                    widget.initValue = () => count;
-                    initValueController.text = count.toString();
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {
-                  setState(() {
-                    count = max(widget.min, count - widget.longPressedValue);
-                    initValueController.text = count.toString();
-                    widget.initValue = () => count;
-                  });
-                  widget.onChanged(count);
-                },
-              ),
-            ),
-            Expanded(
-              flex: 4,
-              child: Container(
-                constraints: BoxConstraints(maxWidth: 100),
-                child: TextField(
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r"[0-9.]")),
-                  ],
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  textAlign: TextAlign.center,
-                  controller: initValueController,
-                  onChanged: (String text) {
-                    count = (String text) {
-                      try {
-                        return double.parse(text);
-                      } on Exception catch (_) {
-                        return count;
-                      }
-                    }.call(text);
-                    widget.initValue = () => count;
-                  },
-                  style: TextStyle(color: widget.numberColor, fontSize: 20),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedIconButton(
-                color: widget.plus,
-                icon: Icons.add,
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + widget.stepValue);
-                    initValueController.text = count.toString();
-                    widget.initValue = () => count;
-                  });
-                  widget.onChanged(min(widget.max, count + widget.stepValue));
-                },
-                onLongPress: () {
-                  setState(() {
-                    count = min(widget.max, count + widget.longPressedValue);
-                    initValueController.text = count.toString();
-                    widget.initValue = () => count;
-                  });
-                  widget.onChanged(
-                    min(widget.max, count + widget.longPressedValue),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
+            ],
+          );
+  }
 }
 
 class RoundedIconButton extends StatelessWidget {
@@ -292,14 +431,32 @@ class RoundedIconButton extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(final BuildContext context) => RawMaterialButton(
-    elevation: 6.0,
-    onPressed: onPress,
-    onLongPress: onLongPress,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    fillColor: color,
-    child: Icon(icon, color: Colors.white, size: 20),
-  );
+  Widget build(final BuildContext context) {
+    return MediaQuery.sizeOf(context).width <= 600
+        ? SizedBox(
+            height: 30,
+            child: RawMaterialButton(
+              elevation: 6.0,
+              onPressed: onPress,
+              onLongPress: onLongPress,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              fillColor: color,
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+          )
+        : RawMaterialButton(
+            elevation: 6.0,
+            onPressed: onPress,
+            onLongPress: onLongPress,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            fillColor: color,
+            child: Icon(icon, color: Colors.white, size: 20),
+          );
+  }
 }
 
 class ScoreCounterState extends State<ScoreCounter> {
@@ -313,88 +470,193 @@ class ScoreCounterState extends State<ScoreCounter> {
   }
 
   @override
-  Widget build(final BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Row(
-        children: <Widget>[
-          const Spacer(),
-          Expanded(child: Icon(widget.icon, color: widget.iconColor, size: 30)),
-          Expanded(
-            child: FittedBox(
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: widget.textColor),
-                ),
-              ),
-            ),
-          ),
-          const Spacer(flex: 2),
-        ],
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: LayoutBuilder(
-          builder: (context, constraints) => Row(
+  Widget build(final BuildContext context) {
+    print('is small phone: ${MediaQuery.sizeOf(context).width <= 600}');
+    print(
+      'height: ${MediaQuery.sizeOf(context).height} width: ${MediaQuery.sizeOf(context).width}',
+    );
+    return MediaQuery.sizeOf(context).width <= 600
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              SizedBox(
-                width: constraints.maxWidth * 0.38,
-                child: RoundedIconButton(
-                  color: widget.minus,
-                  icon: Icons.remove,
-                  onPress: () {
-                    setState(() {
-                      count = max(widget.min, count - widget.stepValue);
-                    });
-                    widget.onChanged(count);
-                  },
-                  onLongPress: () {
-                    setState(() {
-                      count = max(widget.min, count - widget.longPressedValue);
-                    });
-                    widget.onChanged(count);
-                  },
-                ),
+              Row(
+                children: <Widget>[
+                  const Spacer(),
+                  Expanded(
+                    child: Icon(widget.icon, color: widget.iconColor, size: 30),
+                  ),
+                  Expanded(
+                    child: FittedBox(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: widget.textColor),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                ],
               ),
-              SizedBox(
-                width: constraints.maxWidth * 0.24,
-                child: Text(
-                  count.toString(),
-                  style: const TextStyle(fontSize: 40),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow
-                      .ellipsis, // prevents overflow if number is long
-                ),
-              ),
-              SizedBox(
-                width: constraints.maxWidth * 0.38,
-                child: RoundedIconButton(
-                  color: widget.plus,
-                  icon: Icons.add,
-                  onPress: () {
-                    setState(() {
-                      count = min(widget.max, count + widget.stepValue);
-                    });
-                    widget.onChanged(count);
-                  },
-                  onLongPress: () {
-                    setState(() {
-                      count = min(widget.max, count + widget.longPressedValue);
-                    });
-                    widget.onChanged(count);
-                  },
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Row(
+                    children: <Widget>[
+                      SizedBox(
+                        width: constraints.maxWidth * 0.38,
+                        child: RoundedIconButton(
+                          color: widget.minus,
+                          icon: Icons.remove,
+                          onPress: () {
+                            setState(() {
+                              count = max(widget.min, count - widget.stepValue);
+                            });
+                            widget.onChanged(count);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = max(
+                                widget.min,
+                                count - widget.longPressedValue,
+                              );
+                            });
+                            widget.onChanged(count);
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.24,
+                        child: Text(
+                          count.toString(),
+                          style: const TextStyle(fontSize: 40),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow
+                              .ellipsis, // prevents overflow if number is long
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.38,
+                        child: RoundedIconButton(
+                          color: widget.plus,
+                          icon: Icons.add,
+                          onPress: () {
+                            setState(() {
+                              count = min(widget.max, count + widget.stepValue);
+                            });
+                            widget.onChanged(count);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = min(
+                                widget.max,
+                                count + widget.longPressedValue,
+                              );
+                            });
+                            widget.onChanged(count);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    ],
-  );
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Spacer(),
+                  Expanded(
+                    child: Icon(widget.icon, color: widget.iconColor, size: 30),
+                  ),
+                  Expanded(
+                    child: FittedBox(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: widget.textColor),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Row(
+                    children: <Widget>[
+                      SizedBox(
+                        width: constraints.maxWidth * 0.35,
+                        child: RoundedIconButton(
+                          color: widget.minus,
+                          icon: Icons.remove,
+                          onPress: () {
+                            setState(() {
+                              count = max(widget.min, count - widget.stepValue);
+                            });
+                            widget.onChanged(count);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = max(
+                                widget.min,
+                                count - widget.longPressedValue,
+                              );
+                            });
+                            widget.onChanged(count);
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.30,
+                        child: Text(
+                          count.toString(),
+                          style: const TextStyle(fontSize: 40),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow
+                              .ellipsis, // prevents overflow if number is long
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth * 0.35,
+                        child: RoundedIconButton(
+                          color: widget.plus,
+                          icon: Icons.add,
+                          onPress: () {
+                            setState(() {
+                              count = min(widget.max, count + widget.stepValue);
+                            });
+                            widget.onChanged(count);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              count = min(
+                                widget.max,
+                                count + widget.longPressedValue,
+                              );
+                            });
+                            widget.onChanged(count);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
 }
 
 class ScoreCounterSettings extends StatefulWidget {

@@ -86,7 +86,7 @@ class Question extends StatefulWidget {
         json['question'],
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
-        },  
+        },
         isChangable: isChangable,
         init: init(),
       ),
@@ -165,7 +165,7 @@ const List<(Types, String)> segments = <(Types, String)>[
   (Types.icon, 'Icon'),
   (Types.string, 'String'),
   (Types.selectable, 'Selection'),
-  (Types.multipleChoice, 'Multiple Choice'), 
+  (Types.multipleChoice, 'Multiple Choice'),
 ];
 
 class QuestionState extends State<Question> {
@@ -234,7 +234,7 @@ class QuestionState extends State<Question> {
                           },
                           scoreCounter: scoreCounter,
                         );
-                        case Types.multipleChoice:
+                      case Types.multipleChoice:
                         MultipleChoice multipleChoice = MultipleChoice(
                           label: "Label",
                           icon: Icons.check_box,
@@ -377,10 +377,18 @@ class QuestionState extends State<Question> {
                   )
                 : Container(),
 
-            Container(
-              constraints: BoxConstraints(maxHeight: 1000, maxWidth: 450),
-              child: widget.question,
-            ),
+            MediaQuery.sizeOf(context).width <= 600 &&
+                    widget.selected.first != Types.slider
+                ? Expanded(
+                    child: Container(
+                      constraints: BoxConstraints(maxHeight: 1000),
+                      child: widget.question,
+                    ),
+                  )
+                : Container(
+                    constraints: BoxConstraints(maxHeight: 1500, maxWidth: 600),
+                    child: widget.question,
+                  ),
 
             widget.isChangable
                 ? PopupMenuButton(

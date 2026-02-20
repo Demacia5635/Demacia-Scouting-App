@@ -10,13 +10,13 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
     Future<void> Function()? onLongSave,
     required this.onSave,
     this.onLoadSave,
-    this.isSmallScreens,
+    this.isInPreview,
   }) : onLongSave = onLongSave ?? _defaultOnLongSave;
 
   final void Function() onSave;
   final void Function() onLongSave;
   final VoidCallback? onLoadSave; // Add this callback
-  bool? isSmallScreens;
+  bool? isInPreview;
 
   static Future<void> _defaultOnLongSave() async {}
 
@@ -107,7 +107,7 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       elevation: 7,
       title: Text(
-        (isSmallScreens != null) && (isSmallScreens == true)
+        (isInPreview != null) && (isInPreview == true)
             ? "Demacia"
             : "Demacia Scouting Maker",
         style: const TextStyle(
