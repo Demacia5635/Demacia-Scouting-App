@@ -131,10 +131,6 @@ class HomePageState extends State<HomePage> {
         onSave: () async {
           if (widget.json != null) {
             save(widget.json!, MainApp.currentSave);
-            await DatabaseService().uploadData(
-              table: 'data',
-              data: {'form': widget.json!},
-            );
           }
         },
         onLongSave: () async {

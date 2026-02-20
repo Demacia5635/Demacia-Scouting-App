@@ -219,10 +219,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
         onSave:
             () async {
                   save(widget.toJson(), MainApp.currentSave);
-                  await DatabaseService().uploadData(
-                    table: 'data',
-                    data: {'form': widget.toJson()},
-                  );
                 }
                 as void Function(),
         onLongSave: () async =>
