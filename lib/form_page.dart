@@ -60,11 +60,6 @@ class FormPage extends StatefulWidget {
 
     for (var question in json['questions']) {
       final qIndex = question['index'] as int;
-
-      // init() returns Map<int, dynamic Function()?>
-      // init()[qIndex] is a   dynamic Function()?   — i.e. calling it gives the saved value.
-      // We must call that inner function and hand the RAW VALUE to the widget,
-      // not wrap it in yet another closure.
       final initMap = init();
       final innerFn = initMap?[qIndex];
 
@@ -74,8 +69,6 @@ class FormPage extends StatefulWidget {
             question,
             isChangable: isChangable,
             onChanged: onChanged,
-            // Pass a closure that returns the actual saved value (or null).
-            // The widget's fromJson will call init() and check the result type.
             init: innerFn != null ? () => innerFn() : () => null,
           ),
           '\u200B',
@@ -262,7 +255,6 @@ class FormPageState extends State<FormPage> {
     return x;
   }
 
-  /// Handles raw keyboard events.
   void handleKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape) {
@@ -314,105 +306,113 @@ class FormPageState extends State<FormPage> {
           onLongSave: () async =>
               longSave(await widget.onSave(), context, () => setState(() {})),
         ),
-        body: Stack(
+        body: Column(
           children: [
-            SingleChildScrollView(
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                child: Column(
-                  children: [
-                    SectionDivider(label: widget.name, lineColor: widget.color),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Column(
+                    children: [
+                      SectionDivider(
+                        label: widget.name,
+                        lineColor: widget.color,
+                      ),
 
-                    ...getQuestions(),
+                      ...getQuestions(),
 
-                    Row(
-                      spacing: 10,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        widget.isChangable
-                            ? ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    currentIndex++;
-                                    widget.questions.addAll({
-                                      currentIndex: (
-                                        Question(
-                                          key: Key((currentIndex).toString()),
-                                          index: currentIndex,
-                                          onDelete: (int index) {
-                                            setState(() {
-                                              widget.questions.remove(index);
-                                            });
-                                          },
-                                          onDuplicate: (index) {
-                                            setState(() {
-                                              widget.questions.addAll({
-                                                ++currentIndex: (
-                                                  Question.duplicate(
-                                                    widget.questions[index]!.$1,
-                                                    currentIndex,
-                                                  ),
-                                                  '',
-                                                ),
+                      Row(
+                        spacing: 10,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          widget.isChangable
+                              ? ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      currentIndex++;
+                                      widget.questions.addAll({
+                                        currentIndex: (
+                                          Question(
+                                            key: Key((currentIndex).toString()),
+                                            index: currentIndex,
+                                            onDelete: (int index) {
+                                              setState(() {
+                                                widget.questions.remove(index);
                                               });
-                                            });
-                                          },
-                                          isChangable: widget.isChangable,
-                                          onChanged: (index, value) {
-                                            widget.questions[index] = (
-                                              widget.questions[index]!.$1,
-                                              value,
-                                            );
-                                          },
+                                            },
+                                            onDuplicate: (index) {
+                                              setState(() {
+                                                widget.questions.addAll({
+                                                  ++currentIndex: (
+                                                    Question.duplicate(
+                                                      widget
+                                                          .questions[index]!
+                                                          .$1,
+                                                      currentIndex,
+                                                    ),
+                                                    '',
+                                                  ),
+                                                });
+                                              });
+                                            },
+                                            isChangable: widget.isChangable,
+                                            onChanged: (index, value) {
+                                              widget.questions[index] = (
+                                                widget.questions[index]!.$1,
+                                                value,
+                                              );
+                                            },
+                                          ),
+                                          '\u200B',
                                         ),
-                                        '\u200B',
-                                      ),
+                                      });
                                     });
-                                  });
-                                },
-                                child: Icon(Icons.add),
-                              )
-                            : Container(),
-                      ],
-                    ),
-                    SizedBox(height: 50),
-                    Row(
-                      spacing: 100,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: widget.previosPage != null
-                              ? () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          widget.previosPage!(),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Icon(Icons.navigate_before),
-                        ),
-                        ElevatedButton(
-                          onPressed: widget.nextPage != null
-                              ? () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => widget.nextPage!(),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Icon(Icons.navigate_next),
-                        ),
-                      ],
-                    ),
-                  ],
+                                  },
+                                  child: Icon(Icons.add),
+                                )
+                              : Container(),
+                        ],
+                      ),
+                      SizedBox(height: 50),
+                      Row(
+                        spacing: 100,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: widget.previosPage != null
+                                ? () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            widget.previosPage!(),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Icon(Icons.navigate_before),
+                          ),
+                          ElevatedButton(
+                            onPressed: widget.nextPage != null
+                                ? () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            widget.nextPage!(),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Icon(Icons.navigate_next),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
