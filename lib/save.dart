@@ -28,7 +28,7 @@ class Save {
     'title': title,
     'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
     'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
-    'form_id': formId, // Add this
+    'form_id': formId,
   };
 
   factory Save.fromJson(Map<String, dynamic> json) {

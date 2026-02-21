@@ -30,7 +30,7 @@ void main() async {
       // Create Save objects from the data
       MainApp.saves = savesWithForms.map((saveData) {
         final save = Save.fromJson(saveData);
-
+        print('save data in main: ${saveData.toString()}');
         // Store the form data in SharedPreferences for this save
         final formData = saveData['form'];
         if (formData != null) {

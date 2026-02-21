@@ -42,21 +42,21 @@ class HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       DatabaseService databaseService = DatabaseService();
 
-      final savesWithForms = await databaseService
-          .getThreeLatestSavesWithForms();
+      // final savesWithForms = await databaseService
+      //     .getThreeLatestSavesWithForms();
 
-      if (savesWithForms.isNotEmpty) {
-        MainApp.saves = savesWithForms.map((saveData) {
-          final save = Save.fromJson(saveData);
-          final formData = saveData['form'];
-          if (formData != null) {
-            prefs.setString('app_data_${save.index}', jsonEncode(formData));
-          }
-          return save;
-        }).toList();
+      // if (savesWithForms.isNotEmpty) {
+      //   MainApp.saves = savesWithForms.map((saveData) {
+      //     final save = Save.fromJson(saveData);
+      //     final formData = saveData['form'];
+      //     if (formData != null) {
+      //       prefs.setString('app_data_${save.index}', jsonEncode(formData));
+      //     }
+      //     return save;
+      //   }).toList();
 
-        print('Reloaded ${MainApp.saves.length} saves');
-      }
+      //   print('Reloaded ${MainApp.saves.length} saves');
+      // }
 
       Map<String, dynamic>? formData;
 
