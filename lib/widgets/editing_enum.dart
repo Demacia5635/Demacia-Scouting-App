@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/widgets/string_input.dart';
-// Removed 'dart:math' as max is no longer used for currentIndex calculation
 
 class EditableEnumSelector extends StatefulWidget {
   const EditableEnumSelector({
@@ -22,8 +21,6 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
   Map<int, Entry> entries = {};
   int currentIndex = 0;
 
-  final double value = 25;
-
   final TextEditingController _newItemController = TextEditingController();
 
   @override
@@ -34,7 +31,9 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
     for (int i = 0; i < widget.init.length; i++) {
       entries.addAll({i: widget.init[i]});
     }
-    currentIndex = widget.init.last.index;
+    if (widget.init.isNotEmpty) {
+      currentIndex = widget.init.last.index;
+    }
   }
 
   Future<void> editingDialog(
@@ -59,16 +58,13 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                   label: "enter new name",
                   initValue: () => item.title,
                   onChanged: (p0) {
-                    setState(() {
-                      item.title = p0;
-                    });
+                    setState(() => item.title = p0);
                     widget.onChanged(entries.values.toList());
                   },
                 ),
               ],
             ),
-            SizedBox(height: 14),
-
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -80,16 +76,13 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                   label: "enter new name",
                   initValue: () => item.sheetsTitle,
                   onChanged: (p0) {
-                    setState(() {
-                      item.sheetsTitle = p0;
-                    });
+                    setState(() => item.sheetsTitle = p0);
                     widget.onChanged(entries.values.toList());
                   },
                 ),
               ],
             ),
-            SizedBox(height: 14),
-
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -98,29 +91,24 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  constraints: BoxConstraints(maxWidth: 500),
+                  constraints: const BoxConstraints(maxWidth: 500),
                   child: IconPicker(
                     onChanged: (p0) {
-                      setState(() {
-                        item.icon = p0;
-                      });
+                      setState(() => item.icon = p0);
                       widget.onChanged(entries.values.toList());
                     },
                   ),
                 ),
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      item.icon = null;
-                    });
+                    setState(() => item.icon = null);
                     widget.onChanged(entries.values.toList());
                   },
-                  icon: Icon(Icons.delete),
+                  icon: const Icon(Icons.delete),
                 ),
               ],
             ),
-            SizedBox(height: 14),
-
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -131,9 +119,7 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 ColorInput(
                   initValue: () => item.color,
                   onChanged: (color) {
-                    setState(() {
-                      item.color = color;
-                    });
+                    setState(() => item.color = color);
                     widget.onChanged(entries.values.toList());
                   },
                 ),
@@ -151,7 +137,7 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 widget.onChanged(entries.values.toList());
                 Navigator.of(context).pop();
               },
-              child: SizedBox(
+              child: const SizedBox(
                 width: 100,
                 child: Row(
                   children: [
@@ -162,12 +148,10 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                 ),
               ),
             ),
-            SizedBox(width: 500),
+            const SizedBox(width: 500),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: SizedBox(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const SizedBox(
                 width: 100,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -189,154 +173,57 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
     final entriesList = entries.values.toList();
     entriesList.sort((p0, p1) => p0.index.compareTo(p1.index));
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: 300, maxWidth: 500),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 300, maxWidth: 500),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
+          // Entries list — drag-and-drop removed, just render chips directly.
+          SizedBox(
+            height: 220,
             child: SingleChildScrollView(
               child: Wrap(
                 spacing: 1.0,
                 runSpacing: 8.0,
-                children: () {
-                  final list = entriesList.map((item) {
-                    Widget itemWidget = Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.grey.shade800,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          item.icon != null
-                              ? Icon(item.icon, size: 14, color: item.color)
-                              : Container(),
-                          SizedBox(width: 4),
-                          Text(item.title, style: TextStyle(color: item.color)),
-                          IconButton(
-                            icon: Icon(Icons.edit, size: 16),
-                            onPressed: () => editingDialog(
-                              context,
-                              item,
-                              () => setState(() {
-                                if (entries.length > 1)
-                                  entries.remove(item.index);
-                              }),
-                            ),
+                children: entriesList.map((item) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.grey.shade800,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (item.icon != null)
+                          Icon(item.icon, size: 14, color: item.color),
+                        const SizedBox(width: 4),
+                        Text(item.title, style: TextStyle(color: item.color)),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 16),
+                          onPressed: () => editingDialog(
+                            context,
+                            item,
+                            () => setState(() {
+                              if (entries.length > 1) {
+                                entries.remove(item.index);
+                              }
+                            }),
                           ),
-                        ],
-                      ),
-                    );
-
-                    return [
-                      if (item.index == 0)
-                        DragTarget<Entry>(
-                          onAcceptWithDetails: (details) {
-                            setState(() {
-                              entriesList.forEach((p0) => p0.index++);
-                              details.data.index = 0;
-                              entriesList.sort(
-                                (p0, p1) => p0.index.compareTo(p1.index),
-                              );
-                              for (int i = 0; i < entriesList.length; i++) {
-                                entriesList[i].index = i;
-                              }
-                            });
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            if (candidateData.isNotEmpty ||
-                                rejectedData.isNotEmpty) {
-                              if (candidateData.first!.index !=
-                                  entriesList.first.index) {
-                                return Container(
-                                  margin: EdgeInsets.all(5),
-                                  width: value,
-                                  height: value,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.greenAccent.shade700,
-                                      width: 2,
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                            return Container(width: value, height: value);
-                          },
-                        )
-                      else
-                        Container(),
-
-                      Draggable<Entry>(
-                        data: item,
-                        feedback: IgnorePointer(
-                          child: Material(child: itemWidget),
                         ),
-                        childWhenDragging: Opacity(
-                          opacity: 0.3,
-                          child: itemWidget,
-                        ),
-                        child: itemWidget,
-                      ),
-
-                      DragTarget<Entry>(
-                        onAcceptWithDetails: (details) {
-                          setState(() {
-                            if (details.data.index == item.index) return;
-                            entriesList
-                                .where((p0) => p0.index > item.index)
-                                .forEach((p0) => p0.index++);
-                            details.data.index = item.index + 1;
-                            entriesList.sort(
-                              (p0, p1) => p0.index.compareTo(p1.index),
-                            );
-                            for (int i = 0; i < entriesList.length; i++) {
-                              entriesList[i].index = i;
-                            }
-                          });
-                        },
-                        builder: (context, candidateData, rejectedData) {
-                          if (candidateData.isNotEmpty ||
-                              rejectedData.isNotEmpty) {
-                            if (candidateData.first!.index != item.index &&
-                                candidateData.first!.index != item.index + 1) {
-                              return Container(
-                                margin: EdgeInsets.all(5),
-                                height: value,
-                                width: value,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.greenAccent.shade700,
-                                    width: 2,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                          return Container(width: value, height: value);
-                        },
-                      ),
-                    ];
-                  }).toList();
-
-                  List<Widget> widgetList = [];
-                  for (var i in list) {
-                    widgetList.addAll(i);
-                  }
-                  return widgetList;
-                }(),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),
+
           const SizedBox(height: 12),
+
           Row(
             children: [
               Expanded(
@@ -344,20 +231,11 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
                   controller: _newItemController,
                   decoration: const InputDecoration(labelText: 'New item'),
                   onSubmitted: (String text) {
-                    final value = text;
                     setState(() {
-                      if (value.isNotEmpty) {
-                        entries.addAll({
-                          ++currentIndex: Entry(
-                            index: currentIndex,
-                            title: value,
-                          ),
-                        });
-                      } else {
-                        entries.addAll({
-                          ++currentIndex: Entry(index: currentIndex),
-                        });
-                      }
+                      entries[++currentIndex] = Entry(
+                        index: currentIndex,
+                        title: text.isNotEmpty ? text : currentIndex.toString(),
+                      );
                       widget.onChanged(entries.values.toList());
                       _newItemController.clear();
                     });
@@ -367,20 +245,12 @@ class _EditableEnumSelectorState extends State<EditableEnumSelector> {
               IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  final value = _newItemController.text.trim();
+                  final text = _newItemController.text.trim();
                   setState(() {
-                    if (value.isNotEmpty) {
-                      entries.addAll({
-                        ++currentIndex: Entry(
-                          index: currentIndex,
-                          title: value,
-                        ),
-                      });
-                    } else {
-                      entries.addAll({
-                        ++currentIndex: Entry(index: currentIndex),
-                      });
-                    }
+                    entries[++currentIndex] = Entry(
+                      index: currentIndex,
+                      title: text.isNotEmpty ? text : currentIndex.toString(),
+                    );
                     widget.onChanged(entries.values.toList());
                     _newItemController.clear();
                   });
@@ -412,9 +282,6 @@ class Entry {
   Color color;
   IconData? icon;
 
-  /// Two Entry objects are equal when they share the same [index].
-  /// This makes Set<Entry> membership and SegmentedButton.selected work
-  /// correctly across JSON round-trips and init() restorations.
   @override
   bool operator ==(Object other) => other is Entry && other.index == index;
 
