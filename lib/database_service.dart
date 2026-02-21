@@ -167,6 +167,14 @@ class DatabaseService {
       }
 
       print('Fetched ${savesWithForms.length} saves with forms');
+
+      print('resp len: ${response.length}');
+      for (int i = 0; i < response.length; i++) {
+        final row = response[i];
+        final screens = row['form']['screens'] as List;
+        print('screens: ${screens.length} created at: ${row['created_at']}');
+      }
+      print('end');
       return savesWithForms;
     } catch (e) {
       print('Error fetching latest saves with forms: $e');

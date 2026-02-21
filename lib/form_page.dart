@@ -3,6 +3,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/question.dart';
+import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
 import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
@@ -305,9 +306,10 @@ class FormPageState extends State<FormPage> {
           onSave:
               () async {
                     save(widget.toJson(), MainApp.currentSave);
-                    await DatabaseService().uploadData(
-                      table: 'data',
-                      data: {'form': widget.toJson()},
+
+                    await DatabaseService().updateForm(
+                      formData: widget.toJson(),
+                      id: MainApp.currentSave.formId!,
                     );
                   }
                   as void Function(),
