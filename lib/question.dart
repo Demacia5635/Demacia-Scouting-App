@@ -169,265 +169,254 @@ const List<(Types, String)> segments = <(Types, String)>[
 ];
 
 class QuestionState extends State<Question> {
-  Widget settings = Container();
+  Widget settings = const SizedBox.shrink();
 
   @override
   void initState() {
     super.initState();
-
-    setState(() {
-      settings = widget.question.settings(
-        (p0) => setState(() => widget.question = p0),
-      );
-    });
+    // Do NOT call setState here — it causes infinite rebuild / stack overflow.
+    settings = widget.question.settings(
+      (p0) => setState(() => widget.question = p0),
+    );
   }
 
+  Widget get _menu => PopupMenuButton(
+    icon: const Icon(Icons.more_vert),
+    onSelected: (value) {
+      switch (value) {
+        case Options.delete:
+          setState(() => widget.onDelete(widget.index));
+        case Options.duplicate:
+          setState(() => widget.onDuplicate(widget.index));
+      }
+    },
+    itemBuilder: (context) => <PopupMenuEntry<Options>>[
+      const PopupMenuItem<Options>(
+        value: Options.delete,
+        child: ListTile(
+          leading: Icon(Icons.delete_outline),
+          title: Text("Delete"),
+        ),
+      ),
+      const PopupMenuItem<Options>(
+        value: Options.duplicate,
+        child: ListTile(
+          leading: Icon(Icons.control_point_duplicate),
+          title: Text("Duplicate"),
+        ),
+      ),
+    ],
+  );
+
+  // FIX: Removed maxWidth: 600 cap — SelectionSettings needs more room for its
+  // two-column layout. Each settings widget self-constrains as needed.
+  Widget get _settingsPanel => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Padding(padding: const EdgeInsets.all(16), child: settings),
+  );
+
+  // The question widget, always width-capped.
+  Widget get _questionPanel => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 600, maxHeight: 1500),
+    child: widget.question,
+  );
+
   @override
-  Widget build(BuildContext context) => Container(
-    margin: EdgeInsets.symmetric(vertical: 20),
-    padding: EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(6),
-      border: widget.isChangable
-          ? Border.all(color: Colors.pink, width: 2)
-          : null,
-    ),
-    constraints: BoxConstraints(minHeight: 50),
-    child: Column(
-      spacing: 15,
-      children: [
-        widget.isChangable
-            ? SegmentedButton<Types>(
-                selected: widget.selected,
-                onSelectionChanged: (Set<Types> types) {
-                  setState(() {
-                    widget.selected = types;
-                    switch (types.first) {
-                      case Types.boolean:
-                        BooleanSwitch booleanSwitch = BooleanSwitch(
-                          label: "Label",
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = booleanSwitch;
-                        settings = BooleanSwitchSettings(
-                          onChanged: (p0) {
-                            setState(() => widget.question = p0);
-                          },
-                          booleanSwitch: booleanSwitch,
-                        );
-                      case Types.int:
-                        ScoreCounter scoreCounter = ScoreCounter(
-                          label: "Label",
-                          icon: Icons.score,
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = scoreCounter;
-                        settings = ScoreCounterSettings(
-                          onChanged: (ScoreCounter p0) {
-                            setState(() => widget.question = p0);
-                          },
-                          scoreCounter: scoreCounter,
-                        );
-                      case Types.multipleChoice:
-                        MultipleChoice multipleChoice = MultipleChoice(
-                          label: "Label",
-                          icon: Icons.check_box,
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = multipleChoice;
-                        settings = MultipleChoiceSettings(
-                          onChanged: (MultipleChoice p0) {
-                            setState(() => widget.question = p0);
-                          },
-                          multipleChoice: multipleChoice,
-                        );
-                      case Types.slider:
-                        LevelSlider levelSlider = LevelSlider(
-                          label: "Label",
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = levelSlider;
-                        settings = LevelSliderSettings(
-                          onChanged: (LevelSlider p0) {
-                            setState(() => widget.question = p0);
-                          },
-                          levelSlider: levelSlider,
-                        );
-                      case Types.divider:
-                        SectionDivider sectionDivider = SectionDivider(
-                          label: "Label",
-                          isChangable: true,
-                        );
-                        widget.question = sectionDivider;
-                        settings = SectionDividerSettings(
-                          onChanged: (SectionDivider p0) {
-                            setState(() => widget.question = p0);
-                          },
-                          sectionDivider: sectionDivider,
-                        );
-                      case Types.color:
-                        ColorInput colorInput = ColorInput(
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = colorInput;
-                        settings = Container();
-                      case Types.icon:
-                        IconPicker iconPicker = IconPicker(
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = iconPicker;
-                        settings = Container();
-                      case Types.spacer:
-                        Space space = Space();
-                        widget.question = space;
-                        settings = SpaceSettings(
-                          onChanged: (p0) {
-                            setState(() {
-                              widget.question = p0;
-                            });
-                          },
-                          space: space,
-                        );
-                      case Types.string:
-                        StringInput stringInput = StringInput(
-                          label: "Label",
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = stringInput;
-                        settings = StringInputSettings(
-                          onChanged: (p0) {
-                            setState(() {
-                              widget.question = p0;
-                            });
-                          },
-                          stringInput: stringInput,
-                        );
-                      case Types.selectable:
-                        List<Entry> entries = [
-                          Entry(index: 0),
-                          Entry(index: 1),
-                          Entry(index: 2),
-                        ];
-                        Selection selection = Selection(
-                          label: "label",
-                          options: entries,
-                          isChangable: true,
-                          onChanged: (p0) => {
-                            widget.onChanged(widget.index, p0),
-                          },
-                        );
-                        widget.question = selection;
-                        settings = SelectionSettings(
-                          onChanged: (p0) {
-                            setState(() {
-                              widget.question = p0;
-                            });
-                          },
-                          selection: selection,
-                        );
-                    }
-                  });
-                },
-                segments: segments.map<ButtonSegment<Types>>((
-                  (Types, String) shirt,
-                ) {
-                  return ButtonSegment<Types>(
-                    value: shirt.$1,
-                    label: Text(shirt.$2),
-                  );
-                }).toList(),
-              )
-            : Container(),
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isNarrow = screenWidth <= 600;
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    // KEY FIX: The outermost widget has an explicit maxWidth equal to the
+    // screen width. This gives every child (including SectionDivider's
+    // Expanded lines and SelectionSettings' Row) a finite width to work
+    // against, eliminating all "unbounded width" and ParentDataWidget errors.
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: screenWidth, minHeight: 50),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          border: widget.isChangable
+              ? Border.all(color: Colors.pink, width: 2)
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            widget.isChangable
-                ? Container(
-                    margin: EdgeInsets.all(16),
-                    padding: EdgeInsets.all(10),
-                    constraints: BoxConstraints(
-                      // maxWidth: 700
-                    ),
-                    child: Form(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: settings,
-                      ),
-                    ),
-                  )
-                : Container(),
-
-            MediaQuery.sizeOf(context).width <= 600 &&
-                    widget.selected.first != Types.slider
-                ? Expanded(
-                    child: Container(
-                      constraints: BoxConstraints(maxHeight: 1000),
-                      child: widget.question,
-                    ),
-                  )
-                : Container(
-                    constraints: BoxConstraints(maxHeight: 1500, maxWidth: 600),
-                    child: widget.question,
-                  ),
-
-            widget.isChangable
-                ? PopupMenuButton(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      switch (value) {
-                        case Options.delete:
-                          setState(() {
-                            widget.onDelete(widget.index);
-                          });
-                        case Options.duplicate:
-                          setState(() {
-                            widget.onDuplicate(widget.index);
-                          });
+            // Type-selector bar — always scrollable so it never overflows.
+            if (widget.isChangable)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SegmentedButton<Types>(
+                  selected: widget.selected,
+                  onSelectionChanged: (Set<Types> types) {
+                    setState(() {
+                      widget.selected = types;
+                      switch (types.first) {
+                        case Types.boolean:
+                          final w = BooleanSwitch(
+                            label: "Label",
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = BooleanSwitchSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            booleanSwitch: w,
+                          );
+                        case Types.int:
+                          final w = ScoreCounter(
+                            label: "Label",
+                            icon: Icons.score,
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = ScoreCounterSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            scoreCounter: w,
+                          );
+                        case Types.multipleChoice:
+                          final w = MultipleChoice(
+                            label: "Label",
+                            icon: Icons.check_box,
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = MultipleChoiceSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            multipleChoice: w,
+                          );
+                        case Types.slider:
+                          final w = LevelSlider(
+                            label: "Label",
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = LevelSliderSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            levelSlider: w,
+                          );
+                        case Types.divider:
+                          final w = SectionDivider(
+                            label: "Label",
+                            isChangable: true,
+                          );
+                          widget.question = w;
+                          settings = SectionDividerSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            sectionDivider: w,
+                          );
+                        case Types.color:
+                          final w = ColorInput(
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = const SizedBox.shrink();
+                        case Types.icon:
+                          final w = IconPicker(
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = const SizedBox.shrink();
+                        case Types.spacer:
+                          final w = Space();
+                          widget.question = w;
+                          settings = SpaceSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            space: w,
+                          );
+                        case Types.string:
+                          final w = StringInput(
+                            label: "Label",
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = StringInputSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            stringInput: w,
+                          );
+                        case Types.selectable:
+                          final entries = [
+                            Entry(index: 0),
+                            Entry(index: 1),
+                            Entry(index: 2),
+                          ];
+                          final w = Selection(
+                            label: "label",
+                            options: entries,
+                            isChangable: true,
+                            onChanged: (p0) =>
+                                widget.onChanged(widget.index, p0),
+                          );
+                          widget.question = w;
+                          settings = SelectionSettings(
+                            onChanged: (p0) =>
+                                setState(() => widget.question = p0),
+                            selection: w,
+                          );
                       }
-                    },
-                    itemBuilder: (context) => <PopupMenuEntry<Options>>[
-                      const PopupMenuItem<Options>(
-                        value: Options.delete,
-                        child: ListTile(
-                          leading: Icon(Icons.delete_outline),
-                          title: Text("Delete"),
+                    });
+                  },
+                  segments: segments
+                      .map<ButtonSegment<Types>>(
+                        (s) => ButtonSegment<Types>(
+                          value: s.$1,
+                          label: Text(s.$2),
                         ),
-                      ),
-                      const PopupMenuItem<Options>(
-                        value: Options.duplicate,
-                        child: ListTile(
-                          leading: Icon(Icons.control_point_duplicate),
-                          title: Text("Duplicate"),
-                        ),
-                      ),
-                    ],
-                  )
-                : Container(),
+                      )
+                      .toList(),
+                ),
+              ),
+
+            const SizedBox(height: 15),
+
+            // Body: narrow = Column, wide = Row.
+            // mainAxisSize.min on the Row stops it from claiming infinite width.
+            if (isNarrow)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isChangable) _settingsPanel,
+                  _questionPanel,
+                  if (widget.isChangable) _menu,
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isChangable) _settingsPanel,
+                  _questionPanel,
+                  if (widget.isChangable) _menu,
+                ],
+              ),
           ],
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 enum Types {

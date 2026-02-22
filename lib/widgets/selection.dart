@@ -83,36 +83,21 @@ class Selection extends QuestionType {
       jsonInitValue.add(Entry.fromJson(entry));
     }
 
-    // Build an index → Entry lookup from the canonical options list so we can
-    // swap any stale Entry (reconstructed from JSON or from a saved Set) for
-    // the live instance that widget.options holds. This ensures SegmentedButton
-    // receives the exact same object instances it uses for its segments,
-    // so selection highlights render correctly.
     final optionsByIndex = {for (final e in options) e.index: e};
 
-    /// Converts a raw Set<Entry> (possibly stale objects from JSON round-trips)
-    /// into a set of live Entry instances taken from [options], matched by index.
     Set<Entry> normalise(Set<Entry> raw) =>
-        raw
-            .map((e) => optionsByIndex[e.index])
-            .whereType<Entry>()
-            .toSet();
+        raw.map((e) => optionsByIndex[e.index]).whereType<Entry>().toSet();
 
-    // Dart erases generic types at runtime so `init is Set<Entry> Function()?`
-    // always fails. Call init() and check the result type instead.
     Set<Entry> Function()? resolvedInit;
     try {
       if (init != null) {
         final candidate = init();
         if (candidate is Set<Entry>) {
-          // Wrap with normalise() so returned entries are always the live
-          // options instances, not detached JSON-reconstructed objects.
           resolvedInit = () => normalise(init() as Set<Entry>);
         }
       }
     } catch (_) {}
 
-    // Also normalise the JSON-derived fallback so it is consistent.
     final normalisedJsonInit = normalise(jsonInitValue);
 
     return Selection(
@@ -152,13 +137,10 @@ class SelectionChangableState extends State<Selection> {
       selected = {selected!.first};
     }
 
-    // Seed value for the Selector widget so it shows the restored answer.
     if (selected != null && selected!.isNotEmpty) {
       value = selected!.first;
     }
 
-    // Fire onChanged immediately so _previewData is populated even if the
-    // user never interacts with this question after re-entering the screen.
     if (selected != null && selected!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onChanged(selected);
@@ -169,13 +151,14 @@ class SelectionChangableState extends State<Selection> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    constraints: BoxConstraints(maxHeight: 150),
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 600, maxHeight: 150),
     child: Column(
       spacing: 4,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          constraints: BoxConstraints(maxWidth: 100),
+          constraints: const BoxConstraints(maxWidth: 100),
           child: TextField(
             textAlign: TextAlign.center,
             controller: labelController,
@@ -183,8 +166,7 @@ class SelectionChangableState extends State<Selection> {
             style: TextStyle(color: widget.textColor, fontSize: 20),
           ),
         ),
-
-        getSelectionOption(widget.selectionOption),
+        Flexible(child: getSelectionOption(widget.selectionOption)),
       ],
     ),
   );
@@ -209,34 +191,37 @@ class SelectionChangableState extends State<Selection> {
         );
 
       case SelectionOptions.segments:
-        return SegmentedButton<int>(
-          emptySelectionAllowed: true,
-          multiSelectionEnabled: widget.isMultiSelect,
-          selected: () {
-            if (selected!.length > 1 && !widget.isMultiSelect) {
-              selected = {selected!.first};
-            }
-            return selected!.map((entry) => entry.index).toSet();
-          }(),
-          onSelectionChanged: (Set<int> t) {
-            setState(() {
-              selected = widget.options
-                  .where((entry) => t.contains(entry.index))
-                  .toSet();
-              value = selected?.lastOrNull;
-              widget.initValue = selected != null ? () => selected! : null;
-              widget.onChanged(selected);
-            });
-          },
-          segments: widget.segments.map<ButtonSegment<int>>((
-            (Entry, String) p0,
-          ) {
-            return ButtonSegment<int>(
-              icon: Icon(p0.$1.icon, color: p0.$1.color),
-              value: p0.$1.index,
-              label: Text(p0.$1.title, style: TextStyle(color: p0.$1.color)),
-            );
-          }).toList(),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SegmentedButton<int>(
+            emptySelectionAllowed: true,
+            multiSelectionEnabled: widget.isMultiSelect,
+            selected: () {
+              if (selected!.length > 1 && !widget.isMultiSelect) {
+                selected = {selected!.first};
+              }
+              return selected!.map((entry) => entry.index).toSet();
+            }(),
+            onSelectionChanged: (Set<int> t) {
+              setState(() {
+                selected = widget.options
+                    .where((entry) => t.contains(entry.index))
+                    .toSet();
+                value = selected?.lastOrNull;
+                widget.initValue = selected != null ? () => selected! : null;
+                widget.onChanged(selected);
+              });
+            },
+            segments: widget.segments.map<ButtonSegment<int>>((
+              (Entry, String) p0,
+            ) {
+              return ButtonSegment<int>(
+                icon: Icon(p0.$1.icon, color: p0.$1.color),
+                value: p0.$1.index,
+                label: Text(p0.$1.title, style: TextStyle(color: p0.$1.color)),
+              );
+            }).toList(),
+          ),
         );
     }
   }
@@ -255,13 +240,10 @@ class SelectionState extends State<Selection> {
       selected = {selected!.first};
     }
 
-    // Seed value for the Selector widget so it shows the restored answer.
     if (selected != null && selected!.isNotEmpty) {
       value = selected!.first;
     }
 
-    // Fire onChanged immediately so _previewData is populated even if the
-    // user never interacts with this question after re-entering the screen.
     if (selected != null && selected!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onChanged(selected);
@@ -270,17 +252,17 @@ class SelectionState extends State<Selection> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    constraints: BoxConstraints(maxHeight: 100),
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 600, maxHeight: 100),
     child: Column(
       spacing: 4,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           widget.label,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-
-        getSelectionOption(widget.selectionOption),
+        Flexible(child: getSelectionOption(widget.selectionOption)),
       ],
     ),
   );
@@ -304,33 +286,36 @@ class SelectionState extends State<Selection> {
         );
 
       case SelectionOptions.segments:
-        return SegmentedButton<int>(
-          emptySelectionAllowed: true,
-          multiSelectionEnabled: widget.isMultiSelect,
-          selected: () {
-            if (selected!.length > 1 && !widget.isMultiSelect) {
-              selected = {selected!.first};
-            }
-            return selected!.map((entry) => entry.index).toSet();
-          }(),
-          onSelectionChanged: (Set<int> t) {
-            setState(() {
-              selected = widget.options
-                  .where((entry) => t.contains(entry.index))
-                  .toSet();
-              value = selected?.lastOrNull;
-              widget.onChanged(selected);
-            });
-          },
-          segments: widget.segments.map<ButtonSegment<int>>((
-            (Entry, String) p0,
-          ) {
-            return ButtonSegment<int>(
-              icon: Icon(p0.$1.icon, color: p0.$1.color),
-              value: p0.$1.index,
-              label: Text(p0.$1.title, style: TextStyle(color: p0.$1.color)),
-            );
-          }).toList(),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SegmentedButton<int>(
+            emptySelectionAllowed: true,
+            multiSelectionEnabled: widget.isMultiSelect,
+            selected: () {
+              if (selected!.length > 1 && !widget.isMultiSelect) {
+                selected = {selected!.first};
+              }
+              return selected!.map((entry) => entry.index).toSet();
+            }(),
+            onSelectionChanged: (Set<int> t) {
+              setState(() {
+                selected = widget.options
+                    .where((entry) => t.contains(entry.index))
+                    .toSet();
+                value = selected?.lastOrNull;
+                widget.onChanged(selected);
+              });
+            },
+            segments: widget.segments.map<ButtonSegment<int>>((
+              (Entry, String) p0,
+            ) {
+              return ButtonSegment<int>(
+                icon: Icon(p0.$1.icon, color: p0.$1.color),
+                value: p0.$1.index,
+                label: Text(p0.$1.title, style: TextStyle(color: p0.$1.color)),
+              );
+            }).toList(),
+          ),
         );
     }
   }
@@ -364,155 +349,146 @@ class SelectionSettingsState extends State<SelectionSettings> {
     isSegment = widget.selection.selectionOption == SelectionOptions.segments;
   }
 
+  // FIX: Helper to rebuild a Selection with updated fields, keeping all other
+  // fields intact. Avoids repeating the full constructor on every change.
+  Selection _rebuild({
+    String? label,
+    List<Entry>? options,
+    Color? textColor,
+    String? placeHolder,
+    SelectionOptions? selectionOption,
+    void Function(Set<Entry>?)? onChanged,
+    Set<Entry> Function()? initValue,
+    bool? isMultiSelect,
+  }) => Selection(
+    label: label ?? widget.selection.label,
+    options: options ?? widget.selection.options,
+    textColor: textColor ?? widget.selection.textColor,
+    placeHolder: placeHolder ?? widget.selection.placeHolder,
+    selectionOption: selectionOption ?? widget.selection.selectionOption,
+    onChanged: onChanged ?? widget.selection.onChanged,
+    initValue: initValue ?? widget.selection.initValue,
+    isMultiSelect: isMultiSelect ?? widget.selection.isMultiSelect,
+    isChangable: true,
+  );
+
   @override
-  Widget build(BuildContext context) => Row(
-    spacing: 10,
-    children: [
-      Column(
-        spacing: 4,
+  Widget build(BuildContext context) => SingleChildScrollView(
+    // FIX: Removed ConstrainedBox(maxWidth: 800) — let content size itself.
+    scrollDirection: Axis.horizontal,
+    child: IntrinsicHeight(
+      // FIX: IntrinsicHeight lets both columns size to each other's height
+      // without going unbounded, fixing the collapsed-column issue.
+      child: Row(
+        spacing: 10,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            spacing: 10,
-            children: [
-              Text(
-                "Select the Color of the Label: ",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              ColorInput(
-                initValue: () => widget.selection.textColor,
-                onChanged: (color) {
-                  widget.selection = Selection(
-                    label: widget.selection.label,
-                    options: widget.selection.options,
-                    textColor: color,
-                    placeHolder: widget.selection.placeHolder,
-                    selectionOption: widget.selection.selectionOption,
-                    onChanged: widget.selection.onChanged,
-                    initValue: widget.selection.initValue,
-                    isMultiSelect: widget.selection.isMultiSelect,
-                    isChangable: true,
-                  );
-                  widget.onChanged(widget.selection);
-                },
-              ),
-            ],
-          ),
-
-          !isSegment
-              ? StringInput(
-                  label: "Enter the placeHolder",
-                  initValue: () => widget.selection.placeHolder,
-                  onChanged: (p0) {
-                    widget.selection = Selection(
-                      label: widget.selection.label,
-                      options: widget.selection.options,
-                      textColor: widget.selection.textColor,
-                      placeHolder: p0,
-                      selectionOption: widget.selection.selectionOption,
-                      onChanged: widget.selection.onChanged,
-                      initValue: widget.selection.initValue,
-                      isMultiSelect: widget.selection.isMultiSelect,
-                      isChangable: true,
-                    );
-                    widget.onChanged(widget.selection);
-                  },
-                )
-              : Container(),
-
-          Row(
-            spacing: 4,
-            children: [
-              BooleanSwitch(
-                label: "select if you want multi choice",
-                initValue: () => widget.selection.isMultiSelect,
-                onChanged: (value) {
-                  setState(() {
-                    isMulti = value;
-                    if (isMulti) {
-                      isSegment = true;
-                    }
-                  });
-                  widget.selection = Selection(
-                    label: widget.selection.label,
-                    options: widget.selection.options,
-                    placeHolder: widget.selection.placeHolder,
-                    textColor: widget.selection.textColor,
-                    selectionOption: widget.selection.selectionOption,
-                    onChanged: widget.selection.onChanged,
-                    initValue: !value && widget.selection.initValue != null
-                        ? () => {widget.selection.initValue!().first}
-                        : widget.selection.initValue,
-                    isMultiSelect: value,
-                    isChangable: true,
-                  );
-                  widget.onChanged(widget.selection);
-                },
-              ),
-            ],
-          ),
-
-          !isMulti
-              ? Row(
-                  spacing: 4,
+          // --- Left column: settings controls ---
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 260),
+            child: Column(
+              spacing: 8,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Color picker row
+                Row(
+                  spacing: 10,
                   children: [
-                    Text("Selector"),
-                    BooleanSwitch(
-                      label: "select the type of selection",
-                      selectedColor: Colors.red,
-                      initValue: () =>
-                          widget.selection.selectionOption ==
-                          SelectionOptions.segments,
-                      onChanged: (value) {
-                        setState(() {
-                          isSegment = value;
-                        });
-                        widget.selection = Selection(
-                          label: widget.selection.label,
-                          options: widget.selection.options,
-                          placeHolder: widget.selection.placeHolder,
-                          textColor: widget.selection.textColor,
-                          selectionOption: value
-                              ? SelectionOptions.segments
-                              : SelectionOptions.selector,
-                          onChanged: widget.selection.onChanged,
-                          initValue: widget.selection.initValue,
-                          isMultiSelect: widget.selection.isMultiSelect,
-                          isChangable: true,
-                        );
+                    const Text(
+                      "Select the Color of the Label: ",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ColorInput(
+                      initValue: () => widget.selection.textColor,
+                      onChanged: (color) {
+                        widget.selection = _rebuild(textColor: color);
                         widget.onChanged(widget.selection);
                       },
                     ),
-                    Text("segments"),
                   ],
-                )
-              : Container(),
-        ],
-      ),
+                ),
 
-      SizedBox(width: 10),
+                // Placeholder input — only shown for selector mode
+                if (!isSegment)
+                  StringInput(
+                    label: "Enter the placeHolder",
+                    initValue: () => widget.selection.placeHolder,
+                    onChanged: (p0) {
+                      widget.selection = _rebuild(placeHolder: p0);
+                      widget.onChanged(widget.selection);
+                    },
+                  ),
 
-      Column(
-        spacing: 4,
-        children: [
-          EditableEnumSelector(
-            init: widget.selection.options,
-            onChanged: (value) {
-              widget.selection = Selection(
-                label: widget.selection.label,
-                options: value,
-                placeHolder: widget.selection.placeHolder,
-                textColor: widget.selection.textColor,
-                selectionOption: widget.selection.selectionOption,
-                onChanged: widget.selection.onChanged,
-                initValue: widget.selection.initValue,
-                isMultiSelect: widget.selection.isMultiSelect,
-                isChangable: true,
-              );
-              widget.onChanged(widget.selection);
-            },
+                // Multi-select toggle
+                BooleanSwitch(
+                  label: "select if you want multi choice",
+                  initValue: () => widget.selection.isMultiSelect,
+                  onChanged: (value) {
+                    setState(() {
+                      isMulti = value;
+                      if (isMulti) isSegment = true;
+                    });
+                    widget.selection = _rebuild(
+                      isMultiSelect: value,
+                      initValue: !value && widget.selection.initValue != null
+                          ? () => {widget.selection.initValue!().first}
+                          : widget.selection.initValue,
+                    );
+                    widget.onChanged(widget.selection);
+                  },
+                ),
+
+                // Selector / Segments toggle — hidden in multi-select mode
+                if (!isMulti)
+                  Row(
+                    spacing: 4,
+                    children: [
+                      const Text("Selector"),
+                      BooleanSwitch(
+                        label: "select the type of selection",
+                        selectedColor: Colors.red,
+                        initValue: () =>
+                            widget.selection.selectionOption ==
+                            SelectionOptions.segments,
+                        onChanged: (value) {
+                          setState(() => isSegment = value);
+                          widget.selection = _rebuild(
+                            selectionOption: value
+                                ? SelectionOptions.segments
+                                : SelectionOptions.selector,
+                          );
+                          widget.onChanged(widget.selection);
+                        },
+                      ),
+                      const Text("Segments"),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // --- Right column: option list editor ---
+          // FIX: Wrapped in IntrinsicWidth so EditableEnumSelector is never
+          // squeezed to zero width when the parent Row has mainAxisSize.min.
+          IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EditableEnumSelector(
+                  init: widget.selection.options,
+                  onChanged: (value) {
+                    widget.selection = _rebuild(options: value);
+                    widget.onChanged(widget.selection);
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
-    ],
+    ),
   );
 }
