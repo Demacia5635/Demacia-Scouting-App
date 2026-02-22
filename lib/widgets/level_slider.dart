@@ -86,7 +86,28 @@ class LevelSlider extends QuestionType {
         }
       }
     } catch (_) {}
-
+    int divisions = json['divisions'] as int;
+    if (divisions >= 12) {
+      divisions = 12;
+    } else if (divisions <= 1) {
+      divisions = 1;
+    }
+    double max = json['max'] as double;
+    double min = json['min'] as double;
+    if (min <= 1) {
+      min = 1.0;
+    } else if (min >= 12) {
+      min = 1.0;
+    }
+    if (max >= 12) {
+      max = 12.0;
+    } else if (max <= 1) {
+      max = 12.0;
+    }
+    if (min > max) {
+      min = 1.0;
+      max = 12.0;
+    }
     return LevelSlider(
       key: key,
       label: json['label'] as String,
@@ -108,9 +129,9 @@ class LevelSlider extends QuestionType {
         green: json['thumbColor']['g'] as double,
         blue: json['thumbColor']['b'] as double,
       ),
-      min: json['min'] as double,
-      max: json['max'] as double,
-      divisions: json['divisions'] as int,
+      min: min,
+      max: max,
+      divisions: divisions,
       initValue: resolvedInit ?? (() => json['initValue'] as double),
       onChanged: onChanged,
       isChangable: isChangable,
@@ -356,41 +377,46 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: minController,
-              onChanged: (String text) {
+              onSubmitted: (String text) {
                 widget.levelSlider = LevelSlider(
                   label: widget.levelSlider.label,
                   textColor: widget.levelSlider.textColor,
                   sliderColor: widget.levelSlider.sliderColor,
                   thumbColor: widget.levelSlider.thumbColor,
                   min: () {
-                    try {
-                      if (double.parse(text) > widget.levelSlider.max) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.min;
+                    if (text == "") {
+                      minController.text = '0';
+                      text = '0';
                     }
+                    if (double.parse(text) >= widget.levelSlider.max) {
+                      text = widget.levelSlider.min.toString();
+                      minController.text = text;
+                    }
+                    print('text: ${double.parse(text)}');
+                    return double.parse(text);
                   }.call(),
                   max: () {
-                    try {
-                      if (double.parse(maxController.text) <
-                          () {
-                            try {
-                              if (double.parse(text) > widget.levelSlider.max) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.levelSlider.min;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(maxController.text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.max;
-                    }
+                    // try {
+                    //   if (double.parse(maxController.text) <
+                    //       () {
+                    //         try {
+                    //           if (double.parse(text) > widget.levelSlider.max) {
+                    //             print('bigger than max So WORK!!!');
+                    //             throw Exception();
+                    //           }
+                    //           print('is bigger? max: ${double.parse(text)}');
+                    //           return double.parse(text);
+                    //         } on Exception catch (_) {
+                    //           return widget.levelSlider.max;
+                    //         }
+                    //       }.call()) {
+                    //     throw Exception();
+                    //   }
+                    //   return double.parse(maxController.text);
+                    // } on Exception catch (_) {
+                    //   return widget.levelSlider.max;
+                    // }
+                    return widget.levelSlider.max;
                   }.call(),
                   divisions: widget.levelSlider.divisions,
                   initValue: () => clampDouble(
@@ -445,41 +471,52 @@ class LevelSliderSettingsState extends State<LevelSliderSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: maxController,
-              onChanged: (String text) {
+              onSubmitted: (String text) {
                 widget.levelSlider = LevelSlider(
                   label: widget.levelSlider.label,
                   textColor: widget.levelSlider.textColor,
                   sliderColor: widget.levelSlider.sliderColor,
                   thumbColor: widget.levelSlider.thumbColor,
                   min: () {
-                    try {
-                      if (double.parse(minController.text) >
-                          () {
-                            try {
-                              if (double.parse(text) < widget.levelSlider.min) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.levelSlider.max;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(minController.text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.min;
-                    }
+                    // try {
+                    //   if (double.parse(minController.text) >
+                    //       () {
+                    //         try {
+                    //           if (double.parse(text) < widget.levelSlider.min) {
+                    //             throw Exception();
+                    //           }
+                    //           return double.parse(text);
+                    //         } on Exception catch (_) {
+                    //           return widget.levelSlider.max;
+                    //         }
+                    //       }.call()) {
+                    //     throw Exception();
+                    //   }
+                    //   return double.parse(minController.text);
+                    // } on Exception catch (_) {
+                    //   return widget.levelSlider.min;
+                    // }
+                    return widget.levelSlider.min;
                   }.call(),
                   max: () {
-                    try {
-                      if (double.parse(text) < widget.levelSlider.min) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.levelSlider.max;
+                    // try {
+                    //   if (double.parse(text) < widget.levelSlider.min) {
+                    //     throw Exception();
+                    //   }
+                    //   return double.parse(text);
+                    // } on Exception catch (_) {
+                    //   return widget.levelSlider.max;
+                    // }
+
+                    double inputMax = double.tryParse(maxController.text) ?? 12;
+                    inputMax = inputMax.clamp(widget.levelSlider.min + 1, 12.0);
+                    if (inputMax.toString() != maxController.text) {
+                      maxController.text = inputMax.toString();
                     }
+                    print(
+                      'input: ${inputMax.toString()}, text: ${maxController.text}',
+                    );
+                    return inputMax;
                   }.call(),
                   divisions: widget.levelSlider.divisions,
                   initValue: () => clampDouble(
