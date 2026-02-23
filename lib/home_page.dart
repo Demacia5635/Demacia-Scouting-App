@@ -8,7 +8,6 @@ import 'package:scouting_qr_maker/qr_code.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/screen_manager_page.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
-import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   bool _isLoading = true;
+  late int currentFormId;
 
   // Lifted up so answers survive navigating back to home.
   // Outer key = screen index, inner key = question's JSON index.
@@ -42,21 +42,43 @@ class HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       DatabaseService databaseService = DatabaseService();
 
-      // final savesWithForms = await databaseService
-      //     .getThreeLatestSavesWithForms();
+      final savesWithForms = await databaseService
+          .getThreeLatestSavesWithForms();
+      print('in TESTING');
+      //Inc index for all form (if there are 10 forms across all saves it will be form 0, 1, 2...10)
+      if (savesWithForms.isNotEmpty) {
+        // int formIndex = 0;
+        // for (var saveData in savesWithForms) {
+        //   final form = saveData['form'];
+        //   if (form != null && form is Map && form['screens'] != null) {
+        //     final screens = form['screens'] as List;
+        //     for (var screen in screens) {
+        //       screen['name'] = 'Form Num $formIndex';
+        //       print(
+        //         'screen name: ${screen['name']}, real name: ${saveData['form']['screens'][0]['name']}',
+        //       );
+        //       screen['index'] = formIndex;
+        //       formIndex++;
+        //     }
+        //   }
+        // }
+        MainApp.saves = savesWithForms.map((saveData) {
+          final save = Save.fromJson(saveData);
+          final formData = saveData['form'];
+          if (formData != null) {
+            prefs.setString('app_data_${save.index}', jsonEncode(formData));
+          }
+          return save;
+        }).toList();
 
-      // if (savesWithForms.isNotEmpty) {
-      //   MainApp.saves = savesWithForms.map((saveData) {
-      //     final save = Save.fromJson(saveData);
-      //     final formData = saveData['form'];
-      //     if (formData != null) {
-      //       prefs.setString('app_data_${save.index}', jsonEncode(formData));
-      //     }
-      //     return save;
-      //   }).toList();
-
-      //   print('Reloaded ${MainApp.saves.length} saves');
-      // }
+        print('Reloaded ${MainApp.saves.length} saves');
+        print(
+          'current save: ${MainApp.currentSave.formId}, idx: ${MainApp.currentSave.index}',
+        );
+        currentFormId = savesWithForms[MainApp.currentSave.index]['id'];
+      } else {
+        print('no way its empty?: ${savesWithForms.isEmpty}');
+      }
 
       Map<String, dynamic>? formData;
 
@@ -130,12 +152,19 @@ class HomePageState extends State<HomePage> {
       appBar: DemaciaAppBar(
         onSave: () async {
           if (widget.json != null) {
-            save(widget.json!, MainApp.currentSave);
+            print('home page!');
+            save(widget.json!, MainApp.currentSave, currentFormId);
           }
         },
         onLongSave: () async {
           if (widget.json != null) {
-            longSave(widget.json!, context, () => setState(() {}));
+            print('home page!');
+            longSave(
+              widget.json!,
+              context,
+              () => setState(() {}),
+              currentFormId,
+            );
           }
         },
         onLoadSave: () {
@@ -179,11 +208,20 @@ class HomePageState extends State<HomePage> {
                                         if (widget.json!.containsKey(
                                           'screens',
                                         )) {
+                                          print(
+                                            'current id in homePage: $currentFormId',
+                                          );
                                           return ScreenManagerPage.fromJson(
                                             widget.json!,
+                                            currentFormId,
                                           );
                                         }
-                                        return ScreenManagerPage();
+                                        print(
+                                          'current form id home page: $currentFormId',
+                                        );
+                                        return ScreenManagerPage(
+                                          currentFormId: currentFormId,
+                                        );
                                       },
                                     ),
                                   ).then((_) {
@@ -311,6 +349,7 @@ class HomePageState extends State<HomePage> {
                                                       value;
                                                 });
                                               },
+                                              id: currentFormId,
                                               init: () => func(i),
                                             ),
                                           );

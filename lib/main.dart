@@ -5,52 +5,16 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
-import 'package:scouting_qr_maker/form_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final prefs = await SharedPreferences.getInstance();
-
   await Supabase.initialize(
     url: 'https://jnqbzzttvrjeudzbonix.supabase.co',
     anonKey: 'sb_publishable_W3CWjvB06rZEkSHJqccKEw_x5toioxg',
   );
-
-  DatabaseService databaseService = DatabaseService();
-
-  // Load the three latest saves with their forms
-  try {
-    final savesWithForms = await databaseService.getThreeLatestSavesWithForms();
-
-    if (savesWithForms.isNotEmpty) {
-      // Create Save objects from the data
-      MainApp.saves = savesWithForms.map((saveData) {
-        final save = Save.fromJson(saveData);
-        print('save data in main: ${saveData.toString()}');
-        // Store the form data in SharedPreferences for this save
-        final formData = saveData['form'];
-        if (formData != null) {
-          prefs.setString('app_data_${save.index}', jsonEncode(formData));
-        }
-
-        return save;
-      }).toList();
-
-      print('Loaded ${MainApp.saves.length} saves with their forms');
-
-      // Set current save to the first one (which is the latest)
-      MainApp.currentSave = MainApp.saves[0];
-      await prefs.setInt('current_save', 0);
-      print('Set current save to the latest form (Save #1)');
-    }
-  } catch (e) {
-    print('Error loading saves: $e');
-    // Keep default saves on error
-  }
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   MainApp.version = packageInfo.version;
@@ -58,21 +22,23 @@ void main() async {
   runApp(MainApp());
 }
 
-void save(Map<String, dynamic> json, Save file) async {
+void save(Map<String, dynamic> json, Save file, int? id) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('app_data_${file.index}', jsonEncode(json));
 
-  // Upload to Supabase and get the form ID
   final databaseService = DatabaseService();
-  final result = await databaseService.uploadData(
-    table: 'data',
-    data: {'form': json},
-  );
+  var result;
+  if (await databaseService.dbHasData()) {
+    result = await databaseService.updateForm(id: id!, formData: json);
+  } else {
+    result = await databaseService.uploadData(table: 'data', data: json);
+  }
+  print('id: $id');
 
   // Link the form to this save
   if (result != null && result['id'] != null) {
     file.formId = result['id'] as int;
-    await file.saveSaves(); // Save the updated save with form_id
+    await file.saveSaves();
   }
 
   MainApp.currentSave = file;
@@ -82,6 +48,7 @@ void longSave(
   Map<String, dynamic> json,
   BuildContext context,
   void Function() reload,
+  int? id,
 ) {
   showDialog(
     context: context,
@@ -103,7 +70,7 @@ void longSave(
                 .map(
                   (p0) => p0.build(context, () {
                     reload();
-                    save(json, p0);
+                    save(json, p0, id);
                   }),
                 )
                 .toList(),

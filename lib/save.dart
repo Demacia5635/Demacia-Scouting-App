@@ -21,7 +21,7 @@ class Save {
   String title;
   Color color;
   IconData icon;
-  int? formId; // Add this to link to a specific form in the database
+  int? formId;
 
   Map<String, dynamic> toJson() => {
     'index': index,
@@ -181,7 +181,7 @@ class Save {
       final databaseService = DatabaseService();
 
       print('JSON: \n${toJson()}');
-      await databaseService.updateSave(index: index, saveData: toJson());
+      //await databaseService.updateSave(index: index, saveData: toJson());
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('current_save', index);

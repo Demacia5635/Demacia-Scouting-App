@@ -7,10 +7,14 @@ import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/form_page.dart';
 
 class ScreenManagerPage extends StatefulWidget {
-  ScreenManagerPage({super.key, Map<int, FormPage>? screens})
-    : screens = screens ?? {};
+  ScreenManagerPage({
+    super.key,
+    Map<int, FormPage>? screens,
+    int? currentFormId,
+  }) : screens = screens ?? {};
 
   Map<int, FormPage> screens;
+  int? currentFormId;
 
   @override
   State<ScreenManagerPage> createState() => _ScreenManagerPageState();
@@ -19,9 +23,13 @@ class ScreenManagerPage extends StatefulWidget {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
   };
 
-  factory ScreenManagerPage.fromJson(Map<String, dynamic> json) {
+  factory ScreenManagerPage.fromJson(Map<String, dynamic> json, int id) {
     Map<int, FormPage> screens = {};
-    ScreenManagerPage widget = ScreenManagerPage(screens: screens);
+    print('id in fromJson: ${id}');
+    ScreenManagerPage widget = ScreenManagerPage(
+      screens: screens,
+      currentFormId: id,
+    );
 
     print('screen is null?: ${json['screens'] == null}');
     if (json['screens'] == null) {
@@ -33,6 +41,7 @@ class ScreenManagerPage extends StatefulWidget {
         screenJson,
         isChangable: true,
         getJson: () async => widget.toJson(),
+        id: id,
         init: () {},
       );
     }
@@ -55,6 +64,7 @@ class ScreenManagerPage extends StatefulWidget {
     }
 
     widget.screens = screens;
+    widget.currentFormId = id;
     return widget;
   }
 }
@@ -218,11 +228,24 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
       appBar: DemaciaAppBar(
         onSave:
             () async {
-                  save(widget.toJson(), MainApp.currentSave);
+                  print('screen page short save');
+                  print('id under screen page: ${widget.currentFormId}');
+                  save(
+                    widget.toJson(),
+                    MainApp.currentSave,
+                    widget.currentFormId,
+                  );
                 }
                 as void Function(),
-        onLongSave: () async =>
-            longSave(widget.toJson(), context, () => setState(() {})),
+        onLongSave: () async {
+          print('screen page');
+          return longSave(
+            widget.toJson(),
+            context,
+            () => setState(() {}),
+            widget.currentFormId,
+          );
+        },
       ),
       body: GridView.builder(
         padding: EdgeInsets.all(screenWidth < 600 ? 8.0 : 16.0),

@@ -101,7 +101,7 @@ class MultipleChoice extends QuestionType {
     } catch (_) {
       resolvedInit = () => json['initValue'] as double;
     }
-
+    print('alpha: ${json['plus']['a']}');
     return MultipleChoice(
       key: key,
       label: json['label'] as String,

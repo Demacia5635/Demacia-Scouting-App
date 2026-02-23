@@ -112,12 +112,10 @@ class DatabaseService {
           .limit(3);
 
       List<Map<String, dynamic>> savesWithForms = [];
-      print('resp in last three: ${response.toString()}');
+      print('resp in last three: ${response[0].toString()}');
       for (int i = 0; i < response.length; i++) {
-        print(response[i]['form']['form'] == {});
         if (response[i]['form'] is Map<String, dynamic> &&
             response[i]['form'].isEmpty) {
-          print(response[i]['form'] == {});
           SharedPreferences sharedPreferences =
               await SharedPreferences.getInstance();
           savesWithForms.add({
@@ -160,6 +158,7 @@ class DatabaseService {
             },
             'form': response[i]['form'],
             'created_at': response[i]['created_at'],
+            'id': response[i]['id'],
           });
         }
         print('form i: $i, ${response[i]['form']}');
@@ -171,10 +170,15 @@ class DatabaseService {
       print('resp len: ${response.length}');
       for (int i = 0; i < response.length; i++) {
         final row = response[i];
-        final screens = row['form']['screens'] as List;
+        print('b4');
+        print('row: ${row['form']} is null? : ${row['form'] == null}');
+        final screens = row['form'] == null
+            ? []
+            : row['form']['screens'] as List;
         print('screens: ${screens.length} created at: ${row['created_at']}');
       }
       print('end');
+      print('final data: $savesWithForms');
       return savesWithForms;
     } catch (e) {
       print('Error fetching latest saves with forms: $e');
@@ -364,7 +368,14 @@ class DatabaseService {
     }
   }
 
+  Future<bool> dbHasData() async {
+    final data = await _supabase.from('data').select('form').limit(1);
+    print('data: $data');
+    return data.isNotEmpty;
+  }
+
   /// Update an existing save
+  @Deprecated('Useless')
   Future<Map<String, dynamic>?> updateSave({
     required int index,
     required Map<String, dynamic> saveData,

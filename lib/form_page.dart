@@ -20,6 +20,7 @@ class FormPage extends StatefulWidget {
     Future<Map<String, dynamic>> Function()? onSave,
     this.nextPage,
     this.previosPage,
+    this.currentFormId,
   }) : questions = questions ?? {},
        onSave = onSave ?? (() => Future.value({}));
 
@@ -27,6 +28,7 @@ class FormPage extends StatefulWidget {
   String name;
   IconData icon;
   Color color;
+  int? currentFormId;
 
   Map<int, (Question, dynamic)> questions;
   bool isChangable;
@@ -54,6 +56,7 @@ class FormPage extends StatefulWidget {
     FormPage Function()? nextPage,
     FormPage Function()? previosPage,
     void Function(int, dynamic)? onChanged,
+    int? id,
     required Map<int, dynamic Function()?>? Function() init,
   }) {
     Map<int, (Question, dynamic)> questions = {};
@@ -95,6 +98,7 @@ class FormPage extends StatefulWidget {
       onSave: getJson,
       previosPage: previosPage,
       nextPage: nextPage,
+      currentFormId: id,
     );
   }
 
@@ -209,15 +213,27 @@ class FormPageState extends State<FormPage> {
         appBar: DemaciaAppBar(
           onSave:
               () async {
-                    save(widget.toJson(), MainApp.currentSave);
+                    print('form page!');
+                    save(
+                      widget.toJson(),
+                      MainApp.currentSave,
+                      widget.currentFormId,
+                    );
                     await DatabaseService().updateForm(
                       formData: widget.toJson(),
                       id: MainApp.currentSave.formId!,
                     );
                   }
                   as void Function(),
-          onLongSave: () async =>
-              longSave(await widget.onSave(), context, () => setState(() {})),
+          onLongSave: () async {
+            print('form page!');
+            return longSave(
+              await widget.onSave(),
+              context,
+              () => setState(() {}),
+              widget.currentFormId,
+            );
+          },
         ),
         body: Stack(
           children: [
