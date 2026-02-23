@@ -40,47 +40,12 @@ class FormPage extends StatefulWidget {
   State<StatefulWidget> createState() => FormPageState();
 
   Map<String, dynamic> toJson() => {
-    'questions': questions.values.map((p0) {
-      final q = p0.$1.toJson();
-      q['answer'] = _encodeAnswer(p0.$2);
-      return q;
-    }).toList(),
-    'index': index,
-    'name': name,
-    'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
-    'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
+  'questions': questions.values.map((p0) => p0.$1.toJson()).toList(),
+  'index': index,
+  'name': name,
+  'icon': {'codePoint': icon.codePoint, 'fontFamily': icon.fontFamily},
+  'color': {'a': color.a, 'r': color.r, 'g': color.g, 'b': color.b},
   };
-
-  static dynamic _encodeAnswer(dynamic v) {
-    if (v == null) return null;
-    if (v is Color) return {'__t': 'color', 'a': v.a, 'r': v.r, 'g': v.g, 'b': v.b};
-    if (v is IconData) return {'__t': 'icon', 'codePoint': v.codePoint, 'fontFamily': v.fontFamily};
-    // Selection: אצלך זה לפעמים Set<Entry>
-    if (v is Set<Entry>) {
-      return {'__t': 'entrySet', 'items': v.map((e) => e.toJson()).toList()};
-    }
-    return v; // int/bool/double/String/List/Map וכו'
-  }
-
-  static dynamic _decodeAnswer(dynamic v) {
-    if (v == null) return null;
-    if (v is Map && v['__t'] == 'color') {
-      return Color.fromARGB(
-        ((v['a'] as num).clamp(0, 1) * 255).round(),
-        ((v['r'] as num).clamp(0, 1) * 255).round(),
-        ((v['g'] as num).clamp(0, 1) * 255).round(),
-        ((v['b'] as num).clamp(0, 1) * 255).round(),
-      );
-    }
-    if (v is Map && v['__t'] == 'icon') {
-      return IconData(v['codePoint'], fontFamily: v['fontFamily']);
-    }
-    if (v is Map && v['__t'] == 'entrySet') {
-      final items = (v['items'] as List).cast<Map<String, dynamic>>();
-      return items.map((e) => Entry.fromJson(e)).toSet();
-    }
-    return v;
-  }
 
   factory FormPage.fromJson(
     Map<String, dynamic> json, {
@@ -91,32 +56,27 @@ class FormPage extends StatefulWidget {
     void Function(int, dynamic)? onChanged,
     required Map<int, dynamic Function()?>? Function() init,
   }) {
-    Map<int, (Question, dynamic)> questions = {};
+    final questions = <int, (Question, dynamic)>{};
+    final initMap = init(); // מפה של qIndex -> פונקציה שמחזירה ערך התחלתי (אם יש)
 
-    for (var qJson in json['questions']) {
-  final qIndex = qJson['index'] as int;
-  final rawAnswer = qJson['answer'];
-  final decoded = _decodeAnswer(rawAnswer);
+    for (final qJson in (json['questions'] as List? ?? const [])) {
+      final qIndex = qJson['index'] as int;
 
-  // זה ה-callback שיעדכן גם את "העולם החיצוני" (אם יש)
-  // וגם את המפה המקומית כדי ש-toJson תמיד יכיל answer מעודכן
-  void handleChanged(int idx, dynamic value) {
-    onChanged?.call(idx, value);
-    final existing = questions[idx];
-    if (existing != null) {
-      questions[idx] = (existing.$1, value);
+      void handleChanged(int idx, dynamic value) {
+        onChanged?.call(idx, value);
+        final existing = questions[idx];
+        if (existing != null) questions[idx] = (existing.$1, value);
+      }
+
+      final questionWidget = Question.fromJson(
+        qJson as Map<String, dynamic>,
+        isChangable: isChangable,
+        onChanged: handleChanged,
+        init: () => initMap?[qIndex]?.call(), // ✅ אין decodeAnswer
+      );
+
+      questions[qIndex] = (questionWidget, initMap?[qIndex]?.call());
     }
-  }
-
-  final questionWidget = Question.fromJson(
-    qJson,
-    isChangable: isChangable,
-    onChanged: handleChanged,
-    init: () => decoded,
-  );
-
-  questions[qIndex] = (questionWidget, decoded);
-}
 
     return FormPage(
       questions: questions,
@@ -141,30 +101,29 @@ class FormPage extends StatefulWidget {
 
   void load(
     Map<String, dynamic> json,
-    void Function(int, dynamic)? onChanged, Map<int, Function()?>? Function() param2,
+    void Function(int, dynamic)? onChanged,
+    Map<int, dynamic Function()?>? Function() init,
   ) {
-    final Map<int, (Question, dynamic)> newQuestions = {};
+    final newQuestions = <int, (Question, dynamic)>{};
+    final initMap = init();
 
     void handleChanged(int idx, dynamic value) {
       onChanged?.call(idx, value);
       final existing = newQuestions[idx];
-      if (existing != null) {
-        newQuestions[idx] = (existing.$1, value);
-      }
+      if (existing != null) newQuestions[idx] = (existing.$1, value);
     }
 
-    for (var qJson in json['questions']) {
-      final qIndex = qJson['index'] as int;
-      final decoded = _decodeAnswer(qJson['answer']);
+    for (final qJson in (json['questions'] as List? ?? const [])) {
+      final qIndex = (qJson as Map<String, dynamic>)['index'] as int;
 
       final questionWidget = Question.fromJson(
         qJson,
         isChangable: false,
         onChanged: handleChanged,
-        init: () => decoded,
+        init: () => initMap?[qIndex]?.call(), // ✅ אין decodeAnswer
       );
 
-      newQuestions[qIndex] = (questionWidget, decoded);
+      newQuestions[qIndex] = (questionWidget, initMap?[qIndex]?.call());
     }
 
     questions = newQuestions;
@@ -197,8 +156,8 @@ class FormPageState extends State<FormPage> {
 
   @override
   void dispose() {
-    super.dispose();
     focusNode.dispose();
+    super.dispose();
   }
 
   List<Widget> getQuestions() {
@@ -345,10 +304,12 @@ class FormPageState extends State<FormPage> {
       resizeToAvoidBottomInset: false,
       appBar: DemaciaAppBar(
         onSave: () async {
-          save(widget.toJson(), MainApp.currentSave);
+          final fullJson = await widget.onSave(); // זה מגיע מה-ScreenManagerPage
+          await uploadSaveToDb(fullJson, MainApp.currentSave);
         },
         onLongSave: () async =>
-            longSave(await widget.onSave(), context, () => setState(() {})),
+            longSave(await widget.onSave(), context, () => setState(() {})
+        ),
       ),
       body: Stack(
         children: [

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
+import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/form_page.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScreenManagerPage extends StatefulWidget {
   ScreenManagerPage({super.key, Map<int, FormPage>? screens})
@@ -61,14 +65,31 @@ class ScreenManagerPage extends StatefulWidget {
 
 class _ScreenManagerPageState extends State<ScreenManagerPage> {
   int currentIndex = -1;
+  Timer? _autosaveTimer;
+  String _lastSnapshot = '';
 
   @override
   void initState() {
     super.initState();
 
-    final keyList = widget.screens.keys.toList();
-    keyList.sort((p0, p1) => p0.compareTo(p1));
+    final keyList = widget.screens.keys.toList()..sort();
     currentIndex = keyList.isNotEmpty ? keyList.last : -1;
+
+    _lastSnapshot = jsonEncode(widget.toJson());
+
+    _autosaveTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      final snapshot = jsonEncode(widget.toJson());
+      if (snapshot == _lastSnapshot) return;
+
+      _lastSnapshot = snapshot;
+      await saveDraftLocal(jsonDecode(snapshot), MainApp.currentSave);
+    });
+  }
+
+  @override
+  void dispose() {
+    _autosaveTimer?.cancel();
+    super.dispose();
   }
 
   void _addNewFormPage() {
@@ -82,6 +103,54 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     setState(() {
       widget.screens.addAll({currentIndex: newScreen});
     });
+  }
+
+  Future<void> _switchToSave(Save target) async {
+    // 1) לשמור draft של מה שיש עכשיו (כדי לא לאבד עבודה)
+    await saveDraftLocal(widget.toJson(), MainApp.currentSave);
+
+    // 2) להחליף currentSave
+    final prefs = await SharedPreferences.getInstance();
+    MainApp.currentSave = target;
+    await prefs.setInt('current_save', target.index);
+
+    // 3) לטעון JSON של ה-save החדש
+    final json = await loadJsonForSave(target);
+
+    // 4) לבנות מחדש מסך Editing Room מה-json החדש
+    final rebuilt = ScreenManagerPage.fromJson(json);
+
+    setState(() {
+      widget.screens = rebuilt.screens;
+      final keys = widget.screens.keys.toList()..sort();
+      currentIndex = keys.isNotEmpty ? keys.last : -1;
+      _lastSnapshot = jsonEncode(widget.toJson()); // למנוע autosave מיידי כפול
+    });
+  }
+
+  Future<void> _pickSaveDialog() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Load Save'),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: MainApp.saves.map((s) {
+              return ListTile(
+                leading: Icon(s.icon, color: s.color),
+                title: Text(s.title),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _switchToSave(s);
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
   }
 
   void _navigateToScreen(FormPage screen) {
@@ -216,11 +285,14 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
     return Scaffold(
       appBar: DemaciaAppBar(
-        onSave: () async {
-          save(widget.toJson(), MainApp.currentSave);
+        onSave: () async => await uploadSaveToDb(widget.toJson(), MainApp.currentSave),
+        onSaveSelected: (save) async {
+          await _switchToSave(save); // הפונקציה שלך שמבצעת autosave+טעינה+rebuild
         },
-        onLongSave: () async =>
-            longSave(widget.toJson(), context, () => setState(() {})),
+        onAfterDelete: () async {
+          // אופציונלי: אחרי מחיקה לטעון מחדש את current
+          await _switchToSave(MainApp.currentSave);
+        },
       ),
       body: GridView.builder(
         padding: EdgeInsets.all(screenWidth < 600 ? 8.0 : 16.0),

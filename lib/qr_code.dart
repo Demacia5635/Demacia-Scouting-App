@@ -95,7 +95,7 @@ class QrCodeState extends State<QrCode> {
     }
 
     await DatabaseService().uploadData(
-      table: 'answer',
+      table: 'answor',
       data: {'answer': dataMap},
     );
   }

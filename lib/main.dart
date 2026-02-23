@@ -53,55 +53,75 @@ void main() async {
   runApp(MainApp());
 }
 
-void save(Map<String, dynamic> json, Save file) async {
+Future<Map<String, dynamic>> loadJsonForSave(Save save) async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'app_data_${save.index}';
+
+  if (prefs.containsKey(key)) {
+    final s = prefs.getString(key);
+    if (s != null && s.isNotEmpty) return jsonDecode(s);
+  }
+
+  final db = DatabaseService();
+  Map<String, dynamic>? fromDb =
+      (save.formId != null) ? await db.getFormById(save.formId!) : null;
+
+  fromDb ??= await db.getLatestFormData();
+  return fromDb ?? {'screens': []};
+}
+
+Future<void> saveDraftLocal(Map<String, dynamic> json, Save file) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('app_data_${file.index}', jsonEncode(json));
+  await prefs.setInt('current_save', file.index);
+  MainApp.currentSave = file;
+}
 
-  // Upload to Supabase and get the form ID
+Future<void> uploadSaveToDb(Map<String, dynamic> json, Save file) async {
   final databaseService = DatabaseService();
+
+  // מעלה form ל-table data
   final result = await databaseService.uploadData(
     table: 'data',
     data: {'form': json},
   );
 
-  // Link the form to this save
-  if (result != null && result['id'] != null) {
-    file.formId = result['id'] as int;
-    await file.saveSaves(); // Save the updated save with form_id
+  // מקשר את ה-form שנוצר ל-save (form_id)
+  final id = result?['id'];
+  if (id != null) {
+    file.formId = id as int;
+    await file.saveSaves(); // יעדכן בטבלת saves את form_id
   }
-
-  MainApp.currentSave = file;
 }
 
 void longSave(
   Map<String, dynamic> json,
   BuildContext context,
-  void Function() reload,
-) {
+  void Function() reload, {
+  bool uploadOnly = false,
+}) {
   showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        title: Text(
-          'Choose where to save',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Choose save'),
         content: SizedBox(
           height: 200,
           width: 500,
           child: Column(
-            spacing: 10,
-            children: MainApp.saves
-                .map(
-                  (p0) => p0.build(context, () {
-                    reload();
-                    save(json, p0);
-                  }),
-                )
-                .toList(),
+            children: MainApp.saves.map((s) {
+              return s.build(context, () async {
+                reload();
+
+                // תמיד לשמור מקומית (כדי שהדראפט יישמר ב-slot שבחרת)
+                await saveDraftLocal(json, s);
+
+                // ורק אם רוצים Upload:
+                if (uploadOnly) {
+                  await uploadSaveToDb(json, s);
+                }
+              });
+            }).toList(),
           ),
         ),
       );

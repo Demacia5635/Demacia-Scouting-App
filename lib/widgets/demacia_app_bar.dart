@@ -1,47 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/database_service.dart';
-import 'package:scouting_qr_maker/home_page.dart';
 import 'package:scouting_qr_maker/main.dart';
+import 'package:scouting_qr_maker/save.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DemaciaAppBar({
     super.key,
-    Future<void> Function()? onLongSave,
     required this.onSave,
-    this.onLoadSave,
-    this.onSaveAsNew, // << add
-  }) : onLongSave = onLongSave ?? _defaultOnLongSave;
+    this.onLongSave,
+    this.onLoadSave,          // callback "ישן": אחרי שה-AppBar מחליף currentSave
+    this.onSaveSelected,      // callback "חדש": אתה שולט בהחלפת ה-save
+    this.onAfterDelete,       // אופציונלי: רענון אחרי מחיקה
+  });
 
-  final VoidCallback? onSaveAsNew;
-  final void Function() onSave;
-  final void Function() onLongSave;
-  final VoidCallback? onLoadSave; // Add this callback
+  final VoidCallback onSave;
+  final VoidCallback? onLongSave;
 
-  static Future<void> _defaultOnLongSave() async {}
+  /// אם לא מעבירים onSaveSelected, ה-AppBar יחליף currentSave בעצמו ואז יקרא לזה
+  final VoidCallback? onLoadSave;
+
+  /// אם מעבירים את זה, ה-AppBar *לא* יחליף currentSave בעצמו.
+  /// הוא רק יתן לך את ה-save שנבחר ואתה תעשה switch בצורה חכמה (autosave וכו').
+  final Future<void> Function(Save save)? onSaveSelected;
+
+  final Future<void> Function()? onAfterDelete;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    bool isSmallScreen = MediaQuery.of(context).size.width < 600;
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return AppBar(
       actions: [
-        // Save-As-New Button
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: ElevatedButton(
-            onPressed: onSaveAsNew,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-              minimumSize: const Size(0, 0),
-            ),
-            child: Icon(Icons.save_as, size: isSmallScreen ? 20 : 24),
-          ),
-        ),
-        // Current Save Title Button
+        // Current Save Title (אפשר גם להפוך אותו ל"Load" אם תרצה)
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
           child: ElevatedButton(
@@ -61,7 +55,7 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
 
-        // Delete Button
+        // Delete
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
           child: ElevatedButton(
@@ -74,11 +68,11 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
 
-        // Load Button
+        // Load
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
           child: ElevatedButton(
-            onPressed: () => _loadSaves(context, onLoadSave),
+            onPressed: () => _loadSaves(context),
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
               minimumSize: const Size(0, 0),
@@ -87,7 +81,7 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
 
-        // Save Button
+        // Save
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
           child: ElevatedButton(
@@ -101,7 +95,7 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
 
-        // Version Text
+        // Version
         Container(
           margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
           child: Center(
@@ -129,14 +123,12 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  static void _onDelete(BuildContext context) {
+  Future<void> _onDelete(BuildContext context) async {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
           title: const Text(
             'Choose which save to delete',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -146,55 +138,42 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
             width: 500,
             child: SingleChildScrollView(
               child: Column(
-                spacing: 10,
-                children: MainApp.saves
-                    .map(
-                      (p0) => ElevatedButton(
-                        onPressed: () async {
-                          final prefs = await SharedPreferences.getInstance();
+                children: MainApp.saves.map((s) {
+                  return ElevatedButton(
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
 
-                          // Delete from Supabase
-                          final databaseService = DatabaseService();
-                          await databaseService.deleteSave(p0.index);
+                      // Delete from Supabase
+                      await DatabaseService().deleteSave(s.index);
 
-                          // Delete from SharedPreferences
-                          await prefs.remove('app_data_${p0.index}');
+                      // Delete local draft
+                      await prefs.remove('app_data_${s.index}');
 
-                          // Remove from list
-                          MainApp.saves.remove(p0);
+                      // Remove from list
+                      MainApp.saves.remove(s);
 
-                          // Set current save to first available
-                          if (MainApp.saves.isNotEmpty) {
-                            MainApp.currentSave = MainApp.saves[0];
-                            await prefs.setInt(
-                              'current_save',
-                              MainApp.currentSave.index,
-                            );
-                          }
+                      // אם מחקת את הנוכחי - תבחר ראשון פנוי
+                      if (MainApp.saves.isNotEmpty) {
+                        if (MainApp.currentSave.index == s.index) {
+                          MainApp.currentSave = MainApp.saves.first;
+                          await prefs.setInt('current_save', MainApp.currentSave.index);
+                        }
+                      }
 
-                          if (dialogContext.mounted) {
-                            Navigator.of(dialogContext).pop();
-                          }
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
 
-                          // Refresh the home page
-                          if (context.mounted) {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(),
-                              ),
-                              (Route<dynamic> route) => false,
-                            );
-                          }
-                        },
-                        child: ListTile(
-                          title: Text(p0.title),
-                          leading: Icon(p0.icon, color: p0.color),
-                          trailing: Icon(Icons.delete),
-                        ),
-                      ),
-                    )
-                    .toList(),
+                      // רענון חיצוני (Home / Editing)
+                      await onAfterDelete?.call();
+                    },
+                    child: ListTile(
+                      title: Text(s.title),
+                      leading: Icon(s.icon, color: s.color),
+                      trailing: const Icon(Icons.delete),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),
@@ -203,14 +182,12 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  static void _loadSaves(BuildContext context, VoidCallback? onLoadSave) {
+  void _loadSaves(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
           title: const Text(
             'Choose which save to load',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -220,39 +197,35 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
             width: 500,
             child: SingleChildScrollView(
               child: Column(
-                spacing: 10,
-                children: MainApp.saves
-                    .map(
-                      (p0) => ElevatedButton(
-                        onPressed: () async {
-                          // Set the current save
-                          MainApp.currentSave = p0;
+                children: MainApp.saves.map((s) {
+                  return ElevatedButton(
+                    onPressed: () async {
+                      // 1) אם אתה רוצה שליטה מלאה (Editing Room) — קוראים ל-onSaveSelected
+                      if (onSaveSelected != null) {
+                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                        await onSaveSelected!(s);
+                        return;
+                      }
 
-                          // Save to SharedPreferences
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setInt('current_save', p0.index);
+                      // 2) ברירת מחדל (כמו שהיה אצלך)
+                      MainApp.currentSave = s;
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setInt('current_save', s.index);
 
-                          // Close the dialog
-                          if (dialogContext.mounted) {
-                            Navigator.of(dialogContext).pop();
-                          }
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
 
-                          // Trigger reload callback
-                          if (onLoadSave != null) {
-                            onLoadSave();
-                          }
-                        },
-                        child: ListTile(
-                          title: Text(p0.title),
-                          leading: Icon(p0.icon, color: p0.color),
-                          trailing: IconButton(
-                            onPressed: () => p0.editSave(dialogContext),
-                            icon: Icon(Icons.edit),
-                          ),
-                        ),
+                      onLoadSave?.call();
+                    },
+                    child: ListTile(
+                      title: Text(s.title),
+                      leading: Icon(s.icon, color: s.color),
+                      trailing: IconButton(
+                        onPressed: () => s.editSave(dialogContext),
+                        icon: const Icon(Icons.edit),
                       ),
-                    )
-                    .toList(),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),

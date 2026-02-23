@@ -29,66 +29,6 @@ class HomePageState extends State<HomePage> {
     loadData();
   }
 
-  String _extractGameNumber(Map<String, dynamic> json) {
-    if (!json.containsKey('screens')) return '';
-
-    for (final screen in (json['screens'] as List)) {
-      final questions = (screen['questions'] as List);
-      for (final q in questions) {
-        final qMap = q as Map<String, dynamic>;
-        final question = qMap['question'] as Map<String, dynamic>;
-
-        final label = (question['label'] ?? '').toString().trim();
-        if (label == 'מספר משחק' || label.toLowerCase() == 'game number') {
-          // קודם נעדיף answer החדש שלנו
-          final ans = qMap['answer'];
-          if (ans is String && ans.trim().isNotEmpty) return ans.trim();
-          if (ans is num) return ans.toString();
-
-          // fallback: אם עוד לא הספקת להוסיף answer
-          final initValue = question['initValue'];
-          if (initValue is String && initValue.trim().isNotEmpty) return initValue.trim();
-          if (initValue is num) return initValue.toString();
-        }
-      }
-    }
-    return '';
-  }
-
-  Future<void> _saveAsNew() async {
-    if (widget.json == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final db = DatabaseService();
-
-    final gameNum = _extractGameNumber(widget.json!);
-    final nextIndex = MainApp.saves.isEmpty
-        ? 0
-        : (MainApp.saves.map((s) => s.index).reduce((a, b) => a > b ? a : b) + 1);
-
-    final title = (gameNum.isNotEmpty)
-        ? 'save משחק $gameNum'
-        : 'save${nextIndex + 1}';
-
-    // 1) להעלות את הפורם ל-data ולקבל id
-    final formRow = await db.uploadData(table: 'data', data: {'form': widget.json!});
-    final formId = formRow?['id'] as int?;
-
-    // 2) ליצור save חדש בטבלת saves
-    final newSave = Save(index: nextIndex, title: title, formId: formId);
-    await db.uploadSave(newSave.toJson());
-
-    // 3) לשמור ב-shared prefs את הפורם תחת app_data_{index}
-    await prefs.setString('app_data_${newSave.index}', jsonEncode(widget.json!));
-
-    // 4) לעדכן state
-    setState(() {
-      MainApp.saves.add(newSave);
-      MainApp.currentSave = newSave;
-    });
-    await prefs.setInt('current_save', newSave.index);
-  }
-
   void loadData() async {
     setState(() {
       _isLoading = true;
@@ -167,7 +107,7 @@ class HomePageState extends State<HomePage> {
       appBar: DemaciaAppBar(
         onSave: () async {
           if (widget.json != null) {
-            save(widget.json!, MainApp.currentSave);
+            uploadSaveToDb(widget.json!, MainApp.currentSave);
           }
         },
         onLongSave: () async {
@@ -179,7 +119,6 @@ class HomePageState extends State<HomePage> {
           // Reload data when a save is loaded
           loadData();
         },
-        onSaveAsNew: () async { await _saveAsNew(); },
       ),
       body: _isLoading
           ? Center(
