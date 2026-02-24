@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 
+void main(){
+  runApp(qr_code());
+}
 
 class qr_code extends StatefulWidget {
   @override
