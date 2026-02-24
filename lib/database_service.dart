@@ -29,6 +29,86 @@ class DatabaseService {
     }
   }
 
+  Stream<List<Map<String, dynamic>>> getThreeLatestSavesStream() {
+    return _supabase
+        .from('data')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .limit(3)
+        .map((List<Map<String, dynamic>> response) {
+          List<Map<String, dynamic>> savesWithForms = [];
+
+          for (int i = 0; i < response.length; i++) {
+            final row = response[i];
+
+            var formData = row['form'];
+            if (formData is Map<String, dynamic> &&
+                formData['screens'] != null) {
+              formData = Map<String, dynamic>.from(formData);
+              var screens = List.from(formData['screens']);
+              for (int s = 0; s < screens.length; s++) {
+                screens[s]['name'] = 'Form Num $s';
+                screens[s]['index'] = s;
+              }
+              formData['screens'] = screens;
+            }
+
+            savesWithForms.add({
+              'index': i,
+              'id': row['id'],
+              'title': 'Save #${i + 1}',
+              'color': _getColorForIndex(i),
+              'icon': _getIconForIndex(i),
+              'form': formData ?? {},
+              'created_at': row['created_at'],
+            });
+          }
+          return savesWithForms;
+        });
+  }
+
+  Map<String, double> _getColorForIndex(int i) {
+    switch (i) {
+      case 0:
+        return {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0};
+      case 1:
+        return {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0};
+      case 2:
+        return {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0};
+      default:
+        return {'a': 1.0, 'r': 0.5, 'g': 0.5, 'b': 0.5};
+    }
+  }
+
+  Map<String, dynamic> _getIconForIndex(int i) {
+    IconData iconData;
+    switch (i) {
+      case 0:
+        iconData = Icons.filter_1;
+        break;
+      case 1:
+        iconData = Icons.filter_2;
+        break;
+      case 2:
+        iconData = Icons.filter_3;
+        break;
+      default:
+        iconData = Icons.help_outline;
+    }
+
+    return {'codePoint': iconData.codePoint, 'fontFamily': 'MaterialIcons'};
+  }
+
+  Future<int> getLatestFormId() async {
+    final id = await _supabase.from('data').select('id').limit(1);
+    if (id.isEmpty) {
+      return 1;
+    }
+    //return id;
+    print('ID!!!: $id, id!: ${id[0]['id']}');
+    return id[0]['id'];
+  }
+
   /// Get the latest valid form data from Supabase
   Future<Map<String, dynamic>?> getLatestFormData() async {
     try {
@@ -97,6 +177,18 @@ class DatabaseService {
       print('Error fetching all forms: $e');
       return [];
     }
+  }
+
+  Future<void> testData() async {
+    final res = await _supabase
+        .from('data')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: true)
+        .listen((List<Map<String, dynamic>> data) {
+          print('Stream Data: $data');
+        });
+
+    print('Stream Data: $res');
   }
 
   /// Get the three most recent s with their associated form data
