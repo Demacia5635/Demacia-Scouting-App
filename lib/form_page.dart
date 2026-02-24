@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/database_service.dart';
+import 'package:scouting_qr_maker/helper.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/question.dart';
 import 'package:scouting_qr_maker/save.dart';
@@ -66,7 +67,9 @@ class FormPage extends StatefulWidget {
 
       final initMap = init();
       final innerFn = initMap?[qIndex];
-
+      // question = question['selected'] as int == 3
+      // ? Helper.prefs!.getString('')
+      // : question;
       questions.addAll({
         qIndex: (
           Question.fromJson(

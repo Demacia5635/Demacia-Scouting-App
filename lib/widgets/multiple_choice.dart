@@ -20,7 +20,7 @@ class MultipleChoice extends QuestionType {
     this.iconColor = Colors.blue,
     this.stepValue = 1,
     this.longPressedValue = 2,
-    this.max = 4000,
+    this.max = 1000,
     this.min = 0,
     double Function()? initValue,
     this.isChangable = false,
@@ -35,8 +35,8 @@ class MultipleChoice extends QuestionType {
   final Color numberColor;
   final Color iconColor;
   final double stepValue;
-  final double max;
-  final double min;
+  double max;
+  double min;
   final double longPressedValue;
   double Function() initValue;
   void Function(double) onChanged;
@@ -780,85 +780,37 @@ class MultipleChoiceSettingsState extends State<MultipleChoiceSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: minController,
-              onChanged: (String text) {
-                widget.multipleChoice = MultipleChoice(
-                  label: widget.multipleChoice.label,
-                  icon: widget.multipleChoice.icon,
-                  onChanged: widget.multipleChoice.onChanged,
-                  plus: widget.multipleChoice.plus,
-                  minus: widget.multipleChoice.minus,
-                  textColor: widget.multipleChoice.textColor,
-                  numberColor: widget.multipleChoice.numberColor,
-                  iconColor: widget.multipleChoice.iconColor,
-                  stepValue: widget.multipleChoice.stepValue,
-                  longPressedValue: widget.multipleChoice.longPressedValue,
-                  min: () {
-                    try {
-                      if (double.parse(text) > widget.multipleChoice.max) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.multipleChoice.min;
-                    }
-                  }.call(),
-                  max: () {
-                    try {
-                      if (double.parse(maxController.text) <
-                          () {
-                            try {
-                              if (double.parse(text) >
-                                  widget.multipleChoice.max) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.multipleChoice.min;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(maxController.text);
-                    } on Exception catch (_) {
-                      return widget.multipleChoice.max;
-                    }
-                  }.call(),
-                  initValue: () => clampDouble(
-                    widget.multipleChoice.initValue(),
-                    () {
-                      try {
-                        if (double.parse(text) > widget.multipleChoice.max) {
-                          throw Exception();
-                        }
-                        return double.parse(text);
-                      } on Exception catch (_) {
-                        return widget.multipleChoice.min;
-                      }
-                    }.call(),
-                    () {
-                      try {
-                        if (double.parse(maxController.text) <
-                            () {
-                              try {
-                                if (double.parse(text) >
-                                    widget.multipleChoice.max) {
-                                  throw Exception();
-                                }
-                                return double.parse(text);
-                              } on Exception catch (_) {
-                                return widget.multipleChoice.min;
-                              }
-                            }.call()) {
-                          throw Exception();
-                        }
-                        return double.parse(maxController.text);
-                      } on Exception catch (_) {
-                        return widget.multipleChoice.max;
-                      }
-                    }.call(),
-                  ),
-                  isChangable: true,
-                );
+              onSubmitted: (String text) {
+                double? newMin = double.tryParse(text);
+
+                if (newMin == null || newMin >= widget.multipleChoice.max) {
+                  print(
+                    'minumum null: ${newMin == null}, minimum >= maximum: ${newMin != null ? newMin >= widget.multipleChoice.max : 'N/A'}',
+                  );
+                  minController.text = widget.multipleChoice.min.toString();
+                  return;
+                }
+                final double currentVal = widget.multipleChoice.initValue();
+
+                setState(() {
+                  widget.multipleChoice = MultipleChoice(
+                    label: widget.multipleChoice.label,
+                    icon: widget.multipleChoice.icon,
+                    onChanged: widget.multipleChoice.onChanged,
+                    plus: widget.multipleChoice.plus,
+                    minus: widget.multipleChoice.minus,
+                    textColor: widget.multipleChoice.textColor,
+                    numberColor: widget.multipleChoice.numberColor,
+                    iconColor: widget.multipleChoice.iconColor,
+                    stepValue: widget.multipleChoice.stepValue,
+                    longPressedValue: widget.multipleChoice.longPressedValue,
+                    max: widget.multipleChoice.max,
+                    min: newMin,
+                    initValue: () => currentVal < newMin ? newMin : currentVal,
+                    isChangable: true,
+                  );
+                });
+
                 widget.onChanged(widget.multipleChoice);
               },
               style: TextStyle(fontSize: 20),
@@ -874,85 +826,36 @@ class MultipleChoiceSettingsState extends State<MultipleChoiceSettings> {
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               controller: maxController,
-              onChanged: (String text) {
-                widget.multipleChoice = MultipleChoice(
-                  label: widget.multipleChoice.label,
-                  icon: widget.multipleChoice.icon,
-                  onChanged: widget.multipleChoice.onChanged,
-                  plus: widget.multipleChoice.plus,
-                  minus: widget.multipleChoice.minus,
-                  textColor: widget.multipleChoice.textColor,
-                  numberColor: widget.multipleChoice.numberColor,
-                  iconColor: widget.multipleChoice.iconColor,
-                  stepValue: widget.multipleChoice.stepValue,
-                  longPressedValue: widget.multipleChoice.longPressedValue,
-                  min: () {
-                    try {
-                      if (double.parse(minController.text) >
-                          () {
-                            try {
-                              if (double.parse(text) <
-                                  widget.multipleChoice.min) {
-                                throw Exception();
-                              }
-                              return double.parse(text);
-                            } on Exception catch (_) {
-                              return widget.multipleChoice.max;
-                            }
-                          }.call()) {
-                        throw Exception();
-                      }
-                      return double.parse(minController.text);
-                    } on Exception catch (_) {
-                      return widget.multipleChoice.min;
-                    }
-                  }.call(),
-                  max: () {
-                    try {
-                      if (double.parse(text) < widget.multipleChoice.min) {
-                        throw Exception();
-                      }
-                      return double.parse(text);
-                    } on Exception catch (_) {
-                      return widget.multipleChoice.max;
-                    }
-                  }.call(),
-                  initValue: () => clampDouble(
-                    widget.multipleChoice.initValue(),
-                    () {
-                      try {
-                        if (double.parse(minController.text) >
-                            () {
-                              try {
-                                if (double.parse(text) <
-                                    widget.multipleChoice.min) {
-                                  throw Exception();
-                                }
-                                return double.parse(text);
-                              } on Exception catch (_) {
-                                return widget.multipleChoice.max;
-                              }
-                            }.call()) {
-                          throw Exception();
-                        }
-                        return double.parse(minController.text);
-                      } on Exception catch (_) {
-                        return widget.multipleChoice.min;
-                      }
-                    }.call(),
-                    () {
-                      try {
-                        if (double.parse(text) < widget.multipleChoice.min) {
-                          throw Exception();
-                        }
-                        return double.parse(text);
-                      } on Exception catch (_) {
-                        return widget.multipleChoice.max;
-                      }
-                    }.call(),
-                  ),
-                  isChangable: true,
-                );
+              onSubmitted: (String text) {
+                double? newMax = double.tryParse(text);
+
+                if (newMax == null || newMax < widget.multipleChoice.min) {
+                  maxController.text = widget.multipleChoice.max.toString();
+                  return;
+                }
+
+                final double currentVal = widget.multipleChoice.initValue();
+
+                setState(() {
+                  widget.multipleChoice = MultipleChoice(
+                    label: widget.multipleChoice.label,
+                    icon: widget.multipleChoice.icon,
+                    onChanged: widget.multipleChoice.onChanged,
+                    plus: widget.multipleChoice.plus,
+                    minus: widget.multipleChoice.minus,
+                    textColor: widget.multipleChoice.textColor,
+                    numberColor: widget.multipleChoice.numberColor,
+                    iconColor: widget.multipleChoice.iconColor,
+                    stepValue: widget.multipleChoice.stepValue,
+                    longPressedValue: widget.multipleChoice.longPressedValue,
+                    min: widget.multipleChoice.min,
+                    max: newMax,
+                    initValue: () => currentVal > newMax ? newMax : currentVal,
+                    isChangable: true,
+                  );
+                });
+
+                // 5. Notify the parent and save
                 widget.onChanged(widget.multipleChoice);
               },
               style: TextStyle(fontSize: 20),

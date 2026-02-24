@@ -17,7 +17,7 @@ class Question extends StatefulWidget {
     super.key,
     required this.index,
     QuestionType? question,
-    Set<Types>? selected,
+    Set<Types>? questionType,
     this.isChangable = false,
     void Function(int index)? onDelete,
     void Function(int index)? onDuplicate,
@@ -25,14 +25,14 @@ class Question extends StatefulWidget {
   }) : onDelete = onDelete ?? ((p0) {}),
        onDuplicate = onDuplicate ?? ((p0) {}),
        question = question ?? Space(),
-       selected = selected ?? {Types.spacer},
+       questionType = questionType ?? {Types.spacer},
        onChanged = onChanged ?? ((p0, p1) {});
 
   void Function(int index) onDelete;
   void Function(int index) onDuplicate;
   int index;
   QuestionType question;
-  Set<Types> selected;
+  Set<Types> questionType;
   bool isChangable;
   void Function(int, dynamic) onChanged;
 
@@ -42,7 +42,7 @@ class Question extends StatefulWidget {
   Map<String, dynamic> toJson() => {
     'index': index,
     'question': question.toJson(),
-    'selected': selected.first.index,
+    'selected': questionType.first.index,
   };
 
   factory Question.fromJson(
@@ -74,7 +74,7 @@ class Question extends StatefulWidget {
         isChangable: isChangable,
         init: init(),
       ),
-      Types.multipleChoice => MultipleChoice.fromJson(
+      Types.multipleCounter => MultipleChoice.fromJson(
         json['question'],
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
@@ -130,7 +130,7 @@ class Question extends StatefulWidget {
       key: key,
       index: json['index'] as int,
       question: question,
-      selected: {Types.values.elementAt(json['selected'] as int)},
+      questionType: {Types.values.elementAt(json['selected'] as int)},
       isChangable: isChangable,
       onDelete: onDelete,
       onDuplicate: onDuplicate,
@@ -147,7 +147,7 @@ class Question extends StatefulWidget {
     key: key,
     index: index,
     question: question.question,
-    selected: question.selected,
+    questionType: question.questionType,
     isChangable: question.isChangable,
     onDelete: question.onDelete,
     onDuplicate: question.onDuplicate,
@@ -165,7 +165,7 @@ const List<(Types, String)> segments = <(Types, String)>[
   (Types.icon, 'Icon'),
   (Types.string, 'String'),
   (Types.selectable, 'Selection'),
-  (Types.multipleChoice, 'Multiple Choice'),
+  (Types.multipleCounter, 'Multiple Counter'),
 ];
 
 class QuestionState extends State<Question> {
@@ -249,10 +249,10 @@ class QuestionState extends State<Question> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SegmentedButton<Types>(
-                  selected: widget.selected,
+                  selected: widget.questionType,
                   onSelectionChanged: (Set<Types> types) {
                     setState(() {
-                      widget.selected = types;
+                      widget.questionType = types;
                       switch (types.first) {
                         case Types.boolean:
                           final w = BooleanSwitch(
@@ -281,7 +281,7 @@ class QuestionState extends State<Question> {
                                 setState(() => widget.question = p0),
                             scoreCounter: w,
                           );
-                        case Types.multipleChoice:
+                        case Types.multipleCounter:
                           final w = MultipleChoice(
                             label: "Label",
                             icon: Icons.check_box,
@@ -429,7 +429,7 @@ enum Types {
   icon,
   string,
   selectable,
-  multipleChoice,
+  multipleCounter,
 }
 
 enum Options { delete, duplicate }

@@ -47,21 +47,21 @@ class HomePageState extends State<HomePage> {
       print('in TESTING');
       //Inc index for all form (if there are 10 forms across all saves it will be form 0, 1, 2...10)
       if (savesWithForms.isNotEmpty) {
-        // int formIndex = 0;
-        // for (var saveData in savesWithForms) {
-        //   final form = saveData['form'];
-        //   if (form != null && form is Map && form['screens'] != null) {
-        //     final screens = form['screens'] as List;
-        //     for (var screen in screens) {
-        //       screen['name'] = 'Form Num $formIndex';
-        //       print(
-        //         'screen name: ${screen['name']}, real name: ${saveData['form']['screens'][0]['name']}',
-        //       );
-        //       screen['index'] = formIndex;
-        //       formIndex++;
-        //     }
-        //   }
-        // }
+        int formIndex = 0;
+        for (var saveData in savesWithForms) {
+          final form = saveData['form'];
+          if (form != null && form is Map && form['screens'] != null) {
+            final screens = form['screens'] as List;
+            for (var screen in screens) {
+              screen['name'] = 'Form Num $formIndex';
+              print(
+                'screen name: ${screen['name']}, real name: ${saveData['form']['screens'][0]['name']}',
+              );
+              screen['index'] = formIndex;
+              formIndex++;
+            }
+          }
+        }
         MainApp.saves = savesWithForms.map((saveData) {
           final save = Save.fromJson(saveData);
           final formData = saveData['form'];
