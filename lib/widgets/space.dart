@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/widgets/level_slider.dart';
 import 'package:scouting_qr_maker/widgets/question_type.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Space extends QuestionType {
   Space({super.key, this.height = 50});
@@ -17,8 +18,14 @@ class Space extends QuestionType {
   @override
   Map<String, dynamic> toJson() => {'height': height};
 
-  factory Space.fromJson(Map<String, dynamic> json, {Key? key}) =>
-      Space(key: key, height: json['height'] as double);
+  factory Space.fromJson(Map<String, dynamic> json, {Key? key}) {
+    print('height: ${json['height']}');
+    print('height type: ${json['height'].runtimeType}');
+    return Space(
+      key: key,
+      height: (json['height'] as num).toDouble(),
+    ); //dddddddddddddddddd
+  }
 }
 
 class SpaceState extends State<Space> {

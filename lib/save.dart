@@ -55,13 +55,12 @@ class Save {
     } else {
       parsedIcon = Icons.save_alt;
     }
-
     return Save(
       index: json['index'] as int? ?? 0,
       title: json['title'] as String? ?? 'Untitled',
       color: parsedColor,
       icon: parsedIcon,
-      formId: json['form_id'] as int?, // Add this
+      formId: json['id'] as int?,
     );
   }
 

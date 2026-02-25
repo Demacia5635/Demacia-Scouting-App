@@ -11,7 +11,8 @@ class ScreenManagerPage extends StatefulWidget {
     super.key,
     Map<int, FormPage>? screens,
     int? currentFormId,
-  }) : screens = screens ?? {};
+  }) : screens = screens ?? {},
+       currentFormId = currentFormId ?? 1;
 
   Map<int, FormPage> screens;
   int? currentFormId;
@@ -25,42 +26,74 @@ class ScreenManagerPage extends StatefulWidget {
 
   factory ScreenManagerPage.fromJson(Map<String, dynamic> json, int id) {
     Map<int, FormPage> screens = {};
-    print('id in fromJson: ${id}');
+    print('id in fromJson: $id');
+
     ScreenManagerPage widget = ScreenManagerPage(
       screens: screens,
       currentFormId: id,
     );
+    print(
+      '🟧🟧🟧🟧🟧🟧screen manager default widget id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧🟧',
+    );
 
     print('screen is null?: ${json['screens'] == null}');
-    if (json['screens'] == null && json['questions'] == null) {
+
+    // Return empty widget if nothing useful in json
+    if ((json['screens'] == null ||
+            (json['screens'] is List && (json['screens'] as List).isEmpty)) &&
+        json['questions'] == null) {
       return widget;
     }
-    print('lolololololol $json');
-    print('lolololololol ${json.values}');
-    if (json['screens'] != null) {
-      for (var screenJson in json['screens']) {
-        int index = screenJson['index'] as int;
-        print('screen json: $screenJson');
+
+    if (json['screens'] != null && json['screens'] is List) {
+      final screensList = json['screens'] as List;
+
+      for (var screenJson in screensList) {
+        if (screenJson == null) continue;
+        if (screenJson is! Map<String, dynamic>) continue;
+
+        // Skip screens that have no valid questions key at all
+        final hasQuestions =
+            screenJson['questions'] != null && screenJson['questions'] is List;
+        final hasLegacyQuestion =
+            screenJson['question'] != null && screenJson['question'] is List;
+
+        if (!hasQuestions && !hasLegacyQuestion) {
+          // Still add the screen, just with no questions
+          final index = screenJson['index'] as int? ?? screens.length;
+          screens[index] = FormPage.fromJson(
+            // Inject a proper empty questions list so fromJson doesn't crash
+            {...screenJson, 'questions': []},
+            isChangable: true,
+            getJson: () async => widget.toJson(),
+            id: id,
+            init: () => null,
+          );
+          continue;
+        }
+
+        final index = screenJson['index'] as int? ?? screens.length;
         screens[index] = FormPage.fromJson(
           screenJson,
           isChangable: true,
           getJson: () async => widget.toJson(),
           id: id,
-          init: () {},
+          init: () => null,
         );
       }
-    } else {
+    } else if (json['questions'] != null) {
+      // Legacy: single screen stored as root
       screens[0] = FormPage.fromJson(
         json,
         isChangable: true,
         getJson: () async => widget.toJson(),
         id: id,
-        init: () {},
+        init: () => null,
       );
     }
 
+    // Wire up prev/next navigation
     final sortedKeys = screens.keys.toList()..sort();
-
     for (int i = 0; i < sortedKeys.length; i++) {
       int currentKey = sortedKeys[i];
       FormPage? currentPage = screens[currentKey];

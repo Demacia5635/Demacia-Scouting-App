@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,7 +15,7 @@ class DatabaseService {
     required Map<String, dynamic> data,
     String? onConflict,
   }) async {
-    print('upload data: $data');
+    //print('upload data: $data');
     print('\n IN UPLOAD FUNC');
     try {
       final response = await _supabase
@@ -35,19 +37,39 @@ class DatabaseService {
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .limit(3)
-        .map((List<Map<String, dynamic>> response) {
+        .asyncMap((List<Map<String, dynamic>> response) async {
+          // Changed to asyncMap to allow SharedPreferences access
           List<Map<String, dynamic>> savesWithForms = [];
+          final prefs = await SharedPreferences.getInstance();
 
           for (int i = 0; i < response.length; i++) {
             final row = response[i];
-
             var formData = row['form'];
+
+            // Logic from your Future: if form is null or empty, check SharedPreferences
+            if (formData == null || (formData is Map && formData.isEmpty)) {
+              // final localData = prefs.getString('app_data_$i');
+              // if (localData != null && localData.isNotEmpty) {
+              //   try {
+              //     formData = jsonDecode(localData);
+              //   } catch (e) {
+              //     formData = null;
+              //   }
+              // }
+              await prefs.remove('app_data_$i');
+              formData = null;
+            }
+
+            // Format screens if formData exists
             if (formData is Map<String, dynamic> &&
                 formData['screens'] != null) {
               formData = Map<String, dynamic>.from(formData);
               var screens = List.from(formData['screens']);
               for (int s = 0; s < screens.length; s++) {
-                screens[s]['index'] = s;
+                if (screens[s] is Map) {
+                  screens[s] = Map<String, dynamic>.from(screens[s]);
+                  screens[s]['index'] = s;
+                }
               }
               formData['screens'] = screens;
             }
@@ -58,8 +80,10 @@ class DatabaseService {
               'title': 'Save #${i + 1}',
               'color': _getColorForIndex(i),
               'icon': _getIconForIndex(i),
-              'form': formData ?? {},
-              'created_at': row['created_at'],
+              // Ensure we return an empty structure that won't break the UI
+              'form': formData ?? {'screens': []},
+              'created_at':
+                  row['created_at'] ?? DateTime.now().toIso8601String(),
             });
           }
           return savesWithForms;

@@ -58,19 +58,24 @@ class FormPage extends StatefulWidget {
     required Map<int, dynamic Function()?>? Function() init,
   }) {
     Map<int, (Question, dynamic)> questions = {};
-    print('questions? : ${json['questions']}');
-    if (json.isNotEmpty && json['questions'] == null) {
-      print('question YIPPY: ${json.values}');
-      print('real question yippy? : $json');
-      for (var q in json.values) {
-        print('question yay: $q');
-      }
-      for (var question in json.values) {
-        print('question yay: $question');
-        final qIndex = question['index'] as int;
 
+    // Handle both 'questions' and legacy 'question' keys, and null/empty cases
+    List? questionsList;
+
+    if (json['questions'] != null && json['questions'] is List) {
+      questionsList = json['questions'] as List;
+    } else if (json['question'] != null && json['question'] is List) {
+      questionsList = json['question'] as List;
+    }
+
+    if (questionsList != null && questionsList.isNotEmpty) {
+      for (var question in questionsList) {
+        if (question is! Map<String, dynamic>) continue;
+
+        final qIndex = question['index'] as int;
         final initMap = init();
         final innerFn = initMap?[qIndex];
+
         questions.addAll({
           qIndex: (
             Question.fromJson(
@@ -84,48 +89,26 @@ class FormPage extends StatefulWidget {
         });
       }
     }
-    for (var question in json['questions']) {
-      final qIndex = question['index'] as int;
 
-      final initMap = init();
-      final innerFn = initMap?[qIndex];
-      // question = question['selected'] as int == 3
-      // ? Helper.prefs!.getString('')
-      // : question;
-      questions.addAll({
-        qIndex: (
-          Question.fromJson(
-            question,
-            isChangable: isChangable,
-            onChanged: onChanged,
-            init: innerFn != null ? () => innerFn() : () => null,
-          ),
-          '\u200B',
-        ),
-      });
-    }
-    print('all given data: $init');
-
-    print('nextPage: $nextPage');
-    print('previosPage: $previosPage');
-    print('onChanged: $onChanged');
-    print('id: $id');
-    print('getJson: $getJson');
     return FormPage(
       questions: questions,
       isChangable: isChangable,
       index: json['index'] as int,
-      name: json['name'] as String,
-      icon: IconData(
-        json['icon']['codePoint'] as int,
-        fontFamily: json['icon']['fontFamily'] as String,
-      ),
-      color: Color.from(
-        alpha: json['color']['a'],
-        red: json['color']['r'],
-        green: json['color']['g'],
-        blue: json['color']['b'],
-      ),
+      name: json['name'] as String? ?? 'Untitled',
+      icon: json['icon'] != null
+          ? IconData(
+              json['icon']['codePoint'] as int,
+              fontFamily: json['icon']['fontFamily'] as String,
+            )
+          : Icons.article,
+      color: json['color'] != null
+          ? Color.from(
+              alpha: json['color']['a'],
+              red: json['color']['r'],
+              green: json['color']['g'],
+              blue: json['color']['b'],
+            )
+          : Colors.blue,
       onSave: getJson,
       previosPage: previosPage,
       nextPage: nextPage,
@@ -195,7 +178,6 @@ class FormPageState extends State<FormPage> {
     List<(Question, dynamic)> questionList = widget.questions.values.toList();
     questionList.sort((p0, p1) => p0.$1.index.compareTo(p1.$1.index));
 
-    // Drag-and-drop removed — just render questions directly.
     for ((Question, dynamic) question in questionList) {
       x.add(question.$1);
     }
@@ -250,6 +232,7 @@ class FormPageState extends State<FormPage> {
                       MainApp.currentSave,
                       widget.currentFormId,
                     );
+                    print('form id: ${MainApp.currentSave.formId}');
                     await DatabaseService().updateForm(
                       formData: widget.toJson(),
                       id: MainApp.currentSave.formId!,

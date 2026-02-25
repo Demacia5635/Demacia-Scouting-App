@@ -172,11 +172,18 @@ class QuestionState extends State<Question> {
   Widget settings = const SizedBox.shrink();
 
   @override
+  @override
   void initState() {
     super.initState();
-    // Do NOT call setState here — it causes infinite rebuild / stack overflow.
+    _rebuildSettings();
+  }
+
+  void _rebuildSettings() {
     settings = widget.question.settings(
-      (p0) => setState(() => widget.question = p0),
+      (p0) => setState(() {
+        widget.question = p0;
+        _rebuildSettings(); // rebuild settings with new widget reference
+      }),
     );
   }
 
@@ -290,11 +297,12 @@ class QuestionState extends State<Question> {
                                 widget.onChanged(widget.index, p0),
                           );
                           widget.question = w;
-                          settings = MultipleChoiceSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
-                            multipleChoice: w,
-                          );
+                          // settings = MultipleChoiceSettings(
+                          //   onChanged: (p0) =>
+                          //       setState(() => widget.question = p0),
+                          //   multipleChoice: w,
+                          // );
+                          _rebuildSettings();
                         case Types.slider:
                           final w = LevelSlider(
                             label: "Label",

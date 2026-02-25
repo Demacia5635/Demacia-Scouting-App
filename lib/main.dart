@@ -27,6 +27,7 @@ void save(Map<String, dynamic> json, Save file, int? id) async {
   await prefs.setString('app_data_${file.index}', jsonEncode(json));
 
   final databaseService = DatabaseService();
+  print('⚠️⚠️⚠️⚠️⚠️id: $id⚠️⚠️⚠️⚠️⚠️⚠️⚠️');
   var result;
   if (await databaseService.dbHasData()) {
     result = await databaseService.updateForm(id: id!, formData: json);
@@ -34,7 +35,7 @@ void save(Map<String, dynamic> json, Save file, int? id) async {
     result = await databaseService.uploadData(table: 'data', data: json);
   }
   print('id: $id');
-
+  print('✅✅✅✅✅✅✅ ENTER SAVESSSSS ✅✅✅✅✅✅');
   // Link the form to this save
   if (result != null && result['id'] != null) {
     file.formId = result['id'] as int;

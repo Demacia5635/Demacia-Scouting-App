@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/widgets/question_type.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MultipleChoice extends QuestionType {
   MultipleChoice({
@@ -139,11 +140,11 @@ class MultipleChoice extends QuestionType {
         green: json['iconColor']['g'] as double,
         blue: json['iconColor']['b'] as double,
       ),
-      stepValue: json['stepValue'] as double,
-      max: json['max'] as double,
-      min: json['min'] as double,
-      longPressedValue: json['longPressedValue'] as double,
-      initValue: resolvedInit,
+      stepValue: (json['stepValue'] as num).toDouble(),
+      max: (json['max'] as num).toDouble(),
+      min: (json['min'] as num).toDouble(),
+      longPressedValue: (json['longPressedValue'] as num).toDouble(),
+      initValue: resolvedInit = () => (json['initValue'] as num).toDouble(),
       onChanged: onChanged,
       isChangable: isChangable,
     );

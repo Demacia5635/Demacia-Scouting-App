@@ -21,101 +21,126 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
   static Future<void> _defaultOnLongSave() async {}
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight) * 2;
 
   @override
   Widget build(BuildContext context) {
     bool isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return AppBar(
-      actions: [
-        // Current Save Title Button
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: ElevatedButton(
-            onPressed: null,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8 : 16,
-                vertical: 8,
-              ),
-              minimumSize: const Size(0, 0),
-            ),
-            child: Text(
-              MainApp.currentSave.title,
-              style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-
-        // Delete Button
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: ElevatedButton(
-            onPressed: () => _onDelete(context),
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-              minimumSize: const Size(0, 0),
-            ),
-            child: Icon(Icons.delete_forever, size: isSmallScreen ? 20 : 24),
-          ),
-        ),
-
-        // Load Button
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: ElevatedButton(
-            onPressed: () => _loadSaves(context, onLoadSave),
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-              minimumSize: const Size(0, 0),
-            ),
-            child: Icon(Icons.folder_open, size: isSmallScreen ? 20 : 24),
-          ),
-        ),
-
-        // Save Button
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: ElevatedButton(
-            onPressed: onSave,
-            onLongPress: onLongSave,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-              minimumSize: const Size(0, 0),
-            ),
-            child: Icon(Icons.save, size: isSmallScreen ? 20 : 24),
-          ),
-        ),
-
-        // Version Text
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 20),
-          child: Center(
-            child: Text(
-              MainApp.version,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isSmallScreen ? 10 : 14,
-              ),
-            ),
-          ),
-        ),
-      ],
+      toolbarHeight: kToolbarHeight * 2,
       centerTitle: true,
       elevation: 7,
-      title: Text(
-        (isInPreview != null) && (isInPreview == true)
-            ? "Demacia"
-            : "Demacia Scouting Maker",
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
       backgroundColor: Colors.deepPurple.shade700,
+      title: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            (isInPreview != null) && (isInPreview == true)
+                ? "Demacia"
+                : "Demacia Scouting Maker",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Current Save Title Button
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 16,
+                      vertical: 8,
+                    ),
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Text(
+                    MainApp.currentSave.title,
+                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+
+              // Delete Button
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: ElevatedButton(
+                  onPressed: () => _onDelete(context),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Icon(
+                    Icons.delete_forever,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                ),
+              ),
+
+              // Load Button
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: ElevatedButton(
+                  onPressed: () => _loadSaves(context, onLoadSave),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Icon(Icons.folder_open, size: isSmallScreen ? 20 : 24),
+                ),
+              ),
+
+              // Save Button
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: ElevatedButton(
+                  onPressed: onSave,
+                  onLongPress: onLongSave,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Icon(Icons.save, size: isSmallScreen ? 20 : 24),
+                ),
+              ),
+
+              // Version Text
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: Center(
+                  child: Text(
+                    MainApp.version,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 10 : 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: const [],
     );
   }
 
@@ -145,7 +170,11 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
 
                           // Delete from Supabase
                           final databaseService = DatabaseService();
-                          await databaseService.deleteSave(p0.index);
+                          print('id? for delete: ${p0.formId}');
+                          await databaseService.updateForm(
+                            id: p0.formId!,
+                            formData: {},
+                          );
 
                           // Delete from SharedPreferences
                           await prefs.remove('app_data_${p0.index}');
@@ -153,7 +182,6 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
                           // Remove from list
                           MainApp.saves.remove(p0);
 
-                          // Set current save to first available
                           if (MainApp.saves.isNotEmpty) {
                             MainApp.currentSave = MainApp.saves[0];
                             await prefs.setInt(
@@ -217,7 +245,7 @@ class DemaciaAppBar extends StatelessWidget implements PreferredSizeWidget {
                         onPressed: () async {
                           // Set the current save
                           MainApp.currentSave = p0;
-
+                          print('✅✅✅✅✅✅✅ ENTER Load Save ✅✅✅✅✅✅f');
                           // Save to SharedPreferences
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setInt('current_save', p0.index);
