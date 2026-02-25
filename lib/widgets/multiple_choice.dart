@@ -397,15 +397,32 @@ class RoundedTextButton extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(final BuildContext context) => RawMaterialButton(
-    elevation: 6.0,
-    onPressed: onPress,
+  Widget build(final BuildContext context) => GestureDetector(
+    onTap: onPress,
     onLongPress: onLongPress,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    fillColor: color,
-    child: Text(
-      text,
-      style: const TextStyle(color: Colors.white, fontSize: 20),
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      height: 70,
+      width: 100,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: Alignment.center,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -446,127 +463,122 @@ class MultipleChoiceState extends State<MultipleChoice> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.minus,
-                text: '-20',
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - 20);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.minus,
+                    text: '-20',
+                    onPress: () {
+                      setState(() => count = max(widget.min, count - 20));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.minus,
+                    text: '-15',
+                    onPress: () {
+                      setState(() => count = max(widget.min, count - 15));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        count.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontSize: 36,
+                          color: widget.numberColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.plus,
+                    text: '+15',
+                    onPress: () {
+                      setState(() => count = min(widget.max, count + 15));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.plus,
+                    text: '+20',
+                    onPress: () {
+                      setState(() => count = min(widget.max, count + 20));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.minus,
-                text: '-15',
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - 15);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.minus,
-                text: '-10',
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - 10);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.minus,
-                text: '-5',
-                onPress: () {
-                  setState(() {
-                    count = max(widget.min, count - 5);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 8,
-              child: Text(
-                count.toString(),
-                style: const TextStyle(fontSize: 30),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.plus,
-                text: '+5',
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + 5);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.plus,
-                text: '+10',
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + 10);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.plus,
-                text: '+15',
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + 15);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
-            ),
-            Expanded(
-              flex: 6,
-              child: RoundedTextButton(
-                color: widget.plus,
-                text: '+20',
-                onPress: () {
-                  setState(() {
-                    count = min(widget.max, count + 20);
-                  });
-                  widget.onChanged(count);
-                },
-                onLongPress: () {},
-              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.minus,
+                    text: '-10',
+                    onPress: () {
+                      setState(() => count = max(widget.min, count - 10));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.minus,
+                    text: '-5',
+                    onPress: () {
+                      setState(() => count = max(widget.min, count - 5));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                const Expanded(flex: 2, child: SizedBox()),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.plus,
+                    text: '+5',
+                    onPress: () {
+                      setState(() => count = min(widget.max, count + 5));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+                Expanded(
+                  child: RoundedTextButton(
+                    color: widget.plus,
+                    text: '+10',
+                    onPress: () {
+                      setState(() => count = min(widget.max, count + 10));
+                      widget.onChanged(count);
+                    },
+                    onLongPress: () {},
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -32,13 +32,26 @@ class ScreenManagerPage extends StatefulWidget {
     );
 
     print('screen is null?: ${json['screens'] == null}');
-    if (json['screens'] == null) {
+    if (json['screens'] == null && json['questions'] == null) {
       return widget;
     }
-    for (var screenJson in json['screens']) {
-      int index = screenJson['index'] as int;
-      screens[index] = FormPage.fromJson(
-        screenJson,
+    print('lolololololol $json');
+    print('lolololololol ${json.values}');
+    if (json['screens'] != null) {
+      for (var screenJson in json['screens']) {
+        int index = screenJson['index'] as int;
+        print('screen json: $screenJson');
+        screens[index] = FormPage.fromJson(
+          screenJson,
+          isChangable: true,
+          getJson: () async => widget.toJson(),
+          id: id,
+          init: () {},
+        );
+      }
+    } else {
+      screens[0] = FormPage.fromJson(
+        json,
         isChangable: true,
         getJson: () async => widget.toJson(),
         id: id,

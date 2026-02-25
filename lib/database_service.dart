@@ -47,7 +47,6 @@ class DatabaseService {
               formData = Map<String, dynamic>.from(formData);
               var screens = List.from(formData['screens']);
               for (int s = 0; s < screens.length; s++) {
-                screens[s]['name'] = 'Form Num $s';
                 screens[s]['index'] = s;
               }
               formData['screens'] = screens;

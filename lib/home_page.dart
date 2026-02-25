@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -23,123 +24,144 @@ class HomePageState extends State<HomePage> {
   bool _isLoading = true;
   late int currentFormId;
 
-  // Lifted up so answers survive navigating back to home.
-  // Outer key = screen index, inner key = question's JSON index.
   Map<int, Map<int, dynamic>> _previewData = {};
+
+  StreamSubscription? _savesSubscription;
+  final DatabaseService _databaseService = DatabaseService();
 
   @override
   void initState() {
     super.initState();
-    loadData();
+    _subscribeToSaves();
   }
 
-  void loadData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  void dispose() {
+    _savesSubscription?.cancel();
+    super.dispose();
+  }
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      DatabaseService databaseService = DatabaseService();
+  void _subscribeToSaves() {
+    setState(() => _isLoading = true);
 
-      final savesWithForms = await databaseService
-          .getThreeLatestSavesWithForms();
-      print('in TESTING');
-      //Inc index for all form (if there are 10 forms across all saves it will be form 0, 1, 2...10)
-      if (savesWithForms.isNotEmpty) {
-        int formIndex = 0;
-        for (var saveData in savesWithForms) {
-          final form = saveData['form'];
-          if (form != null && form is Map && form['screens'] != null) {
-            final screens = form['screens'] as List;
-            for (var screen in screens) {
-              screen['name'] = 'Form Num $formIndex';
-              print(
-                'screen name: ${screen['name']}, real name: ${saveData['form']['screens'][0]['name']}',
-              );
-              screen['index'] = formIndex;
-              formIndex++;
+    _savesSubscription?.cancel();
+    _savesSubscription = _databaseService.getThreeLatestSavesStream().listen(
+      (savesWithForms) async {
+        print('stream data: $savesWithForms');
+        final prefs = await SharedPreferences.getInstance();
+        print('is empty? ${savesWithForms.isEmpty}');
+        if (savesWithForms.isNotEmpty) {
+          MainApp.saves = savesWithForms.map((saveData) {
+            final save = Save.fromJson(saveData);
+            final formData = saveData['form'];
+            print('is null? ${formData == null}');
+            print('form data: $formData');
+            if (formData != null) {
+              prefs.setString('app_data_${save.index}', jsonEncode(formData));
             }
-          }
-        }
-        MainApp.saves = savesWithForms.map((saveData) {
-          final save = Save.fromJson(saveData);
-          final formData = saveData['form'];
-          if (formData != null) {
-            prefs.setString('app_data_${save.index}', jsonEncode(formData));
-          }
-          return save;
-        }).toList();
+            return save;
+          }).toList();
 
-        print('Reloaded ${MainApp.saves.length} saves');
-        print(
-          'current save: ${MainApp.currentSave.formId}, idx: ${MainApp.currentSave.index}',
-        );
-        currentFormId = savesWithForms[MainApp.currentSave.index]['id'];
-      } else {
-        print('no way its empty?: ${savesWithForms.isEmpty}');
-      }
-
-      Map<String, dynamic>? formData;
-
-      final saveKey = 'app_data_${MainApp.currentSave.index}';
-      if (prefs.containsKey(saveKey)) {
-        final savedJson = prefs.getString(saveKey);
-        if (savedJson != null && savedJson.isNotEmpty) {
-          formData = jsonDecode(savedJson);
+          print('Stream update: ${MainApp.saves.length} saves');
           print(
-            'Loaded form from SharedPreferences for save ${MainApp.currentSave.index}',
+            'current save: ${MainApp.currentSave.formId}, idx: ${MainApp.currentSave.index}',
           );
+
+          currentFormId = savesWithForms[MainApp.currentSave.index]['id'];
+          print('current form id: $currentFormId');
+        } else {
+          print('Stream returned empty saves');
+          print('idddddd: $currentFormId');
+          currentFormId = await DatabaseService().getLatestFormId();
+          print('current id: $currentFormId');
         }
-      }
 
-      if (formData == null) {
-        formData = await databaseService.getLatestFormData();
-        print('Loaded latest form as fallback');
-      }
+        Map<String, dynamic>? formData;
 
-      setState(() {
-        widget.json = formData;
-        _isLoading = false;
-        _initPreviewData();
-      });
+        final saveKey = 'app_data_${MainApp.currentSave.index}';
+        if (prefs.containsKey(saveKey)) {
+          final savedJson = prefs.getString(saveKey);
+          print('saved data from pref: $savedJson');
+          if (savedJson != null && savedJson.isNotEmpty) {
+            formData = jsonDecode(savedJson);
+            print('\n form data from prefs: $formData');
+            print(
+              'Loaded form from SharedPreferences for save ${MainApp.currentSave.index}',
+            );
+          }
+        }
 
-      print('Final json state: ${widget.json != null ? "loaded" : "null"}');
-      if (widget.json != null && widget.json!.containsKey('screens')) {
-        print('Form has ${widget.json!['screens']?.length ?? 0} screens');
-      }
-    } catch (e) {
-      print('Error loading data: $e');
-      setState(() {
-        widget.json = null;
-        _isLoading = false;
-      });
-    }
+        if (formData == null) {
+          formData = await _databaseService.getLatestFormData();
+          print('Loaded latest form as fallback');
+        }
+
+        if (mounted) {
+          setState(() {
+            widget.json = formData;
+            _isLoading = false;
+            _initPreviewData();
+          });
+
+          print('Final json state: ${widget.json != null ? "loaded" : "null"}');
+          if (widget.json != null && widget.json!.containsKey('screens')) {
+            print('Form has ${widget.json!['screens']?.length ?? 0} screens');
+          }
+        }
+      },
+      onError: (e) {
+        print('Stream error: $e');
+        if (mounted) {
+          setState(() {
+            widget.json = null;
+            _isLoading = false;
+          });
+        }
+      },
+    );
   }
 
-  /// Builds _previewData keyed by each question's actual JSON index,
-  /// preserving any answers already filled in.
+  void loadData() {
+    _subscribeToSaves();
+  }
+
   void _initPreviewData() {
-    if (widget.json == null || !widget.json!.containsKey('screens')) {
+    if (widget.json == null ||
+        (!widget.json!.containsKey('screens') &&
+            !widget.json!.containsKey('questions'))) {
       _previewData = {};
+      print('No screens found in JSON, preview data initialized as empty');
       return;
     }
-
-    final screens = widget.json!['screens'] as List;
+    print('Initializing preview data from JSON');
+    final screens = widget.json!['screens'] == null
+        ? widget.json!['questions'] as List
+        : widget.json!['screens'] as List;
+    print('screens: $screens');
     final updated = <int, Map<int, dynamic>>{};
-
-    for (int i = 0; i < screens.length; i++) {
-      final questions = screens[i]['questions'] as List;
-      updated[i] = {};
-      for (final q in questions) {
-        // Use the question's real JSON index as the key — this is what
-        // onChanged fires with, so the two must always match.
+    if (screens == widget.json!['screens']) {
+      for (int i = 0; i < screens.length; i++) {
+        final questions = screens[i]['questions'] as List;
+        updated[i] = {};
+        for (final q in questions) {
+          final qIndex = q['index'] as int;
+          print('question index: $qIndex');
+          print('\n');
+          print('preview data before init: ${_previewData[i]?[qIndex]}');
+          updated[i]![qIndex] = _previewData[i]?[qIndex];
+        }
+      }
+    } else if (screens == widget.json!['questions']) {
+      updated[0] = {};
+      for (final q in screens) {
         final qIndex = q['index'] as int;
-        updated[i]![qIndex] = _previewData[i]?[qIndex] ?? null;
+        updated[0]![qIndex] = _previewData[0]?[qIndex];
       }
     }
 
     _previewData = updated;
+    print('\n \n \n');
+    print('Preview data initialized: $_previewData');
   }
 
   @override
@@ -205,9 +227,15 @@ class HomePageState extends State<HomePage> {
                                         print(
                                           'contains key?: ${widget.json!.containsKey('screens')}',
                                         );
+                                        print(
+                                          'contains questions?: ${widget.json!.containsKey('questions')}',
+                                        );
                                         if (widget.json!.containsKey(
-                                          'screens',
-                                        )) {
+                                              'screens',
+                                            ) ||
+                                            widget.json!.containsKey(
+                                              'questions',
+                                            )) {
                                           print(
                                             'current id in homePage: $currentFormId',
                                           );
@@ -265,70 +293,26 @@ class HomePageState extends State<HomePage> {
 
                                         List<FormPage> screens = [];
 
-                                        // func returns the init map for screen i,
-                                        // keyed by each question's real JSON index.
+                                        // Simplified: just return saved values directly,
+                                        // no JSON mutation needed.
                                         Map<int, dynamic Function()?>? func(
                                           int i,
                                         ) {
+                                          print('func called for screen $i');
+                                          print(
+                                            'previewData[$i]: ${_previewData[i]}',
+                                          );
                                           return _previewData[i]?.map<
                                             int,
                                             dynamic Function()?
-                                          >((qIndex, savedValue) {
-                                            return MapEntry(qIndex, () {
-                                              if (savedValue != null) {
-                                                // Mirror the saved value back into
-                                                // JSON so fromJson picks it up as
-                                                // initValue on re-entry.
-                                                final screenJson =
-                                                    widget.json!['screens'][i];
-                                                final questionJson =
-                                                    (screenJson['questions']
-                                                            as List)
-                                                        .firstWhere(
-                                                          (q) =>
-                                                              q['index'] ==
-                                                              qIndex,
-                                                          orElse: () => null,
-                                                        );
-                                                if (questionJson != null) {
-                                                  if (savedValue is Set) {
-                                                    questionJson['question']['initValue'] =
-                                                        savedValue
-                                                            .map(
-                                                              (option) => option
-                                                                  .toJson(),
-                                                            )
-                                                            .toList();
-                                                  } else {
-                                                    switch (savedValue
-                                                        .runtimeType) {
-                                                      case Color:
-                                                        questionJson['question']['initValue'] =
-                                                            {
-                                                              'a': savedValue.a,
-                                                              'r': savedValue.r,
-                                                              'g': savedValue.g,
-                                                              'b': savedValue.b,
-                                                            };
-                                                      case IconData:
-                                                        questionJson['question']['initValue'] = {
-                                                          'codePoint':
-                                                              savedValue
-                                                                  .codePoint,
-                                                          'fontFamily':
-                                                              savedValue
-                                                                  .fontFamily,
-                                                        };
-                                                      default:
-                                                        questionJson['question']['initValue'] =
-                                                            savedValue;
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                              return _previewData[i]![qIndex];
-                                            });
-                                          });
+                                          >(
+                                            (qIndex, _) => MapEntry(qIndex, () {
+                                              print(
+                                                'init called for screen $i, question $qIndex, value: ${_previewData[i]?[qIndex]}',
+                                              );
+                                              return _previewData[i]?[qIndex];
+                                            }),
+                                          );
                                         }
 
                                         for (
@@ -342,9 +326,10 @@ class HomePageState extends State<HomePage> {
                                               isChangable: false,
                                               getJson: () async => widget.json!,
                                               onChanged: (qIndex, value) {
-                                                // qIndex is the question's real
-                                                // JSON index — matches our map key.
                                                 setState(() {
+                                                  print(
+                                                    'onChanged called: screen $i, question $qIndex, value: $value',
+                                                  );
                                                   _previewData[i]![qIndex] =
                                                       value;
                                                 });

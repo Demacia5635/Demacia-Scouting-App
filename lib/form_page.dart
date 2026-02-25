@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:scouting_qr_maker/database_service.dart';
-import 'package:scouting_qr_maker/helper.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/question.dart';
-import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
-import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:flutter/services.dart';
 
@@ -61,7 +58,32 @@ class FormPage extends StatefulWidget {
     required Map<int, dynamic Function()?>? Function() init,
   }) {
     Map<int, (Question, dynamic)> questions = {};
+    print('questions? : ${json['questions']}');
+    if (json.isNotEmpty && json['questions'] == null) {
+      print('question YIPPY: ${json.values}');
+      print('real question yippy? : $json');
+      for (var q in json.values) {
+        print('question yay: $q');
+      }
+      for (var question in json.values) {
+        print('question yay: $question');
+        final qIndex = question['index'] as int;
 
+        final initMap = init();
+        final innerFn = initMap?[qIndex];
+        questions.addAll({
+          qIndex: (
+            Question.fromJson(
+              question,
+              isChangable: isChangable,
+              onChanged: onChanged,
+              init: innerFn != null ? () => innerFn() : () => null,
+            ),
+            '\u200B',
+          ),
+        });
+      }
+    }
     for (var question in json['questions']) {
       final qIndex = question['index'] as int;
 
@@ -82,7 +104,13 @@ class FormPage extends StatefulWidget {
         ),
       });
     }
+    print('all given data: $init');
 
+    print('nextPage: $nextPage');
+    print('previosPage: $previosPage');
+    print('onChanged: $onChanged');
+    print('id: $id');
+    print('getJson: $getJson');
     return FormPage(
       questions: questions,
       isChangable: isChangable,
