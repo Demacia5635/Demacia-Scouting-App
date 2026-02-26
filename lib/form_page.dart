@@ -53,8 +53,8 @@ class FormPage extends StatefulWidget {
     Map<String, dynamic> json, {
     bool isChangable = false,
     Future<Map<String, dynamic>> Function()? getJson,
-    FormPage Function()? nextPage,
-    FormPage Function()? previosPage,
+    Widget Function()? nextPage,
+    Widget Function()? previosPage,
     void Function(int, dynamic)? onChanged,
     int? id,
     required Map<int, dynamic Function()?>? Function() init,
@@ -120,28 +120,33 @@ class FormPage extends StatefulWidget {
   }
 
   load(
-    json,
+    Map<String, dynamic> json,
     void Function(int, dynamic)? onChanged,
     Map<int, dynamic Function()?>? Function() init,
   ) {
     questions = {};
-    for (var question in json['questions']) {
-      final qIndex = question['index'] as int;
 
+    final List<dynamic> questionsList =
+        (json['questions'] as List?) ??
+        (json['question'] as List?) ??
+        const [];
+
+    for (final q in questionsList) {
+      if (q is! Map<String, dynamic>) continue;
+
+      final qIndex = q['index'] as int;
       final initMap = init();
       final innerFn = initMap?[qIndex];
 
-      questions.addAll({
-        qIndex: (
-          Question.fromJson(
-            question,
-            isChangable: false,
-            onChanged: onChanged,
-            init: innerFn != null ? () => innerFn() : () => null,
-          ),
-          '\u200B',
+      questions[qIndex] = (
+        Question.fromJson(
+          q,
+          isChangable: false,
+          onChanged: onChanged,
+          init: innerFn != null ? () => innerFn() : () => null,
         ),
-      });
+        '\u200B',
+      );
     }
   }
 }

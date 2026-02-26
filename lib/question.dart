@@ -64,7 +64,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
       Types.int => ScoreCounter.fromJson(
         json['question'],
@@ -72,7 +72,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
       Types.multipleCounter => MultipleChoice.fromJson(
         json['question'],
@@ -80,7 +80,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
       Types.slider => LevelSlider.fromJson(
         json['question'],
@@ -88,7 +88,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
       Types.divider => SectionDivider.fromJson(
         json['question'],
@@ -99,14 +99,14 @@ class Question extends StatefulWidget {
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
         },
-        init: init(),
+        init: init,
       ),
       Types.icon => IconPicker.fromJson(
         json['question'],
         onChanged: (p0) => {
           if (onChanged != null) onChanged(json['index'], p0),
         },
-        init: init(),
+        init: init,
       ),
       Types.string => StringInput.fromJson(
         json['question'],
@@ -114,7 +114,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
       Types.selectable => Selection.fromJson(
         json['question'],
@@ -122,7 +122,7 @@ class Question extends StatefulWidget {
           if (onChanged != null) onChanged(json['index'], p0),
         },
         isChangable: isChangable,
-        init: init(),
+        init: init,
       ),
     };
 

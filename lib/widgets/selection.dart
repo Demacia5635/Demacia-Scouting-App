@@ -91,9 +91,10 @@ class Selection extends QuestionType {
     Set<Entry> Function()? resolvedInit;
     try {
       if (init != null) {
-        final candidate = init();
+        final candidate = init(); // קוראים פעם אחת בלבד
         if (candidate is Set<Entry>) {
-          resolvedInit = () => normalise(init() as Set<Entry>);
+          final cached = normalise(candidate); // מנרמלים פעם אחת
+          resolvedInit = () => cached; // מחזירים cached בלי לקרוא שוב ל-init()
         }
       }
     } catch (_) {}
@@ -139,12 +140,6 @@ class SelectionChangableState extends State<Selection> {
 
     if (selected != null && selected!.isNotEmpty) {
       value = selected!.first;
-    }
-
-    if (selected != null && selected!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onChanged(selected);
-      });
     }
 
     labelController.text = widget.label;
@@ -244,11 +239,6 @@ class SelectionState extends State<Selection> {
       value = selected!.first;
     }
 
-    if (selected != null && selected!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onChanged(selected);
-      });
-    }
   }
 
   @override

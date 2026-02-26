@@ -59,9 +59,10 @@ class StringInput extends QuestionType {
     String Function()? resolvedInit;
     try {
       if (init != null) {
-        final candidate = init();
+        final candidate = init(); // קוראים פעם אחת בלבד
         if (candidate is String) {
-          resolvedInit = () => init() as String;
+          final cached = candidate;
+          resolvedInit = () => cached; // ✅ לא קוראים שוב ל-init
         }
       }
     } catch (_) {}
@@ -124,11 +125,6 @@ class StringInputState extends State<StringInput> {
 
     controller.text = widget.initValue();
 
-    // Seed _previewData immediately so the value is preserved even if
-    // the user navigates away without typing in this field again.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onChanged(controller.text);
-    });
   }
 
   @override
