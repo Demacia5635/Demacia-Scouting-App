@@ -76,26 +76,6 @@ class HomePageState extends State<HomePage> {
           print('idddddd: $currentFormId');
           currentFormId = await DatabaseService().getLatestFormId();
           print('current id: $currentFormId');
-          /**'index': i,
-            'title': 'Save #${i + 1}',
-            'color': i == 0
-                ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
-                : i == 1
-                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
-                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
-            'icon': {
-              'codePoint': i == 0
-                  ? Icons.filter_1.codePoint
-                  : i == 1
-                  ? Icons.filter_2.codePoint
-                  : Icons.filter_3.codePoint,
-              'fontFamily': 'MaterialIcons',
-            },
-            'form': sharedPreferences.getString('app_data_$i') != null
-                ? (sharedPreferences.getString('app_data_$i')!)
-                : "",
-            'created_at': DateTime.now(),
-          }); */
           Map<String, dynamic> saveforEmptyForm = {
             'index': count,
             'title': 'Save #${count + 1}',
@@ -127,7 +107,7 @@ class HomePageState extends State<HomePage> {
           print('saved data from pref: $savedJson');
           if (savedJson != null && savedJson.isNotEmpty) {
             formData = jsonDecode(savedJson);
-            print('\n form data from prefs: $formData');
+            //print('\n form data from prefs: $formData');
             // print(
             //   'Loaded form from SharedPreferences for save ${MainApp.currentSave.index}',
             // );
@@ -150,6 +130,15 @@ class HomePageState extends State<HomePage> {
           if (widget.json != null && widget.json!.containsKey('screens')) {
             print('Form has ${widget.json!['screens']?.length ?? 0} screens');
           }
+        } else {
+          setState(() {
+            widget.json = formData;
+            // _isLoading = false;
+            // _initPreviewData();
+            print(
+              'mounted is false in stream listener, json set but preview data not initialized',
+            );
+          });
         }
       },
       onError: (e) {
@@ -180,11 +169,11 @@ class HomePageState extends State<HomePage> {
     for (int i = 0; i < MainApp.saves.length; i++) {
       print('❗❗❗❗❗❗❗❗save: $i data: ${MainApp.saves[i].toJson()}❗❗❗❗❗❗');
     }
-    print('Initializing preview data from JSON');
+    //print('Initializing preview data from JSON');
     final screens = widget.json!['screens'] == null
         ? widget.json!['questions'] as List
         : widget.json!['screens'] as List;
-    print('screens: $screens');
+    //print('screens: $screens');
     final updated = <int, Map<int, dynamic>>{};
     if (screens == widget.json!['screens']) {
       for (int i = 0; i < screens.length; i++) {
@@ -216,6 +205,7 @@ class HomePageState extends State<HomePage> {
     }
     print('🛑🛑🛑🛑🛑🛑updated data $updated 🛑🛑🛑🛑🛑🛑');
     _previewData = updated;
+    //_restorePreviewDataFromPrefs();
     print('\n \n \n');
     print('Preview data initialized: $_previewData');
   }
@@ -292,7 +282,6 @@ class HomePageState extends State<HomePage> {
                                       currentFormId,
                                     );
                                   }
-                                  // Empty/null form — open blank ScreenManagerPage
                                   return ScreenManagerPage(
                                     currentFormId: currentFormId,
                                   );
@@ -322,10 +311,24 @@ class HomePageState extends State<HomePage> {
                         // ── Preview Room ──────────────────────────────────
                         ElevatedButton(
                           onPressed: () {
-                            if (widget.json == null ||
-                                widget.json!.isEmpty ||
-                                !widget.json!.containsKey('screens') ||
-                                (widget.json!['screens'] as List).isEmpty) {
+                            if (widget.json == null || widget.json!.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Form is null or empty. Cannot open preview.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            bool containsScreens = widget.json!.containsKey(
+                              'screens',
+                            );
+                            bool containsQuestions = widget.json!.containsKey(
+                              'questions',
+                            );
+                            if (!containsQuestions && !containsScreens) {
+                              //(widget.json!['screens'] as List).isEmpty
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -339,11 +342,18 @@ class HomePageState extends State<HomePage> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) {
-                                  if (!widget.json!.containsKey('screens')) {
-                                    return FormPage(index: 0);
+                                  if (!widget.json!.containsKey('screens') &&
+                                      !widget.json!.containsKey('questions')) {
+                                    return FormPage(
+                                      index: 0,
+                                      currentFormId: currentFormId,
+                                    );
                                   }
 
                                   List<FormPage> screens = [];
+                                  print(
+                                    '❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗json dAtA: ${widget.json}❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗❗',
+                                  );
 
                                   // Simplified: just return saved values directly,
                                   // no JSON mutation needed.
@@ -367,21 +377,32 @@ class HomePageState extends State<HomePage> {
 
                                   for (
                                     int i = 0;
-                                    i < widget.json!['screens'].length;
+                                    i <
+                                        (widget.json!['screens']?.length ??
+                                            widget.json!['questions']?.length ??
+                                            0);
                                     i++
                                   ) {
                                     print(
                                       '✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨b4 crash enter home page: ✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨',
                                     );
+                                    print(
+                                      '✨✨✨✨✨✨✨✨✨✨✨✨✨data: ${widget.json!['screens']?[i] ?? widget.json!['questions']?[i]} ✨✨✨✨✨✨✨✨✨✨✨✨✨',
+                                    );
+                                    print(
+                                      'questions index 0: ${widget.json!['questions']?[0]}✨✨✨✨✨✨✨✨✨✨✨✨✨',
+                                    );
                                     screens.add(
                                       FormPage.fromJson(
-                                        widget.json!['screens'][i],
+                                        widget.json!['screens']?[i] ??
+                                            widget.json! ??
+                                            {},
                                         isChangable: false,
                                         getJson: () async => widget.json!,
                                         onChanged: (qIndex, value) {
                                           setState(() {
                                             print(
-                                              'onChanged called: screen $i, question $qIndex, value: $value',
+                                              '✨✨✨✨✨✨✨✨✨onChanged called: screen $i, question $qIndex, value: $value',
                                             );
                                             _previewData[i]![qIndex] = value;
                                           });
@@ -427,10 +448,14 @@ class HomePageState extends State<HomePage> {
                                         : () => QrCode(
                                             data: _previewData,
                                             previosPage: () {
+                                              Map<String, dynamic> dataToLoad =
+                                                  widget
+                                                      .json!['screens']?[screens
+                                                          .length -
+                                                      1] ??
+                                                  widget.json!;
                                               screens.last.load(
-                                                widget.json!['screens'][screens
-                                                        .length -
-                                                    1],
+                                                dataToLoad,
                                                 (qIndex, value) {
                                                   setState(() {
                                                     _previewData[screens
@@ -445,7 +470,9 @@ class HomePageState extends State<HomePage> {
                                             },
                                           );
                                   }
-
+                                  if (screens.isEmpty) {
+                                    return HomePage();
+                                  }
                                   return screens[0];
                                 },
                               ),

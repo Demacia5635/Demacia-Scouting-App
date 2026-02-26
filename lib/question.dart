@@ -182,7 +182,7 @@ class QuestionState extends State<Question> {
     settings = widget.question.settings(
       (p0) => setState(() {
         widget.question = p0;
-        _rebuildSettings(); // rebuild settings with new widget reference
+        _rebuildSettings();
       }),
     );
   }
@@ -270,8 +270,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = BooleanSwitchSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             booleanSwitch: w,
                           );
                         case Types.int:
@@ -284,8 +287,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = ScoreCounterSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             scoreCounter: w,
                           );
                         case Types.multipleCounter:
@@ -297,12 +303,15 @@ class QuestionState extends State<Question> {
                                 widget.onChanged(widget.index, p0),
                           );
                           widget.question = w;
-                          // settings = MultipleChoiceSettings(
-                          //   onChanged: (p0) =>
-                          //       setState(() => widget.question = p0),
-                          //   multipleChoice: w,
-                          // );
-                          _rebuildSettings();
+                          settings = MultipleChoiceSettings(
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
+                            multipleChoice: w,
+                          );
+                        //_rebuildSettings();
                         case Types.slider:
                           final w = LevelSlider(
                             label: "Label",
@@ -312,8 +321,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = LevelSliderSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             levelSlider: w,
                           );
                         case Types.divider:
@@ -323,8 +335,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = SectionDividerSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             sectionDivider: w,
                           );
                         case Types.color:
@@ -345,8 +360,11 @@ class QuestionState extends State<Question> {
                           final w = Space();
                           widget.question = w;
                           settings = SpaceSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             space: w,
                           );
                         case Types.string:
@@ -358,8 +376,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = StringInputSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             stringInput: w,
                           );
                         case Types.selectable:
@@ -377,8 +398,11 @@ class QuestionState extends State<Question> {
                           );
                           widget.question = w;
                           settings = SelectionSettings(
-                            onChanged: (p0) =>
-                                setState(() => widget.question = p0),
+                            onChanged: (p0) {
+                              if (p0 != widget.question) {
+                                setState(() => widget.question = p0);
+                              }
+                            },
                             selection: w,
                           );
                       }

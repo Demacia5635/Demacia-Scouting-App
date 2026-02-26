@@ -20,7 +20,9 @@ class FormPage extends StatefulWidget {
     this.previosPage,
     this.currentFormId,
   }) : questions = questions ?? {},
-       onSave = onSave ?? (() => Future.value({}));
+       onSave = onSave ?? (() => Future.value({})) {
+    print('🟦🟦🟦🟦🟦id: ${currentFormId}🟧🟧🟦🟦🟦🟦');
+  }
 
   int index;
   String name;
@@ -58,10 +60,10 @@ class FormPage extends StatefulWidget {
     required Map<int, dynamic Function()?>? Function() init,
   }) {
     Map<int, (Question, dynamic)> questions = {};
-
-    // Handle both 'questions' and legacy 'question' keys, and null/empty cases
+    print('🛑🛑🛑🛑🛑🛑🛑🛑🛑id: $id 🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑');
     List? questionsList;
-
+    print('question type: ${json['question'].runtimeType}');
+    print('🛑🛑🛑JSON DATA IN FROMJSON: $json 🛑🛑🛑');
     if (json['questions'] != null && json['questions'] is List) {
       questionsList = json['questions'] as List;
     } else if (json['question'] != null && json['question'] is List) {
@@ -90,6 +92,7 @@ class FormPage extends StatefulWidget {
       }
     }
 
+    print('🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི name: ${json['name']}🧸ྀི🧸ྀི🧸ྀི🧸ྀི');
     return FormPage(
       questions: questions,
       isChangable: isChangable,
@@ -233,9 +236,16 @@ class FormPageState extends State<FormPage> {
                       widget.currentFormId,
                     );
                     print('form id: ${MainApp.currentSave.formId}');
+                    print(
+                      '🟧🟧🟧🟧🟧🟧form id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧',
+                    );
                     await DatabaseService().updateForm(
                       formData: widget.toJson(),
-                      id: MainApp.currentSave.formId!,
+                      id:
+                          widget.currentFormId ??
+                          MainApp
+                              .currentSave
+                              .formId!, //MainApp.currentSave.formId!,
                     );
                   }
                   as void Function(),

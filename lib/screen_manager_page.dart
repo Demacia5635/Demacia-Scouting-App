@@ -37,11 +37,13 @@ class ScreenManagerPage extends StatefulWidget {
     );
 
     print('screen is null?: ${json['screens'] == null}');
-
-    // Return empty widget if nothing useful in json
-    if ((json['screens'] == null ||
-            (json['screens'] is List && (json['screens'] as List).isEmpty)) &&
-        json['questions'] == null) {
+    print('🟧🟧🟧🟧🟧🟧🟧questions: ${json['questions']}🟧🟧🟧🟧🟧🟧🟧');
+    if (json['screens'] == null && json['questions'] == null) {
+      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET EARLY🟧🟧🟧🟧🟧🟧');
+      return widget;
+    }
+    if ((json['screens'] is List && (json['screens'] as List).isEmpty)) {
+      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET🟧🟧🟧🟧🟧🟧');
       return widget;
     }
 
@@ -133,6 +135,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
       name: 'Form Num $currentIndex',
       isChangable: true,
       onSave: () async => widget.toJson(),
+      currentFormId: widget.currentFormId,
     );
 
     setState(() {
