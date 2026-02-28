@@ -5,6 +5,8 @@ import 'package:scouting_qr_maker/widgets/color_input.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
 import 'package:scouting_qr_maker/widgets/icon_picker.dart';
 import 'package:scouting_qr_maker/form_page.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScreenManagerPage extends StatefulWidget {
   ScreenManagerPage({
@@ -294,6 +296,27 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             () => setState(() {}),
             widget.currentFormId,
           );
+        },
+        onLoadSave: () async {
+          // נטען מחדש את אותו screen manager לפי save שנבחר
+          final prefs = await SharedPreferences.getInstance();
+          final key = 'app_data_${MainApp.currentSave.index}';
+          final savedJson = prefs.getString(key);
+
+          if (savedJson != null && savedJson.isNotEmpty) {
+            final formData = jsonDecode(savedJson) as Map<String, dynamic>;
+            if (!mounted) return;
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ScreenManagerPage.fromJson(
+                  formData,
+                  widget.currentFormId ?? 1,
+                ),
+              ),
+            );
+          }
         },
       ),
       body: GridView.builder(
