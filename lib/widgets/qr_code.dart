@@ -19,6 +19,8 @@ class _qr_code_state extends State<qr_code> {
   Barcode? resolt;
   QRViewController? controller;
 
+  
+
     @override
   void reassemble() {
     if (Platform.isAndroid) {
@@ -37,6 +39,15 @@ class _qr_code_state extends State<qr_code> {
       });
     });
 
+  }
+ 
+  void openQrCode(){
+    if(resolt != null && resolt!.code != null){
+      String code = resolt!.code!;
+      if(code.startsWith('http')){
+        
+      }
+    }
   }
 
   Future<void> flipeCmera() async {
