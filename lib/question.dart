@@ -54,6 +54,7 @@ class Question extends StatefulWidget {
     void Function(int index)? onDuplicate,
     required dynamic Function() init,
   }) {
+    print('🛑🛑🛑init value given to QUESTION🛑🛑🛑 ${init()}');
     QuestionType question = switch (Types.values.elementAt(
       json['selected'] as int,
     )) {
@@ -125,7 +126,7 @@ class Question extends StatefulWidget {
         init: init,
       ),
     };
-
+    print('🟢🟢🟢Question created from JSON with index ${json['index']}🟢🟢🟢');
     return Question(
       key: key,
       index: json['index'] as int,

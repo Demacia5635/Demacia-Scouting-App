@@ -21,7 +21,7 @@ class FormPage extends StatefulWidget {
     this.currentFormId,
   }) : questions = questions ?? {},
        onSave = onSave ?? (() => Future.value({})) {
-    print('🟦🟦🟦🟦🟦id: ${currentFormId}🟧🟧🟦🟦🟦🟦');
+    //print('🟦🟦🟦🟦🟦id: ${currentFormId}🟧🟧🟦🟦🟦🟦');
   }
 
   int index;
@@ -62,8 +62,8 @@ class FormPage extends StatefulWidget {
     Map<int, (Question, dynamic)> questions = {};
     print('🛑🛑🛑🛑🛑🛑🛑🛑🛑id: $id 🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑');
     List? questionsList;
-    print('question type: ${json['question'].runtimeType}');
-    print('🛑🛑🛑JSON DATA IN FROMJSON: $json 🛑🛑🛑');
+    // print('question type: ${json['question'].runtimeType}');
+    // print('🛑🛑🛑JSON DATA IN FROMJSON: $json 🛑🛑🛑');
     if (json['questions'] != null && json['questions'] is List) {
       questionsList = json['questions'] as List;
     } else if (json['question'] != null && json['question'] is List) {
@@ -77,7 +77,9 @@ class FormPage extends StatefulWidget {
         final qIndex = question['index'] as int;
         final initMap = init();
         final innerFn = initMap?[qIndex];
-
+        print(
+          '🛑🛑🛑🛑🛑🛑printing all init  ${() => innerFn != null ? innerFn() : innerFn}🛑🛑🛑🛑🛑🛑',
+        );
         questions.addAll({
           qIndex: (
             Question.fromJson(
@@ -92,7 +94,7 @@ class FormPage extends StatefulWidget {
       }
     }
 
-    print('🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི name: ${json['name']}🧸ྀི🧸ྀི🧸ྀི🧸ྀི');
+    //print('🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི🧸ྀི name: ${json['name']}🧸ྀི🧸ྀི🧸ྀི🧸ྀི');
     return FormPage(
       questions: questions,
       isChangable: isChangable,
@@ -119,36 +121,34 @@ class FormPage extends StatefulWidget {
     );
   }
 
-  load(
-    Map<String, dynamic> json,
-    void Function(int, dynamic)? onChanged,
-    Map<int, dynamic Function()?>? Function() init,
-  ) {
-    questions = {};
+  // load(
+  //   Map<String, dynamic> json,
+  //   void Function(int, dynamic)? onChanged,
+  //   Map<int, dynamic Function()?>? Function() init,
+  // ) {
+  //   questions = {};
 
-    final List<dynamic> questionsList =
-        (json['questions'] as List?) ??
-        (json['question'] as List?) ??
-        const [];
+  //   final List<dynamic> questionsList =
+  //       (json['questions'] as List?) ?? (json['question'] as List?) ?? const [];
 
-    for (final q in questionsList) {
-      if (q is! Map<String, dynamic>) continue;
+  //   for (final question in questionsList) {
+  //     if (question is! Map<String, dynamic>) continue;
 
-      final qIndex = q['index'] as int;
-      final initMap = init();
-      final innerFn = initMap?[qIndex];
+  //     final qIndex = question['index'] as int;
+  //     final initMap = init();
+  //     final innerFn = initMap?[qIndex];
 
-      questions[qIndex] = (
-        Question.fromJson(
-          q,
-          isChangable: false,
-          onChanged: onChanged,
-          init: innerFn != null ? () => innerFn() : () => null,
-        ),
-        '\u200B',
-      );
-    }
-  }
+  //     questions[qIndex] = (
+  //       Question.fromJson(
+  //         question,
+  //         isChangable: false,
+  //         onChanged: onChanged,
+  //         init: innerFn != null ? () => innerFn() : () => null,
+  //       ),
+  //       '\u200B',
+  //     );
+  //   }
+  // }
 }
 
 class FormPageState extends State<FormPage> {
@@ -224,7 +224,7 @@ class FormPageState extends State<FormPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('in form page');
+    //print('in form page');
     return RawKeyboardListener(
       focusNode: focusNode,
       onKey: handleKeyEvent,

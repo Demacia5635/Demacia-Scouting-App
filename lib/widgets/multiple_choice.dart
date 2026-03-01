@@ -91,18 +91,21 @@ class MultipleChoice extends QuestionType {
   }) {
     // Dart erases generic types at runtime so `init is double Function()?`
     // always fails. Call init() and check if the result is a double.
+    print('🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑INIT: $init🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑');
     double Function() resolvedInit;
     try {
       final candidate = init != null ? init() : null;
       if (candidate is double) {
         resolvedInit = () => init() as double;
+        print('🛑🛑🛑init is a double Function() 🛑🛑🛑');
       } else {
         resolvedInit = () => json['initValue'] as double;
+        print('🛑🛑🛑init is NOT a double Function()🛑🛑🛑');
       }
     } catch (_) {
       resolvedInit = () => json['initValue'] as double;
     }
-    print('alpha: ${json['plus']['a']}');
+    //print('CHOSE MULTIPLE CHOICE $resolvedInit 🟦🟦🟦🟦🟦🟦🟦🟦🟦');
     return MultipleChoice(
       key: key,
       label: json['label'] as String,
@@ -144,7 +147,7 @@ class MultipleChoice extends QuestionType {
       max: (json['max'] as num).toDouble(),
       min: (json['min'] as num).toDouble(),
       longPressedValue: (json['longPressedValue'] as num).toDouble(),
-      initValue: resolvedInit = () => (json['initValue'] as num).toDouble(),
+      initValue: resolvedInit,
       onChanged: onChanged,
       isChangable: isChangable,
     );
@@ -298,7 +301,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                     initValueController.text = count.toString();
                     widget.initValue = () => count;
                   });
-                  widget.onChanged(min(widget.max, count + 5));
+                  widget.onChanged(count);
                 },
                 onLongPress: () {},
               ),
@@ -314,7 +317,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                     initValueController.text = count.toString();
                     widget.initValue = () => count;
                   });
-                  widget.onChanged(min(widget.max, count + 10));
+                  widget.onChanged(count);
                 },
                 onLongPress: () {},
               ),
@@ -330,7 +333,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                     initValueController.text = count.toString();
                     widget.initValue = () => count;
                   });
-                  widget.onChanged(min(widget.max, count + 15));
+                  widget.onChanged(count);
                 },
                 onLongPress: () {},
               ),
@@ -346,7 +349,7 @@ class MultipleChoiceChangableState extends State<MultipleChoice> {
                     initValueController.text = count.toString();
                     widget.initValue = () => count;
                   });
-                  widget.onChanged(min(widget.max, count + 20));
+                  widget.onChanged(count);
                 },
                 onLongPress: () {},
               ),

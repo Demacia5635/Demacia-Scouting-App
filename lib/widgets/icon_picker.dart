@@ -40,16 +40,17 @@ class IconPicker extends QuestionType {
         }
       }
     } catch (_) {}
-
+    //print('chose ICON 🟦🟦🟦🟦🟦🟦');
     return IconPicker(
       key: key,
       onChanged: onChanged,
-      initValue: resolvedInit ??
+      initValue:
+          resolvedInit ??
           (json['initValue']['codePoint'] != ''
               ? () => IconData(
-                    json['initValue']['codePoint'] as int,
-                    fontFamily: json['initValue']['fontFamily'] as String,
-                  )
+                  json['initValue']['codePoint'] as int,
+                  fontFamily: json['initValue']['fontFamily'] as String,
+                )
               : null),
     );
   }

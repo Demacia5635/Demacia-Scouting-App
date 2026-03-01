@@ -79,14 +79,14 @@ class HomePageState extends State<HomePage> {
             'color': count == 0
                 ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0}
                 : count == 1
-                    ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0}
-                    : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0},
+                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0}
+                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0},
             'icon': {
               'codePoint': count == 0
                   ? Icons.filter_1.codePoint
                   : count == 1
-                      ? Icons.filter_2.codePoint
-                      : Icons.filter_3.codePoint,
+                  ? Icons.filter_2.codePoint
+                  : Icons.filter_3.codePoint,
               'fontFamily': 'MaterialIcons',
             },
             'form': prefs.getString('app_data_$count') ?? "",
@@ -305,10 +305,12 @@ class HomePageState extends State<HomePage> {
                               return;
                             }
 
-                            final containsScreens =
-                                widget.json!.containsKey('screens');
-                            final containsQuestions =
-                                widget.json!.containsKey('questions');
+                            final containsScreens = widget.json!.containsKey(
+                              'screens',
+                            );
+                            final containsQuestions = widget.json!.containsKey(
+                              'questions',
+                            );
 
                             if (!containsQuestions && !containsScreens) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -337,21 +339,29 @@ class HomePageState extends State<HomePage> {
                                   // רשימת מסכים אחת
                                   final List screensList =
                                       (widget.json!['screens'] ??
-                                          widget.json!['questions']) as List;
+                                              widget.json!['questions'])
+                                          as List;
 
                                   // init map למסך
                                   Map<int, dynamic Function()?> func(int i) {
-                                    final screenMap = _previewData[i] ?? {};
-                                    return screenMap.map<int, dynamic Function()?>(
-                                      (qIndex, _) => MapEntry(
-                                        qIndex,
-                                        () => _previewData[i]?[qIndex],
-                                      ),
+                                    print(
+                                      '🟧🟧🟦🟦🟦🟧🟧🟦🟦🟦data for screen $i: ${_previewData[i]}🟧🟧🟦🟦🟦',
                                     );
+                                    final screenMap = _previewData[i] ?? {};
+                                    return screenMap
+                                        .map<int, dynamic Function()?>(
+                                          (qIndex, _) => MapEntry(
+                                            qIndex,
+                                            () => _previewData[i]?[qIndex],
+                                          ),
+                                        );
                                   }
 
                                   // בניית עמוד לפי אינדקס – חדש כל פעם
                                   FormPage buildPage(int i) {
+                                    print(
+                                      '🟢🟢🟢🟢🟢🟢func(i): ${() => func(i)}🟢🟢🟢🟢🟢🟢',
+                                    );
                                     return FormPage.fromJson(
                                       screensList[i] as Map<String, dynamic>,
                                       isChangable: false,
@@ -364,16 +374,17 @@ class HomePageState extends State<HomePage> {
                                       },
                                       id: currentFormId,
                                       init: () => func(i),
-                                      previosPage:
-                                          i > 0 ? () => buildPage(i - 1) : null,
+                                      previosPage: i > 0
+                                          ? () => buildPage(i - 1)
+                                          : null,
                                       nextPage: (i + 1 < screensList.length)
                                           ? () => buildPage(i + 1)
                                           : () => QrCode(
-                                                data: _previewData,
-                                                previosPage: () => buildPage(
-                                                  screensList.length - 1,
-                                                ),
+                                              data: _previewData,
+                                              previosPage: () => buildPage(
+                                                screensList.length - 1,
                                               ),
+                                            ),
                                     );
                                   }
 
