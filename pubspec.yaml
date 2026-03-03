@@ -16,12 +16,21 @@ dependencies:
   package_info_plus: ^8.3.0
   qr_flutter: ^4.1.0
   shared_preferences: ^2.5.3
-  uuid: ^4.5.1
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+flutter_launcher_icons: 
+  android: true
+  ios: true
+  windows:
+    generate: true # Some versions prefer this instead of just 'true'
+    image_path: "assets/Demacia-logo.png"
+    icon_size: 256 
+  image_path: "assets/Demacia-logo.png"
 
 flutter:
   uses-material-design: true

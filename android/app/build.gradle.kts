@@ -9,8 +9,8 @@ plugins {
 
 android {
     namespace = "com.example.scouting_qr_maker"
-    compileSdk = 34  // Changed from flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36  // Changed from flutter.compileSdkVersion
+    ndkVersion = "27.0.12077973"
     
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,7 +24,7 @@ android {
     defaultConfig {
         applicationId = "com.example.scouting_qr_maker"
         minSdk = flutter.minSdkVersion  // Changed from flutter.minSdkVersion
-        targetSdk = 34  // Changed from flutter.targetSdkVersion
+        targetSdk = 36  // Changed from flutter.targetSdkVersion
         versionCode = 1  // Changed from flutter.versionCode
         versionName = "1.0"  // Changed from flutter.versionName
     }

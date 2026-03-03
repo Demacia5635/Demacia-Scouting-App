@@ -284,7 +284,7 @@ class HomePageState extends State<HomePage> {
                               "Editing Room",
                               style: TextStyle(fontSize: isPhone ? 16 : 18),
                             ),
-                            trailing: const Icon(Icons.arrow_right_alt),
+                            trailing: const Icon(Icons.edit),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: isPhone ? 12 : 16,
                             ),
@@ -402,10 +402,10 @@ class HomePageState extends State<HomePage> {
                           ),
                           child: ListTile(
                             title: Text(
-                              "Preview Room",
+                              "Enter Form",
                               style: TextStyle(fontSize: isPhone ? 16 : 18),
                             ),
-                            trailing: const Icon(Icons.arrow_right_alt),
+                            trailing: const Icon(Icons.list_alt),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: isPhone ? 12 : 16,
                             ),
