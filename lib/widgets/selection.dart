@@ -91,10 +91,10 @@ class Selection extends QuestionType {
     Set<Entry> Function()? resolvedInit;
     try {
       if (init != null) {
-        final candidate = init(); // קוראים פעם אחת בלבד
+        final candidate = init();
         if (candidate is Set<Entry>) {
-          final cached = normalise(candidate); // מנרמלים פעם אחת
-          resolvedInit = () => cached; // מחזירים cached בלי לקרוא שוב ל-init()
+          final cached = normalise(candidate);
+          resolvedInit = () => cached;
         }
       }
     } catch (_) {}
@@ -238,7 +238,6 @@ class SelectionState extends State<Selection> {
     if (selected != null && selected!.isNotEmpty) {
       value = selected!.first;
     }
-
   }
 
   @override
@@ -339,8 +338,6 @@ class SelectionSettingsState extends State<SelectionSettings> {
     isSegment = widget.selection.selectionOption == SelectionOptions.segments;
   }
 
-  // FIX: Helper to rebuild a Selection with updated fields, keeping all other
-  // fields intact. Avoids repeating the full constructor on every change.
   Selection _rebuild({
     String? label,
     List<Entry>? options,
@@ -350,30 +347,30 @@ class SelectionSettingsState extends State<SelectionSettings> {
     void Function(Set<Entry>?)? onChanged,
     Set<Entry> Function()? initValue,
     bool? isMultiSelect,
-  }) => Selection(
-    label: label ?? widget.selection.label,
-    options: options ?? widget.selection.options,
-    textColor: textColor ?? widget.selection.textColor,
-    placeHolder: placeHolder ?? widget.selection.placeHolder,
-    selectionOption: selectionOption ?? widget.selection.selectionOption,
-    onChanged: onChanged ?? widget.selection.onChanged,
-    initValue: initValue ?? widget.selection.initValue,
-    isMultiSelect: isMultiSelect ?? widget.selection.isMultiSelect,
-    isChangable: true,
-  );
+  }) {
+    final currentInit = widget.selection.initValue;
+
+    return Selection(
+      label: label ?? widget.selection.label,
+      options: options ?? widget.selection.options,
+      textColor: textColor ?? widget.selection.textColor,
+      placeHolder: placeHolder ?? widget.selection.placeHolder,
+      selectionOption: selectionOption ?? widget.selection.selectionOption,
+      onChanged: onChanged ?? widget.selection.onChanged,
+      initValue: initValue ?? currentInit,
+      isMultiSelect: isMultiSelect ?? widget.selection.isMultiSelect,
+      isChangable: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    // FIX: Removed ConstrainedBox(maxWidth: 800) — let content size itself.
     scrollDirection: Axis.horizontal,
     child: IntrinsicHeight(
-      // FIX: IntrinsicHeight lets both columns size to each other's height
-      // without going unbounded, fixing the collapsed-column issue.
       child: Row(
         spacing: 10,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Left column: settings controls ---
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 260),
             child: Column(
@@ -381,7 +378,6 @@ class SelectionSettingsState extends State<SelectionSettings> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Color picker row
                 Row(
                   spacing: 10,
                   children: [
@@ -399,7 +395,6 @@ class SelectionSettingsState extends State<SelectionSettings> {
                   ],
                 ),
 
-                // Placeholder input — only shown for selector mode
                 if (!isSegment)
                   StringInput(
                     label: "Enter the placeHolder",
@@ -410,26 +405,25 @@ class SelectionSettingsState extends State<SelectionSettings> {
                     },
                   ),
 
-                // Multi-select toggle
                 BooleanSwitch(
                   label: "select if you want multi choice",
                   initValue: () => widget.selection.isMultiSelect,
                   onChanged: (value) {
+                    final captured = widget.selection.initValue;
                     setState(() {
                       isMulti = value;
                       if (isMulti) isSegment = true;
                     });
                     widget.selection = _rebuild(
                       isMultiSelect: value,
-                      initValue: !value && widget.selection.initValue != null
-                          ? () => {widget.selection.initValue!().first}
-                          : widget.selection.initValue,
+                      initValue: !value && captured != null
+                          ? () => {captured().first}
+                          : captured,
                     );
                     widget.onChanged(widget.selection);
                   },
                 ),
 
-                // Selector / Segments toggle — hidden in multi-select mode
                 if (!isMulti)
                   Row(
                     spacing: 4,
@@ -460,9 +454,6 @@ class SelectionSettingsState extends State<SelectionSettings> {
 
           const SizedBox(width: 10),
 
-          // --- Right column: option list editor ---
-          // FIX: Wrapped in IntrinsicWidth so EditableEnumSelector is never
-          // squeezed to zero width when the parent Row has mainAxisSize.min.
           IntrinsicWidth(
             child: Column(
               mainAxisSize: MainAxisSize.min,

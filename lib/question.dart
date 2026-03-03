@@ -182,8 +182,11 @@ class QuestionState extends State<Question> {
   void _rebuildSettings() {
     settings = widget.question.settings(
       (p0) => setState(() {
+        bool sameType = p0.runtimeType == widget.question.runtimeType;
         widget.question = p0;
-        _rebuildSettings();
+        if (!sameType) {
+          _rebuildSettings();
+        }
       }),
     );
   }
@@ -252,7 +255,6 @@ class QuestionState extends State<Question> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Type-selector bar — always scrollable so it never overflows.
             if (widget.isChangable)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -312,7 +314,7 @@ class QuestionState extends State<Question> {
                             },
                             multipleChoice: w,
                           );
-                        //_rebuildSettings();
+                          _rebuildSettings();
                         case Types.slider:
                           final w = LevelSlider(
                             label: "Label",
