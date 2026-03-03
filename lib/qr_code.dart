@@ -10,14 +10,21 @@ import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
+import 'package:http/http.dart' as http;
 
 void main() {}
 
 class QrCode extends StatefulWidget {
-  QrCode({super.key, required this.data, required this.previosPage});
+  QrCode({
+    super.key,
+    required this.data,
+    required this.previosPage,
+    this.onUploaded, // ✅ new callback — called only on successful upload
+  });
 
   Map<int, Map<int, dynamic>> data;
   Widget Function() previosPage;
+  VoidCallback? onUploaded;
 
   @override
   State<StatefulWidget> createState() => QrCodeState();
@@ -25,6 +32,7 @@ class QrCode extends StatefulWidget {
 
 class QrCodeState extends State<QrCode> {
   String qrData = '';
+  bool _isUploading = false;
 
   late FocusNode focusNode;
 
@@ -52,7 +60,37 @@ class QrCodeState extends State<QrCode> {
           }
           return x;
         }
-        return '\u200B'; // Placeholder for unsupported types or null
+        return '\u200B';
+    }
+  }
+
+  Future<void> sendToSheet() async {
+    Map<String, dynamic> dataMap = {};
+    for (var entry in widget.data.entries) {
+      for (var screenEntry in entry.value.entries) {
+        String value = valueToString(screenEntry.value);
+        if (value != '\u200B') {
+          dataMap[screenEntry.key.toString()] = value;
+        }
+      }
+    }
+
+    final url = Uri.parse(
+      'https://script.google.com/macros/s/AKfycbyZydAiTiAP5LdN3fPUjN5-xihFFbeN4-T9mrUpBe8JZHcwxYOKXbxEliwRmWfEBwy35g/exec',
+    );
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url)
+        ..headers['Content-Type'] = 'application/json'
+        ..body = jsonEncode(dataMap);
+
+      final streamedResponse = await client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+    } finally {
+      client.close();
     }
   }
 
@@ -79,9 +117,8 @@ class QrCodeState extends State<QrCode> {
       qrData += ',';
     }
 
-    // Check if widget is still mounted before calling setState
     if (mounted) {
-      setState(() {}); // Trigger rebuild after data loads
+      setState(() {});
     }
   }
 
@@ -104,20 +141,16 @@ class QrCodeState extends State<QrCode> {
     );
   }
 
-  /// Handles raw keyboard events.
   void handleKeyEvent(RawKeyEvent event) {
-    // Check if the event is a key down event and the pressed key is the Escape key.
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape) {
-      // Check if there's a route to pop (i.e., not the very first screen)
       if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); // Pop the current route
+        Navigator.of(context).pop();
       }
     }
 
     if (event is RawKeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      // Check if there's a route to pop (i.e., not the very first screen)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => widget.previosPage()),
@@ -168,12 +201,46 @@ class QrCodeState extends State<QrCode> {
                       },
                       child: Icon(Icons.navigate_before),
                     ),
+
                     ElevatedButton(
-                      onPressed: () async {
-                        await _uploadData();
-                      },
-                      child: Icon(Icons.upload),
+                      onPressed: _isUploading
+                          ? null
+                          : () async {
+                              setState(() => _isUploading = true);
+                              try {
+                                await _uploadData();
+                                await sendToSheet();
+                                if (context.mounted) {
+                                  // ✅ Only resets form data when upload button is pressed
+                                  widget.onUploaded?.call();
+                                  Navigator.of(
+                                    context,
+                                  ).popUntil((route) => route.isFirst);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Upload failed: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isUploading = false);
+                                }
+                              }
+                            },
+                      child: _isUploading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(Icons.upload),
                     ),
+
                     ElevatedButton(
                       onPressed: null,
                       child: Icon(Icons.navigate_next),

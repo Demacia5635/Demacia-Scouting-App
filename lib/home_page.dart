@@ -149,6 +149,14 @@ class HomePageState extends State<HomePage> {
     _subscribeToSaves();
   }
 
+  // ✅ Called only when upload button is pressed in QrCode page
+  void _resetPreviewData() {
+    setState(() {
+      _previewData = {};
+      _initPreviewData();
+    });
+  }
+
   void _initPreviewData() {
     print('json: ${widget.json}');
     if (widget.json == null ||
@@ -165,12 +173,9 @@ class HomePageState extends State<HomePage> {
 
     final updated = <int, Map<int, dynamic>>{};
 
-    // ⚠️ השארתי את הלוגיקה שלך כמו שהיא (לא חובה לתיקון הנוכחי),
-    // אבל מומלץ בעתיד לפשט אותה כך שתמיד updated[i] = {}.
     if (screens == widget.json!['screens']) {
       for (int i = 0; i < screens.length; i++) {
         if (screens[i]['questions'] == null) {
-          // אם אין questions – לפחות ליצור מפה ריקה למסך הזה:
           updated[i] = {};
         } else {
           final questions = screens[i]['questions'] as List;
@@ -291,7 +296,7 @@ class HomePageState extends State<HomePage> {
                           ),
                         ),
 
-                        // ── Preview Room ──────────────────────────────────
+                        // ── Enter Form ────────────────────────────────────
                         ElevatedButton(
                           onPressed: () {
                             if (widget.json == null || widget.json!.isEmpty) {
@@ -326,7 +331,6 @@ class HomePageState extends State<HomePage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                // ✅ FIX: builder חדש שמייצר FormPage חדש לכל אינדקס (בלי List<FormPage> ובלי load)
                                 builder: (context) {
                                   if (!widget.json!.containsKey('screens') &&
                                       !widget.json!.containsKey('questions')) {
@@ -336,13 +340,11 @@ class HomePageState extends State<HomePage> {
                                     );
                                   }
 
-                                  // רשימת מסכים אחת
                                   final List screensList =
                                       (widget.json!['screens'] ??
                                               widget.json!['questions'])
                                           as List;
 
-                                  // init map למסך
                                   Map<int, dynamic Function()?> func(int i) {
                                     print(
                                       '🟧🟧🟦🟦🟦🟧🟧🟦🟦🟦data for screen $i: ${_previewData[i]}🟧🟧🟦🟦🟦',
@@ -357,7 +359,6 @@ class HomePageState extends State<HomePage> {
                                         );
                                   }
 
-                                  // בניית עמוד לפי אינדקס – חדש כל פעם
                                   FormPage buildPage(int i) {
                                     print(
                                       '🟢🟢🟢🟢🟢🟢func(i): ${() => func(i)}🟢🟢🟢🟢🟢🟢',
@@ -384,6 +385,8 @@ class HomePageState extends State<HomePage> {
                                               previosPage: () => buildPage(
                                                 screensList.length - 1,
                                               ),
+                                              // ✅ Reset ONLY when upload is pressed
+                                              onUploaded: _resetPreviewData,
                                             ),
                                     );
                                   }
@@ -392,6 +395,7 @@ class HomePageState extends State<HomePage> {
                                 },
                               ),
                             );
+                            // ✅ No .then() reset here — going back normally keeps the data
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.zero,
