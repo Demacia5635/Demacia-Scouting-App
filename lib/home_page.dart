@@ -382,10 +382,11 @@ class HomePageState extends State<HomePage> {
                                           ? () => buildPage(i + 1)
                                           : () => QrCode(
                                               data: _previewData,
+                                              formJson: widget
+                                                  .json, // ✅ pass form JSON for label mapping
                                               previosPage: () => buildPage(
                                                 screensList.length - 1,
                                               ),
-                                              // ✅ Reset ONLY when upload is pressed
                                               onUploaded: _resetPreviewData,
                                             ),
                                     );
@@ -395,7 +396,6 @@ class HomePageState extends State<HomePage> {
                                 },
                               ),
                             );
-                            // ✅ No .then() reset here — going back normally keeps the data
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.zero,
