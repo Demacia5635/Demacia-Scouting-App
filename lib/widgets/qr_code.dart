@@ -1,11 +1,11 @@
-
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-void main(){
+void main() {
   runApp(qr_code());
 }
 
@@ -19,9 +19,7 @@ class _qr_code_state extends State<qr_code> {
   Barcode? resolt;
   QRViewController? controller;
 
-  
-
-    @override
+  @override
   void reassemble() {
     if (Platform.isAndroid) {
       controller!.pauseCamera();
@@ -30,23 +28,46 @@ class _qr_code_state extends State<qr_code> {
     }
   }
 
-  
-  void _onQRViewCreated(QRViewController controller){
+  void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    controller.scannedDataStream.listen((scanData){
-      setState((){
+    controller.scannedDataStream.listen((scanData) {
+      setState(() {
         resolt = scanData;
       });
+      // automatically open any http/https URLs
+      _maybeLaunchResult();
     });
-
   }
- 
-  void openQrCode(){
-    if(resolt != null && resolt!.code != null){
-      String code = resolt!.code!;
-      if(code.startsWith('http')){
-        
+
+  void openQrCode() {
+    // exposed method to manually open the current scan result
+    if (resolt != null && resolt!.code != null) {
+      final code = resolt!.code!;
+      if (code.startsWith('http')) {
+        _launchUrl(code);
       }
+    }
+  }
+
+  void _maybeLaunchResult() {
+    if (resolt != null && resolt!.code != null) {
+      final code = resolt!.code!;
+      if (code.startsWith(RegExp(r'https?://'))) {
+        // once we attempt to open, pause to avoid repeated launches
+        controller?.pauseCamera();
+        _launchUrl(code);
+      }
+    }
+  }
+
+  Future<void> _launchUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not launch $urlString')));
     }
   }
 
@@ -57,23 +78,51 @@ class _qr_code_state extends State<qr_code> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('qr code')  
-      ),
+      appBar: AppBar(title: const Text('qr code')),
       body: Column(
         children: [
           Expanded(
             flex: 5,
-            child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated)
-            ),
+            child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated),
+          ),
           Expanded(
             flex: 5,
-          child: Center(
-            child: (resolt != null)
-              ? Text( 'Barcode Type: ${describeEnum(resolt!.format)}   Data: ${resolt!.code}') : Text('Scan a code')),
-          )
-        ]
-    ),
-      );
+            child: Center(
+              child: (resolt != null)
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Barcode Type: ${describeEnum(resolt!.format)}   Data: ${resolt!.code}',
+                        ),
+                        if (resolt!.code != null &&
+                            resolt!.code!.startsWith(RegExp(r'https?://')))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                openQrCode();
+                              },
+                              child: const Text('Open Link'),
+                            ),
+                          ),
+                        if (controller != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: TextButton(
+                              onPressed: () {
+                                controller?.resumeCamera();
+                              },
+                              child: const Text('Scan Again'),
+                            ),
+                          ),
+                      ],
+                    )
+                  : const Text('Scan a code'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
