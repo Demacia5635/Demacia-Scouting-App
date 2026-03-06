@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:http/http.dart' as http;
 
 void main() {}
@@ -37,6 +39,8 @@ class QrCodeState extends State<QrCode> {
   bool _isUploading = false;
 
   late FocusNode focusNode;
+  final ScreenshotController _screenshotController = ScreenshotController();
+  Timer? _screenshotTimer;
 
   String valueToString(dynamic value) {
     switch (value.runtimeType) {
@@ -66,8 +70,6 @@ class QrCodeState extends State<QrCode> {
     }
   }
 
-  // Builds {screenIndex: {questionIndex: "label"}} from formJson
-  // Also returns the screen name for each screen index
   Map<int, Map<int, String>> _buildLabelMap() {
     final labelMap = <int, Map<int, String>>{};
     if (widget.formJson == null) return labelMap;
@@ -101,7 +103,6 @@ class QrCodeState extends State<QrCode> {
     return labelMap;
   }
 
-  // Returns screen name (e.g. "Auto", "Teleop") for a given screen index
   String _getScreenName(int screenIndex) {
     if (widget.formJson == null) return 'screen$screenIndex';
     final screens = widget.formJson!['screens'] as List? ?? [];
@@ -116,7 +117,6 @@ class QrCodeState extends State<QrCode> {
   Future<void> sendToSheet() async {
     final labelMap = _buildLabelMap();
 
-    // ✅ First pass: collect all labels across all screens to detect duplicates
     final allLabels = <String>[];
     for (var screenEntry in widget.data.entries) {
       final screenIndex = screenEntry.key;
@@ -128,7 +128,6 @@ class QrCodeState extends State<QrCode> {
       }
     }
 
-    // Find labels that appear more than once (duplicates across screens)
     final labelCounts = <String, int>{};
     for (final l in allLabels) {
       labelCounts[l] = (labelCounts[l] ?? 0) + 1;
@@ -138,7 +137,6 @@ class QrCodeState extends State<QrCode> {
         .map((e) => e.key)
         .toSet();
 
-    // ✅ Second pass: build dataMap, prefixing duplicates with screen name
     final Map<String, dynamic> dataMap = {};
     for (var screenEntry in widget.data.entries) {
       final screenIndex = screenEntry.key;
@@ -151,7 +149,6 @@ class QrCodeState extends State<QrCode> {
         final rawLabel =
             labelMap[screenIndex]?[qIndex] ?? 'screen${screenIndex}_q$qIndex';
 
-        // ✅ If this label appears in multiple screens, prefix with screen name
         final finalLabel = duplicateLabels.contains(rawLabel)
             ? '${screenName}_$rawLabel'
             : rawLabel;
@@ -170,7 +167,6 @@ class QrCodeState extends State<QrCode> {
     try {
       final encodedBody = jsonEncode(dataMap);
 
-      // Step 1: POST — don't auto-follow redirect
       final request = http.Request('POST', url)
         ..headers['Content-Type'] = 'application/json'
         ..followRedirects = false
@@ -181,7 +177,6 @@ class QrCodeState extends State<QrCode> {
       http.Response response;
 
       if (firstResponse.statusCode == 302) {
-        // Google redirects require GET
         final redirectUrl = Uri.parse(firstResponse.headers['location']!);
         response = await http.get(redirectUrl);
       } else {
@@ -205,10 +200,54 @@ class QrCodeState extends State<QrCode> {
     super.initState();
     focusNode = FocusNode();
     _loadData();
+
+    // Take screenshot after 10 seconds
+    _screenshotTimer = Timer(const Duration(seconds: 10), () async {
+      try {
+        final image = await _screenshotController.capture();
+        if (image != null) {
+          print('Screenshot taken! Size: ${image.lengthInBytes} bytes');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '✅ Screenshot taken! (${image.lengthInBytes} bytes)',
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          print('Screenshot returned null!');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ Screenshot failed: image was null'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('Screenshot error: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ Screenshot error: $e'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _screenshotTimer?.cancel();
     focusNode.dispose();
     super.dispose();
   }
@@ -271,97 +310,102 @@ class QrCodeState extends State<QrCode> {
     autofocus: true,
     child: Scaffold(
       appBar: DemaciaAppBar(onSave: () {}, isInPreview: true),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              spacing: 30,
-              children: [
-                SectionDivider(
-                  label: 'Qr Code',
-                  lineColor: Colors.cyanAccent.shade700,
-                ),
-                QrImageView(
-                  data: qrData,
-                  size: 300,
-                  backgroundColor: Colors.white,
-                ),
+      body: Screenshot(
+        controller: _screenshotController,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                spacing: 30,
+                children: [
+                  SectionDivider(
+                    label: 'Qr Code',
+                    lineColor: Colors.cyanAccent.shade700,
+                  ),
+                  QrImageView(
+                    data: qrData,
+                    size: 300,
+                    backgroundColor: Colors.white,
+                  ),
 
-                Text(
-                  qrData,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                  Text(
+                    qrData,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
 
-                Row(
-                  spacing: 50,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => widget.previosPage(),
-                          ),
-                        );
-                      },
-                      child: Icon(Icons.navigate_before),
-                    ),
+                  Row(
+                    spacing: 50,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => widget.previosPage(),
+                            ),
+                          );
+                        },
+                        child: Icon(Icons.navigate_before),
+                      ),
 
-                    ElevatedButton(
-                      onPressed: _isUploading
-                          ? null
-                          : () async {
-                              setState(() => _isUploading = true);
-                              try {
-                                await _uploadData();
-                                await sendToSheet();
-                                if (context.mounted) {
-                                  widget.onUploaded?.call();
-                                  Navigator.of(
-                                    context,
-                                  ).popUntil((route) => route.isFirst);
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        e.toString().replaceAll(
-                                          'Exception: ',
-                                          '',
+                      ElevatedButton(
+                        onPressed: _isUploading
+                            ? null
+                            : () async {
+                                setState(() => _isUploading = true);
+                                try {
+                                  await _uploadData();
+                                  await sendToSheet();
+                                  if (context.mounted) {
+                                    widget.onUploaded?.call();
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          e.toString().replaceAll(
+                                            'Exception: ',
+                                            '',
+                                          ),
                                         ),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 4),
                                       ),
-                                      backgroundColor: Colors.red,
-                                      duration: Duration(seconds: 4),
-                                    ),
-                                  );
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isUploading = false);
+                                  }
                                 }
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _isUploading = false);
-                                }
-                              }
-                            },
-                      child: _isUploading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.upload),
-                    ),
+                              },
+                        child: _isUploading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(Icons.upload),
+                      ),
 
-                    ElevatedButton(
-                      onPressed: null,
-                      child: Icon(Icons.navigate_next),
-                    ),
-                  ],
-                ),
-              ],
+                      ElevatedButton(
+                        onPressed: null,
+                        child: Icon(Icons.navigate_next),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
