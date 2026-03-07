@@ -9,6 +9,7 @@ import 'package:scouting_qr_maker/qr_code.dart';
 import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/screen_manager_page.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
+import 'package:scouting_qr_maker/widgets/scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -410,6 +411,26 @@ class HomePageState extends State<HomePage> {
                               style: TextStyle(fontSize: isPhone ? 16 : 18),
                             ),
                             trailing: const Icon(Icons.list_alt),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isPhone ? 12 : 16,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Scanner(),
+                              ),
+                            );
+                          },
+                          child: ListTile(
+                            title: Text(
+                              "Scan Qr Code",
+                              style: TextStyle(fontSize: isPhone ? 16 : 18),
+                            ),
+                            trailing: const Icon(Icons.scanner_outlined),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: isPhone ? 12 : 16,
                             ),
