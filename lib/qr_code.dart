@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:gal/gal.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
@@ -51,10 +55,8 @@ class QrCodeState extends State<QrCode> {
         return value.toString();
       case IconData:
         return '${(value as IconData).codePoint},${(value).fontFamily}';
-        break;
       case Color:
         return (value as Color).toHexString(includeHashSign: true);
-        break;
       default:
         if (value is Set<Entry>) {
           String x = '';
@@ -204,14 +206,28 @@ class QrCodeState extends State<QrCode> {
     // Take screenshot after 10 seconds
     _screenshotTimer = Timer(const Duration(seconds: 10), () async {
       try {
-        final image = await _screenshotController.capture();
-        if (image != null) {
-          print('Screenshot taken! Size: ${image.lengthInBytes} bytes');
+        Uint8List? imageBytes = await _screenshotController.capture();
+        if (imageBytes != null) {
+          final tempDir = await getTemporaryDirectory();
+
+          final String filePath =
+              '${tempDir.path}/screenshot_${DateTime.now().millisecondsSinceEpoch}.png';
+          final File file = File(filePath);
+
+          await file.writeAsBytes(imageBytes);
+
+          try {
+            await Gal.putImage(file.path);
+            print("Saved to gallery!");
+          } catch (e) {
+            print("Error saving image: $e");
+          }
+          print('Screenshot taken! Size: ${imageBytes.lengthInBytes} bytes');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  '✅ Screenshot taken! (${image.lengthInBytes} bytes)',
+                  '✅ Screenshot taken! (${imageBytes.lengthInBytes} bytes)',
                 ),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 3),
