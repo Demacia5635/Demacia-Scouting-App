@@ -19,8 +19,7 @@ class Selection extends QuestionType {
     this.isMultiSelect = false,
     this.isChangable = false,
     this.segments = const [],
-  }) : initValue =
-           initValue ?? (options.isNotEmpty ? () => {options.first} : () => {}),
+  }) : initValue = initValue ?? (() => {}),
        onChanged = onChanged ?? ((p0) {}) {
     if (isMultiSelect) selectionOption = SelectionOptions.segments;
     segments = [];
@@ -171,7 +170,7 @@ class SelectionChangableState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: (widget.placeHolder),
+          placeholder: widget.placeHolder,
           value: value,
           makeItem: (Entry t) => t.title,
           onChange: (Entry t) {
@@ -261,7 +260,7 @@ class SelectionState extends State<Selection> {
       case SelectionOptions.selector:
         return Selector(
           options: widget.options,
-          placeholder: (widget.placeHolder),
+          placeholder: widget.placeHolder,
           value: value,
           makeItem: (Entry t) => t.title,
           onChange: (Entry t) {
@@ -414,10 +413,14 @@ class SelectionSettingsState extends State<SelectionSettings> {
                       isMulti = value;
                       if (isMulti) isSegment = true;
                     });
+                    // FIX: guard against empty set before calling .first
                     widget.selection = _rebuild(
                       isMultiSelect: value,
                       initValue: !value && captured != null
-                          ? () => {captured().first}
+                          ? () {
+                              final s = captured();
+                              return s.isNotEmpty ? {s.first} : {};
+                            }
                           : captured,
                     );
                     widget.onChanged(widget.selection);
