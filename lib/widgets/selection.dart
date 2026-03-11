@@ -146,10 +146,11 @@ class SelectionChangableState extends State<Selection> {
 
   @override
   Widget build(BuildContext context) => ConstrainedBox(
-    constraints: const BoxConstraints(maxWidth: 600, maxHeight: 150),
+    constraints: const BoxConstraints(maxWidth: 400, maxHeight: 150),
     child: Column(
       spacing: 4,
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           constraints: const BoxConstraints(maxWidth: 100),
@@ -369,6 +370,7 @@ class SelectionSettingsState extends State<SelectionSettings> {
       child: Row(
         spacing: 10,
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 260),
@@ -457,9 +459,10 @@ class SelectionSettingsState extends State<SelectionSettings> {
 
           const SizedBox(width: 10),
 
-          IntrinsicWidth(
+          Flexible(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 EditableEnumSelector(
                   init: widget.selection.options,
