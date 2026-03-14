@@ -159,9 +159,9 @@ class QrCodeState extends State<QrCode> {
     }
 
     print('Sending to sheet: $dataMap');
-
+    //TODO: the url the he will open the right web cose ther dumb
     final url = Uri.parse(
-      'https://script.google.com/macros/s/AKfycbzwDCPVAost-Crrql2l6CiGi8C5KUmH0ZFE6UBmFASLsN-l9mlzeOMrpbwlyD7LVM4svg/exec',
+      'https://docs.google.com/spreadsheets/d/1PuNPL4EYWW4F2yAiuk5ydpoZ2Nbo7uLJ3xI_mrKj6Xs/edit?gid=0&pli=1&authuser=0#gid=0',
     );
 
     final client = http.Client();
