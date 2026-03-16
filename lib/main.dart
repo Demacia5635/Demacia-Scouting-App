@@ -34,15 +34,24 @@ void save(Map<String, dynamic> json, Save file, int? id) async {
 
   final databaseService = DatabaseService();
   print('⚠️⚠️⚠️⚠️⚠️id: $id⚠️⚠️⚠️⚠️⚠️⚠️⚠️');
+
   var result;
-  if (await databaseService.dbHasData()) {
-    result = await databaseService.updateForm(id: id!, formData: json);
+
+  // ✅ If this save already has a linked DB row, update it.
+  // Otherwise insert a new row and tag it with save_slot so we
+  // can correctly identify it when reading back from the stream.
+  if (id != null) {
+    result = await databaseService.updateForm(id: id, formData: json);
   } else {
-    result = await databaseService.uploadData(table: 'data', data: json);
+    result = await databaseService.uploadData(
+      table: 'data',
+      data: {'form': json, 'save_slot': file.index},
+    );
   }
+
   print('id: $id');
   print('✅✅✅✅✅✅✅ ENTER SAVESSSSS ✅✅✅✅✅✅');
-  // Link the form to this save
+
   if (result != null && result['id'] != null) {
     file.formId = result['id'] as int;
     await file.saveSaves();
@@ -80,7 +89,7 @@ void longSave(
                 .map(
                   (p0) => p0.build(context, () {
                     reload();
-                    save(json, p0, id);
+                    save(json, p0, p0.formId);
                   }),
                 )
                 .toList(),

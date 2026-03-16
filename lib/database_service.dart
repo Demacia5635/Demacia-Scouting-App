@@ -15,7 +15,6 @@ class DatabaseService {
     required Map<String, dynamic> data,
     String? onConflict,
   }) async {
-    //print('upload data: $data');
     print('\n IN UPLOAD FUNC');
     try {
       final response = await _supabase
@@ -38,7 +37,6 @@ class DatabaseService {
         .order('created_at', ascending: false)
         .limit(3)
         .asyncMap((List<Map<String, dynamic>> response) async {
-          // Changed to asyncMap to allow SharedPreferences access
           List<Map<String, dynamic>> savesWithForms = [];
           final prefs = await SharedPreferences.getInstance();
 
@@ -46,39 +44,18 @@ class DatabaseService {
             final row = response[i];
             var formData = row['form'];
 
-            // Logic from your Future: if form is null or empty, check SharedPreferences
-            // if (formData == null || (formData is Map && formData.isEmpty)) {
-            //   // final localData = prefs.getString('app_data_$i');
-            //   // if (localData != null && localData.isNotEmpty) {
-            //   //   try {
-            //   //     formData = jsonDecode(localData);
-            //   //   } catch (e) {
-            //   //     formData = null;
-            //   //   }
-            //   // }
-            //   await prefs.remove('app_data_$i');
-            //   formData = null;
-            // }
-
-            // if (formData is Map<String, dynamic> &&
-            //     formData['screens'] != null) {
-            //   formData = Map<String, dynamic>.from(formData);
-            //   var screens = List.from(formData['screens']);
-            //   for (int s = 0; s < screens.length; s++) {
-            //     if (screens[s] is Map) {
-            //       screens[s] = Map<String, dynamic>.from(screens[s]);
-            //       screens[s]['index'] = s;
-            //     }
-            //   }
-            //   formData['screens'] = screens;
-            // }
+            // ✅ Use save_slot from the DB row so each row maps to the
+            // correct save slot regardless of insertion/ordering.
+            // Fall back to loop position i for legacy rows that predate
+            // the save_slot column.
+            final int slotIndex = (row['save_slot'] as int?) ?? i;
 
             savesWithForms.add({
-              'index': i,
+              'index': slotIndex,
               'id': row['id'],
-              'title': 'Save #${i + 1}',
-              'color': _getColorForIndex(i),
-              'icon': _getIconForIndex(i),
+              'title': 'Save #${slotIndex + 1}',
+              'color': _getColorForIndex(slotIndex),
+              'icon': _getIconForIndex(slotIndex),
               'form': formData ?? {'screens': []},
               'created_at':
                   row['created_at'] ?? DateTime.now().toIso8601String(),
@@ -125,7 +102,6 @@ class DatabaseService {
     if (id.isEmpty) {
       return 1;
     }
-    //return id;
     print('ID!!!: $id, id!: ${id[0]['id']}');
     return id[0]['id'];
   }
@@ -212,12 +188,11 @@ class DatabaseService {
     print('Stream Data: $res');
   }
 
-  /// Get the three most recent s with their associated form data
+  /// Get the three most recent saves with their associated form data
   Future<List<Map<String, dynamic>>> getThreeLatestSavesWithForms() async {
     try {
       print('Getting three latest saves with forms');
 
-      // Get the 3 most recent data entries
       final response = await _supabase
           .from('data')
           .select()
@@ -227,71 +202,38 @@ class DatabaseService {
       List<Map<String, dynamic>> savesWithForms = [];
       print('resp in last three: ${response[0].toString()}');
       for (int i = 0; i < response.length; i++) {
+        // ✅ Use save_slot if present, fall back to loop index
+        final int slotIndex = (response[i]['save_slot'] as int?) ?? i;
+
         if (response[i]['form'] is Map<String, dynamic> &&
             response[i]['form'].isEmpty) {
           SharedPreferences sharedPreferences =
               await SharedPreferences.getInstance();
           savesWithForms.add({
-            'index': i,
-            'title': 'Save #${i + 1}',
-            'color': i == 0
-                ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
-                : i == 1
-                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
-                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
-            'icon': {
-              'codePoint': i == 0
-                  ? Icons.filter_1.codePoint
-                  : i == 1
-                  ? Icons.filter_2.codePoint
-                  : Icons.filter_3.codePoint,
-              'fontFamily': 'MaterialIcons',
-            },
-            'form': sharedPreferences.getString('app_data_$i') != null
-                ? (sharedPreferences.getString('app_data_$i')!)
+            'index': slotIndex,
+            'title': 'Save #${slotIndex + 1}',
+            'color': _getColorForIndex(slotIndex),
+            'icon': _getIconForIndex(slotIndex),
+            'form': sharedPreferences.getString('app_data_$slotIndex') != null
+                ? (sharedPreferences.getString('app_data_$slotIndex')!)
                 : "",
             'created_at': DateTime.now(),
           });
         } else {
           savesWithForms.add({
-            'index': i,
-            'title': 'Save #${i + 1}',
-            'color': i == 0
-                ? {'a': 1.0, 'r': 1.0, 'g': 0.0, 'b': 0.0} // Red
-                : i == 1
-                ? {'a': 1.0, 'r': 0.0, 'g': 1.0, 'b': 0.0} // Green
-                : {'a': 1.0, 'r': 0.0, 'g': 0.0, 'b': 1.0}, // Blue
-            'icon': {
-              'codePoint': i == 0
-                  ? Icons.filter_1.codePoint
-                  : i == 1
-                  ? Icons.filter_2.codePoint
-                  : Icons.filter_3.codePoint,
-              'fontFamily': 'MaterialIcons',
-            },
+            'index': slotIndex,
+            'title': 'Save #${slotIndex + 1}',
+            'color': _getColorForIndex(slotIndex),
+            'icon': _getIconForIndex(slotIndex),
             'form': response[i]['form'],
             'created_at': response[i]['created_at'],
             'id': response[i]['id'],
           });
         }
-        print('form i: $i, ${response[i]['form']}');
-        print('is empty ${response[i]['form'] == {}}');
+        print('form i: $i, slot: $slotIndex, ${response[i]['form']}');
       }
 
       print('Fetched ${savesWithForms.length} saves with forms');
-
-      print('resp len: ${response.length}');
-      for (int i = 0; i < response.length; i++) {
-        final row = response[i];
-        print('b4');
-        print('row: ${row['form']} is null? : ${row['form'] == null}');
-        final screens = row['form'] == null
-            ? []
-            : row['form']['screens'] as List;
-        print('screens: ${screens.length} created at: ${row['created_at']}');
-      }
-      print('end');
-      print('final data: $savesWithForms');
       return savesWithForms;
     } catch (e) {
       print('Error fetching latest saves with forms: $e');
@@ -340,17 +282,14 @@ class DatabaseService {
         return null;
       }
 
-      // Check if data has "screens" wrapper
       if (data.containsKey('screens')) {
-        return data; // Return the whole structure with screens
+        return data;
       }
 
-      // Check if data has "questions" at root level
       if (data.containsKey('questions')) {
         return data;
       }
 
-      // If it has index, name, and other FormPage fields
       if (data.containsKey('index') &&
           (data.containsKey('name') || data.containsKey('questions'))) {
         return data;

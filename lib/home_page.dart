@@ -65,8 +65,7 @@ class HomePageState extends State<HomePage> {
 
           print('Stream update: ${MainApp.saves.length} saves');
 
-          // ✅ Fix: use firstWhere to find the correct save by index,
-          // instead of treating the list as positionally ordered.
+          // ✅ Find the correct row by save slot index, not list position
           final currentIndex = MainApp.currentSave.index;
           final matchingSave = savesWithForms.firstWhere(
             (s) => s['index'] == currentIndex,
@@ -156,7 +155,6 @@ class HomePageState extends State<HomePage> {
     _subscribeToSaves();
   }
 
-  // ✅ Called only when upload button is pressed in QrCode page
   void _resetPreviewData() {
     setState(() {
       _previewData = {};
@@ -275,10 +273,14 @@ class HomePageState extends State<HomePage> {
                                     return ScreenManagerPage.fromJson(
                                       widget.json!,
                                       currentFormId,
+                                      // ✅ Pass a live getter so ScreenManagerPage
+                                      // always reads the current id, not a snapshot.
+                                      getFormId: () => currentFormId,
                                     );
                                   }
                                   return ScreenManagerPage(
                                     currentFormId: currentFormId,
+                                    getFormId: () => currentFormId, // ✅
                                   );
                                 },
                               ),

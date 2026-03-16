@@ -13,11 +13,15 @@ class ScreenManagerPage extends StatefulWidget {
     super.key,
     Map<int, FormPage>? screens,
     int? currentFormId,
+    this.getFormId,
   }) : screens = screens ?? {},
        currentFormId = currentFormId ?? 1;
 
   Map<int, FormPage> screens;
   int? currentFormId;
+  final int Function()? getFormId;
+
+  int get liveFormId => getFormId?.call() ?? currentFormId ?? 1;
 
   @override
   State<ScreenManagerPage> createState() => _ScreenManagerPageState();
@@ -26,26 +30,24 @@ class ScreenManagerPage extends StatefulWidget {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
   };
 
-  factory ScreenManagerPage.fromJson(Map<String, dynamic> json, int id) {
+  factory ScreenManagerPage.fromJson(
+    Map<String, dynamic> json,
+    int id, {
+    int Function()? getFormId,
+  }) {
     Map<int, FormPage> screens = {};
     print('id in fromJson: $id');
 
     ScreenManagerPage widget = ScreenManagerPage(
       screens: screens,
       currentFormId: id,
-    );
-    print(
-      '🟧🟧🟧🟧🟧🟧screen manager default widget id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧🟧',
+      getFormId: getFormId,
     );
 
-    print('screen is null?: ${json['screens'] == null}');
-    print('🟧🟧🟧🟧🟧🟧🟧questions: ${json['questions']}🟧🟧🟧🟧🟧🟧🟧');
     if (json['screens'] == null && json['questions'] == null) {
-      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET EARLY🟧🟧🟧🟧🟧🟧');
       return widget;
     }
     if ((json['screens'] is List && (json['screens'] as List).isEmpty)) {
-      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET🟧🟧🟧🟧🟧🟧');
       return widget;
     }
 
@@ -56,17 +58,14 @@ class ScreenManagerPage extends StatefulWidget {
         if (screenJson == null) continue;
         if (screenJson is! Map<String, dynamic>) continue;
 
-        // Skip screens that have no valid questions key at all
         final hasQuestions =
             screenJson['questions'] != null && screenJson['questions'] is List;
         final hasLegacyQuestion =
             screenJson['question'] != null && screenJson['question'] is List;
 
         if (!hasQuestions && !hasLegacyQuestion) {
-          // Still add the screen, just with no questions
           final index = screenJson['index'] as int? ?? screens.length;
           screens[index] = FormPage.fromJson(
-            // Inject a proper empty questions list so fromJson doesn't crash
             {...screenJson, 'questions': []},
             isChangable: true,
             getJson: () async => widget.toJson(),
@@ -86,7 +85,6 @@ class ScreenManagerPage extends StatefulWidget {
         );
       }
     } else if (json['questions'] != null) {
-      // Legacy: single screen stored as root
       screens[0] = FormPage.fromJson(
         json,
         isChangable: true,
@@ -96,7 +94,6 @@ class ScreenManagerPage extends StatefulWidget {
       );
     }
 
-    // Wire up prev/next navigation
     final sortedKeys = screens.keys.toList()..sort();
     for (int i = 0; i < sortedKeys.length; i++) {
       int currentKey = sortedKeys[i];
@@ -106,7 +103,6 @@ class ScreenManagerPage extends StatefulWidget {
         currentPage.previosPage = (i > 0)
             ? () => screens[sortedKeys[i - 1]]!
             : null;
-
         currentPage.nextPage = (i < sortedKeys.length - 1)
             ? () => screens[sortedKeys[i + 1]]!
             : null;
@@ -125,7 +121,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
   @override
   void initState() {
     super.initState();
-
     final keyList = widget.screens.keys.toList();
     keyList.sort((p0, p1) => p0.compareTo(p1));
     currentIndex = keyList.isNotEmpty ? keyList.last : -1;
@@ -137,7 +132,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
       name: 'Form Num $currentIndex',
       isChangable: true,
       onSave: () async => widget.toJson(),
-      currentFormId: widget.currentFormId,
+      currentFormId: MainApp.currentSave.formId ?? widget.liveFormId,
     );
 
     setState(() {
@@ -162,7 +157,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     IconData pickingIcon = screen.icon;
     Color pickingColor = screen.color;
 
-    // Get screen size for responsive dialog
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
 
@@ -184,7 +178,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       label: Text("Enter new Screen name"),
                     ),
                   ),
-                  // Icon picker section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -214,7 +207,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       ),
                     ],
                   ),
-                  // Color picker section
                   Row(
                     mainAxisAlignment: isPhone
                         ? MainAxisAlignment.spaceBetween
@@ -240,9 +232,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             ElevatedButton(
               child: const Text('Rename'),
@@ -263,7 +253,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsive grid
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth < 400
         ? 2
@@ -277,28 +266,26 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
     return Scaffold(
       appBar: DemaciaAppBar(
-        onSave:
-            () async {
-                  print('screen page short save');
-                  print('id under screen page: ${widget.currentFormId}');
-                  save(
-                    widget.toJson(),
-                    MainApp.currentSave,
-                    widget.currentFormId,
-                  );
-                }
-                as void Function(),
+        onSave: () {
+          // ✅ Always read formId directly from the currently selected save
+          // so we never use a stale captured id from when the page was built.
+          final currentSave = MainApp.currentSave;
+          print('screen page short save → ${currentSave.title}, formId: ${currentSave.formId}');
+          save(
+            widget.toJson(),
+            currentSave,
+            currentSave.formId, // ✅ the id that belongs to this save slot
+          );
+        },
         onLongSave: () async {
-          print('screen page');
           return longSave(
             widget.toJson(),
             context,
             () => setState(() {}),
-            widget.currentFormId,
+            MainApp.currentSave.formId, // ✅ same here
           );
         },
         onLoadSave: () async {
-          // נטען מחדש את אותו screen manager לפי save שנבחר
           final prefs = await SharedPreferences.getInstance();
           final key = 'app_data_${MainApp.currentSave.index}';
           final savedJson = prefs.getString(key);
@@ -312,7 +299,8 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
               MaterialPageRoute(
                 builder: (_) => ScreenManagerPage.fromJson(
                   formData,
-                  widget.currentFormId ?? 1,
+                  MainApp.currentSave.formId ?? widget.liveFormId,
+                  getFormId: widget.getFormId,
                 ),
               ),
             );
@@ -444,16 +432,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     bottom: 0,
                     right: 0,
                     child: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          //screen.isSpecialForm = !screen.isSpecialForm;
-                        });
-                      },
+                      onPressed: () => setState(() {}),
                       icon: Icon(
                         Icons.star,
-                        // color: screen.isSpecialForm
-                        //     ? Colors.yellow
-                        //     : Colors.grey,
                         size: screenWidth < 600 ? 20 : 24,
                       ),
                       padding: EdgeInsets.all(4),
@@ -465,7 +446,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             ),
           );
 
-          // Simplified drag-and-drop for phones
           if (screenWidth < 600) {
             return LongPressDraggable<FormPage>(
               data: screen,
@@ -515,14 +495,11 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     }
                   });
                 },
-                builder: (context, candidateData, rejectedData) {
-                  return card(false);
-                },
+                builder: (context, candidateData, rejectedData) => card(false),
               ),
             );
           }
 
-          // Desktop drag-and-drop with drop zones
           return Row(
             children: [
               if (index == 0)
@@ -543,8 +520,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                   },
                   builder: (context, candidateData, rejectedData) {
                     if (candidateData.isNotEmpty || rejectedData.isNotEmpty) {
-                      if (candidateData.first!.index !=
-                          screenList.first.index) {
+                      if (candidateData.first!.index != screenList.first.index) {
                         return Container(
                           margin: EdgeInsets.symmetric(horizontal: 10),
                           width: 25,
