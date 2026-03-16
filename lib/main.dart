@@ -19,6 +19,12 @@ void main() async {
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   MainApp.version = packageInfo.version;
 
+  // ✅ Restore last selected save index from SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  final savedIndex = prefs.getInt('current_save') ?? 0;
+  final clampedIndex = savedIndex.clamp(0, MainApp.saves.length - 1);
+  MainApp.currentSave = MainApp.saves[clampedIndex];
+
   runApp(MainApp());
 }
 
@@ -43,6 +49,9 @@ void save(Map<String, dynamic> json, Save file, int? id) async {
   }
 
   MainApp.currentSave = file;
+
+  // ✅ Persist the current save index so it survives restarts
+  await prefs.setInt('current_save', file.index);
 }
 
 void longSave(

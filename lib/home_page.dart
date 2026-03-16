@@ -65,12 +65,18 @@ class HomePageState extends State<HomePage> {
 
           print('Stream update: ${MainApp.saves.length} saves');
 
-          currentFormId = savesWithForms[MainApp.currentSave.index]['id'];
+          // ✅ Fix: use firstWhere to find the correct save by index,
+          // instead of treating the list as positionally ordered.
+          final currentIndex = MainApp.currentSave.index;
+          final matchingSave = savesWithForms.firstWhere(
+            (s) => s['index'] == currentIndex,
+            orElse: () => savesWithForms[0],
+          );
+          currentFormId = matchingSave['id'];
           print('current form id: $currentFormId');
           count++;
         } else {
           print('Stream returned empty saves');
-          print('idddddd: $currentFormId');
           currentFormId = await DatabaseService().getLatestFormId();
           print('current id: $currentFormId');
 
@@ -383,8 +389,7 @@ class HomePageState extends State<HomePage> {
                                           ? () => buildPage(i + 1)
                                           : () => QrCode(
                                               data: _previewData,
-                                              formJson: widget
-                                                  .json, // ✅ pass form JSON for label mapping
+                                              formJson: widget.json,
                                               previosPage: () => buildPage(
                                                 screensList.length - 1,
                                               ),
