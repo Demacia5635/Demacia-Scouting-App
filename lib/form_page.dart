@@ -77,9 +77,9 @@ class FormPage extends StatefulWidget {
         final qIndex = question['index'] as int;
         final initMap = init();
         final innerFn = initMap?[qIndex];
-        print(
-          '🛑🛑🛑🛑🛑🛑printing all init  ${() => innerFn != null ? innerFn() : innerFn}🛑🛑🛑🛑🛑🛑',
-        );
+        // print(
+        //   '🛑🛑🛑🛑🛑🛑printing all init  ${() => innerFn != null ? innerFn() : innerFn}🛑🛑🛑🛑🛑🛑',
+        // );
         questions.addAll({
           qIndex: (
             Question.fromJson(
@@ -231,39 +231,40 @@ class FormPageState extends State<FormPage> {
       autofocus: true,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: DemaciaAppBar(
-          onSave:
-              () async {
-                    print('form page!');
-                    save(
-                      widget.toJson(),
-                      MainApp.currentSave,
-                      widget.currentFormId,
-                    );
-                    print('form id: ${MainApp.currentSave.formId}');
-                    print(
-                      '🟧🟧🟧🟧🟧🟧form id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧',
-                    );
-                    await DatabaseService().updateForm(
-                      formData: widget.toJson(),
-                      id:
-                          widget.currentFormId ??
-                          MainApp
-                              .currentSave
-                              .formId!, //MainApp.currentSave.formId!,
-                    );
-                  }
-                  as void Function(),
-          onLongSave: () async {
-            print('form page!');
-            return longSave(
-              await widget.onSave(),
-              context,
-              () => setState(() {}),
-              widget.currentFormId,
-            );
-          },
-        ),
+        appBar: HomePageAppBar(),
+        // appBar: DemaciaAppBar(
+        //   onSave:
+        //       () async {
+        //             print('form page!');
+        //             save(
+        //               widget.toJson(),
+        //               MainApp.currentSave,
+        //               widget.currentFormId,
+        //             );
+        //             print('form id: ${MainApp.currentSave.formId}');
+        //             print(
+        //               '🟧🟧🟧🟧🟧🟧form id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧',
+        //             );
+        //             await DatabaseService().updateForm(
+        //               formData: widget.toJson(),
+        //               id:
+        //                   widget.currentFormId ??
+        //                   MainApp
+        //                       .currentSave
+        //                       .formId!, //MainApp.currentSave.formId!,
+        //             );
+        //           }
+        //           as void Function(),
+        //   onLongSave: () async {
+        //     print('form page!');
+        //     return longSave(
+        //       await widget.onSave(),
+        //       context,
+        //       () => setState(() {}),
+        //       widget.currentFormId,
+        //     );
+        //   },
+        // ),
         body: Stack(
           children: [
             SingleChildScrollView(
@@ -371,4 +372,128 @@ class FormPageState extends State<FormPage> {
       ),
     );
   }
+}
+
+class HomePageAppBar extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Widget build(BuildContext context) {
+    bool isSmallScreen = MediaQuery.of(context).size.width < 600;
+    return AppBar(
+      toolbarHeight: kToolbarHeight * 2,
+      centerTitle: true,
+      elevation: 7,
+      backgroundColor: Colors.deepPurple.shade700,
+      title: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Demacia Scouting Maker",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Current Save Title Button
+              Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 20,
+                ),
+                child: ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 16,
+                      vertical: 8,
+                    ),
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Text(
+                    MainApp.currentSave.title,
+                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+
+              // // Delete Button
+              // Container(
+              //   margin: EdgeInsets.symmetric(
+              //     horizontal: isSmallScreen ? 4 : 20,
+              //   ),
+              //   child: ElevatedButton(
+              //     onPressed: () => _onDelete(context),
+              //     style: ElevatedButton.styleFrom(
+              //       padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              //       minimumSize: const Size(0, 0),
+              //     ),
+              //     child: Icon(
+              //       Icons.delete_forever,
+              //       size: isSmallScreen ? 20 : 24,
+              //     ),
+              //   ),
+              // ),
+
+              // // Load Button
+              // Container(
+              //   margin: EdgeInsets.symmetric(
+              //     horizontal: isSmallScreen ? 4 : 20,
+              //   ),
+              //   child: ElevatedButton(
+              //     onPressed: () => _loadSaves(context, onLoadSave),
+              //     style: ElevatedButton.styleFrom(
+              //       padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              //       minimumSize: const Size(0, 0),
+              //     ),
+              //     child: Icon(Icons.folder_open, size: isSmallScreen ? 20 : 24),
+              //   ),
+              // ),
+
+              // // Save Button
+              // Container(
+              //   margin: EdgeInsets.symmetric(
+              //     horizontal: isSmallScreen ? 4 : 20,
+              //   ),
+              //   child: ElevatedButton(
+              //     onPressed: onSave,
+              //     onLongPress: onLongSave,
+              //     style: ElevatedButton.styleFrom(
+              //       padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+              //       minimumSize: const Size(0, 0),
+              //     ),
+              //     child: Icon(Icons.save, size: isSmallScreen ? 20 : 24),
+              //   ),
+              // ),
+
+              // Version Text
+              // Container(
+              //   margin: EdgeInsets.symmetric(
+              //     horizontal: isSmallScreen ? 4 : 20,
+              //   ),
+              //   child: Center(
+              //     child: Text(
+              //       MainApp.version,
+              //       textAlign: TextAlign.center,
+              //       style: TextStyle(
+              //         color: Colors.white,
+              //         fontSize: isSmallScreen ? 10 : 14,
+              //       ),
+              //     ),
+              //   ),
+              // ),
+            ],
+          ),
+        ],
+      ),
+      actions: const [],
+    );
+  }
+
+  @override
+  // TODO: implement preferredSize
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight) * 2;
 }

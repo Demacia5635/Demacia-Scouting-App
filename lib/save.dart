@@ -55,6 +55,7 @@ class Save {
     } else {
       parsedIcon = Icons.save_alt;
     }
+
     return Save(
       index: json['index'] as int? ?? 0,
       title: json['title'] as String? ?? 'Untitled',
@@ -179,7 +180,7 @@ class Save {
     try {
       final databaseService = DatabaseService();
 
-      print('JSON: \n${toJson()}');
+      //print('JSON: \n${toJson()}');
       //await databaseService.updateSave(index: index, saveData: toJson());
 
       final prefs = await SharedPreferences.getInstance();

@@ -56,17 +56,14 @@ class ScreenManagerPage extends StatefulWidget {
         if (screenJson == null) continue;
         if (screenJson is! Map<String, dynamic>) continue;
 
-        // Skip screens that have no valid questions key at all
         final hasQuestions =
             screenJson['questions'] != null && screenJson['questions'] is List;
         final hasLegacyQuestion =
             screenJson['question'] != null && screenJson['question'] is List;
 
         if (!hasQuestions && !hasLegacyQuestion) {
-          // Still add the screen, just with no questions
           final index = screenJson['index'] as int? ?? screens.length;
           screens[index] = FormPage.fromJson(
-            // Inject a proper empty questions list so fromJson doesn't crash
             {...screenJson, 'questions': []},
             isChangable: true,
             getJson: () async => widget.toJson(),
@@ -86,7 +83,6 @@ class ScreenManagerPage extends StatefulWidget {
         );
       }
     } else if (json['questions'] != null) {
-      // Legacy: single screen stored as root
       screens[0] = FormPage.fromJson(
         json,
         isChangable: true,
@@ -121,27 +117,34 @@ class ScreenManagerPage extends StatefulWidget {
 
 class _ScreenManagerPageState extends State<ScreenManagerPage> {
   int currentIndex = -1;
+  late Map<int, FormPage> screens; //  state owns the mutable map
 
   @override
   void initState() {
     super.initState();
+    screens = widget.screens; // initialize once from widget
 
-    final keyList = widget.screens.keys.toList();
+    final keyList = screens.keys.toList();
     keyList.sort((p0, p1) => p0.compareTo(p1));
     currentIndex = keyList.isNotEmpty ? keyList.last : -1;
   }
+
+  // State-level toJson so it always uses the live `screens` map
+  Map<String, dynamic> toJson() => {
+    'screens': screens.values.map((p0) => p0.toJson()).toList(),
+  };
 
   void _addNewFormPage() {
     final newScreen = FormPage(
       index: ++currentIndex,
       name: 'Form Num $currentIndex',
       isChangable: true,
-      onSave: () async => widget.toJson(),
+      onSave: () async => toJson(),
       currentFormId: widget.currentFormId,
     );
 
     setState(() {
-      widget.screens.addAll({currentIndex: newScreen});
+      screens.addAll({currentIndex: newScreen});
     });
   }
 
@@ -151,7 +154,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
   void _deleteScreen(FormPage screen) {
     setState(() {
-      widget.screens.remove(screen.index);
+      screens.remove(screen.index);
     });
   }
 
@@ -162,7 +165,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
     IconData pickingIcon = screen.icon;
     Color pickingColor = screen.color;
 
-    // Get screen size for responsive dialog
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
 
@@ -184,7 +186,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       label: Text("Enter new Screen name"),
                     ),
                   ),
-                  // Icon picker section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -214,7 +215,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                       ),
                     ],
                   ),
-                  // Color picker section
                   Row(
                     mainAxisAlignment: isPhone
                         ? MainAxisAlignment.spaceBetween
@@ -263,7 +263,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsive grid
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth < 400
         ? 2
@@ -281,24 +280,19 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             () async {
                   print('screen page short save');
                   print('id under screen page: ${widget.currentFormId}');
-                  save(
-                    widget.toJson(),
-                    MainApp.currentSave,
-                    widget.currentFormId,
-                  );
+                  save(toJson(), MainApp.currentSave, widget.currentFormId);
                 }
                 as void Function(),
         onLongSave: () async {
           print('screen page');
           return longSave(
-            widget.toJson(),
+            toJson(),
             context,
             () => setState(() {}),
             widget.currentFormId,
           );
         },
         onLoadSave: () async {
-          // נטען מחדש את אותו screen manager לפי save שנבחר
           final prefs = await SharedPreferences.getInstance();
           final key = 'app_data_${MainApp.currentSave.index}';
           final savedJson = prefs.getString(key);
@@ -327,9 +321,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
           mainAxisSpacing: screenWidth < 600 ? 8.0 : 16.0,
           childAspectRatio: 0.65,
         ),
-        itemCount: widget.screens.length + 1,
+        itemCount: screens.length + 1, //  use state's screens
         itemBuilder: (context, index) {
-          if (index == widget.screens.length) {
+          if (index == screens.length) {
             return Card(
               margin: EdgeInsets.all(4),
               elevation: 4,
@@ -350,7 +344,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             );
           }
 
-          final screenList = widget.screens.values.toList();
+          final screenList = screens.values.toList(); // ← use state's screens
           screenList.sort((p0, p1) => p0.index.compareTo(p1.index));
           final screen = screenList[index];
 
@@ -445,17 +439,9 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     right: 0,
                     child: IconButton(
                       onPressed: () {
-                        setState(() {
-                          //screen.isSpecialForm = !screen.isSpecialForm;
-                        });
+                        setState(() {});
                       },
-                      icon: Icon(
-                        Icons.star,
-                        // color: screen.isSpecialForm
-                        //     ? Colors.yellow
-                        //     : Colors.grey,
-                        size: screenWidth < 600 ? 20 : 24,
-                      ),
+                      icon: Icon(Icons.star, size: screenWidth < 600 ? 20 : 24),
                       padding: EdgeInsets.all(4),
                       constraints: BoxConstraints(),
                     ),

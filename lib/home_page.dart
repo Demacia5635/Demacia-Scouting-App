@@ -65,7 +65,11 @@ class HomePageState extends State<HomePage> {
 
           print('Stream update: ${MainApp.saves.length} saves');
 
-          currentFormId = savesWithForms[MainApp.currentSave.index]['id'];
+          final matchingSave = savesWithForms.firstWhere(
+            (save) => save['index'] == MainApp.currentSave.index,
+            orElse: () => savesWithForms.first,
+          );
+          currentFormId = matchingSave['id'];
           print('current form id: $currentFormId');
           count++;
         } else {
@@ -103,7 +107,7 @@ class HomePageState extends State<HomePage> {
         final saveKey = 'app_data_${MainApp.currentSave.index}';
         if (prefs.containsKey(saveKey)) {
           final savedJson = prefs.getString(saveKey);
-          print('saved data from pref: $savedJson');
+          //print('saved data from pref: $savedJson');
           if (savedJson != null && savedJson.isNotEmpty) {
             formData = jsonDecode(savedJson);
           }
@@ -159,7 +163,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void _initPreviewData() {
-    print('json: ${widget.json}');
+    //print('json: ${widget.json}');
     if (widget.json == null ||
         (!widget.json!.containsKey('screens') &&
             !widget.json!.containsKey('questions'))) {
@@ -300,7 +304,18 @@ class HomePageState extends State<HomePage> {
                         // ── Enter Form ────────────────────────────────────
                         ElevatedButton(
                           onPressed: () {
-                            if (widget.json == null || widget.json!.isEmpty) {
+                            print(widget.json == null);
+                            print(widget.json!.isEmpty);
+                            print(
+                              jsonEncode(widget.json) ==
+                                  jsonEncode({"screens": []}),
+                            );
+                            //print(widget.json! == {"screens : []"});
+                            print('WIDGET JsOn: ${widget.json}');
+                            if (widget.json == null ||
+                                widget.json!.isEmpty ||
+                                jsonEncode(widget.json) ==
+                                    jsonEncode({"screens": []})) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -347,9 +362,9 @@ class HomePageState extends State<HomePage> {
                                           as List;
 
                                   Map<int, dynamic Function()?> func(int i) {
-                                    print(
-                                      '🟧🟧🟦🟦🟦🟧🟧🟦🟦🟦data for screen $i: ${_previewData[i]}🟧🟧🟦🟦🟦',
-                                    );
+                                    // print(
+                                    //   '🟧🟧🟦🟦🟦🟧🟧🟦🟦🟦data for screen $i: ${_previewData[i]}🟧🟧🟦🟦🟦',
+                                    // );
                                     final screenMap = _previewData[i] ?? {};
                                     return screenMap
                                         .map<int, dynamic Function()?>(
@@ -361,11 +376,19 @@ class HomePageState extends State<HomePage> {
                                   }
 
                                   FormPage buildPage(int i) {
-                                    print(
-                                      '🟢🟢🟢🟢🟢🟢func(i): ${() => func(i)}🟢🟢🟢🟢🟢🟢',
-                                    );
+                                    final bool isLegacy =
+                                        widget.json!.containsKey('questions') &&
+                                        !widget.json!.containsKey('screens');
+
+                                    //final rawPage = isLegacy ? widget.json! : screensList[i];
+
+                                    final pageJson = isLegacy
+                                        ? widget.json!
+                                        : screensList[i]
+                                              as Map<String, dynamic>;
+
                                     return FormPage.fromJson(
-                                      screensList[i] as Map<String, dynamic>,
+                                      pageJson,
                                       isChangable: false,
                                       getJson: () async => widget.json!,
                                       onChanged: (qIndex, value) {
@@ -383,8 +406,7 @@ class HomePageState extends State<HomePage> {
                                           ? () => buildPage(i + 1)
                                           : () => QrCode(
                                               data: _previewData,
-                                              formJson: widget
-                                                  .json, // ✅ pass form JSON for label mapping
+                                              formJson: widget.json,
                                               previosPage: () => buildPage(
                                                 screensList.length - 1,
                                               ),

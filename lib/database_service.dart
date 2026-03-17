@@ -35,7 +35,7 @@ class DatabaseService {
     return _supabase
         .from('data')
         .stream(primaryKey: ['id'])
-        .order('created_at', ascending: false)
+        .order('created_at', ascending: true)
         .limit(3)
         .asyncMap((List<Map<String, dynamic>> response) async {
           // Changed to asyncMap to allow SharedPreferences access
@@ -483,7 +483,7 @@ class DatabaseService {
 
   Future<bool> dbHasData() async {
     final data = await _supabase.from('data').select('form').limit(1);
-    print('data: $data');
+    //print('data: $data');
     return data.isNotEmpty;
   }
 
@@ -494,7 +494,7 @@ class DatabaseService {
     required Map<String, dynamic> saveData,
   }) async {
     try {
-      print('Updating save with data: $saveData');
+      //print('Updating save with data: $saveData');
       final existing = await _supabase
           .from('saves')
           .select()
