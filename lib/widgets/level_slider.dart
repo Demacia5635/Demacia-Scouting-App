@@ -2,9 +2,9 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:scouting_qr_maker/widgets/color_input.dart";
-import "package:scouting_qr_maker/widgets/question_type.dart";
+import "package:/widgets/question_type.dart";
 
-class LevelSlider extends QuestionType {
+class */ extends QuestionType {
   LevelSlider({
     super.key,
     required this.label,
