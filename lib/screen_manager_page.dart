@@ -13,11 +13,15 @@ class ScreenManagerPage extends StatefulWidget {
     super.key,
     Map<int, FormPage>? screens,
     int? currentFormId,
+    this.getFormId,
   }) : screens = screens ?? {},
        currentFormId = currentFormId ?? 1;
 
   Map<int, FormPage> screens;
   int? currentFormId;
+  final int Function()? getFormId;
+
+  int get liveFormId => getFormId?.call() ?? currentFormId ?? 1;
 
   @override
   State<ScreenManagerPage> createState() => _ScreenManagerPageState();
@@ -26,26 +30,24 @@ class ScreenManagerPage extends StatefulWidget {
     'screens': screens.values.map((p0) => p0.toJson()).toList(),
   };
 
-  factory ScreenManagerPage.fromJson(Map<String, dynamic> json, int id) {
+  factory ScreenManagerPage.fromJson(
+    Map<String, dynamic> json,
+    int id, {
+    int Function()? getFormId,
+  }) {
     Map<int, FormPage> screens = {};
     print('id in fromJson: $id');
 
     ScreenManagerPage widget = ScreenManagerPage(
       screens: screens,
       currentFormId: id,
-    );
-    print(
-      '🟧🟧🟧🟧🟧🟧screen manager default widget id: ${widget.currentFormId}🟧🟧🟧🟧🟧🟧🟧',
+      getFormId: getFormId,
     );
 
-    print('screen is null?: ${json['screens'] == null}');
-    print('🟧🟧🟧🟧🟧🟧🟧questions: ${json['questions']}🟧🟧🟧🟧🟧🟧🟧');
     if (json['screens'] == null && json['questions'] == null) {
-      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET EARLY🟧🟧🟧🟧🟧🟧');
       return widget;
     }
     if ((json['screens'] is List && (json['screens'] as List).isEmpty)) {
-      print('🟧🟧🟧🟧🟧🟧RETURNED WIDGET🟧🟧🟧🟧🟧🟧');
       return widget;
     }
 
@@ -92,7 +94,6 @@ class ScreenManagerPage extends StatefulWidget {
       );
     }
 
-    // Wire up prev/next navigation
     final sortedKeys = screens.keys.toList()..sort();
     for (int i = 0; i < sortedKeys.length; i++) {
       int currentKey = sortedKeys[i];
@@ -102,7 +103,6 @@ class ScreenManagerPage extends StatefulWidget {
         currentPage.previosPage = (i > 0)
             ? () => screens[sortedKeys[i - 1]]!
             : null;
-
         currentPage.nextPage = (i < sortedKeys.length - 1)
             ? () => screens[sortedKeys[i + 1]]!
             : null;
@@ -240,9 +240,7 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             ElevatedButton(
               child: const Text('Rename'),
@@ -284,12 +282,11 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                 }
                 as void Function(),
         onLongSave: () async {
-          print('screen page');
           return longSave(
             toJson(),
             context,
             () => setState(() {}),
-            widget.currentFormId,
+            MainApp.currentSave.formId, // ✅ same here
           );
         },
         onLoadSave: () async {
@@ -306,7 +303,8 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
               MaterialPageRoute(
                 builder: (_) => ScreenManagerPage.fromJson(
                   formData,
-                  widget.currentFormId ?? 1,
+                  MainApp.currentSave.formId ?? widget.liveFormId,
+                  getFormId: widget.getFormId,
                 ),
               ),
             );
@@ -451,7 +449,6 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
             ),
           );
 
-          // Simplified drag-and-drop for phones
           if (screenWidth < 600) {
             return LongPressDraggable<FormPage>(
               data: screen,
@@ -501,14 +498,11 @@ class _ScreenManagerPageState extends State<ScreenManagerPage> {
                     }
                   });
                 },
-                builder: (context, candidateData, rejectedData) {
-                  return card(false);
-                },
+                builder: (context, candidateData, rejectedData) => card(false),
               ),
             );
           }
 
-          // Desktop drag-and-drop with drop zones
           return Row(
             children: [
               if (index == 0)

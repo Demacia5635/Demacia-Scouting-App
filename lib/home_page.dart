@@ -74,7 +74,6 @@ class HomePageState extends State<HomePage> {
           count++;
         } else {
           print('Stream returned empty saves');
-          print('idddddd: $currentFormId');
           currentFormId = await DatabaseService().getLatestFormId();
           print('current id: $currentFormId');
 
@@ -154,7 +153,6 @@ class HomePageState extends State<HomePage> {
     _subscribeToSaves();
   }
 
-  // ✅ Called only when upload button is pressed in QrCode page
   void _resetPreviewData() {
     setState(() {
       _previewData = {};
@@ -273,10 +271,14 @@ class HomePageState extends State<HomePage> {
                                     return ScreenManagerPage.fromJson(
                                       widget.json!,
                                       currentFormId,
+                                      // ✅ Pass a live getter so ScreenManagerPage
+                                      // always reads the current id, not a snapshot.
+                                      getFormId: () => currentFormId,
                                     );
                                   }
                                   return ScreenManagerPage(
                                     currentFormId: currentFormId,
+                                    getFormId: () => currentFormId, // ✅
                                   );
                                 },
                               ),
