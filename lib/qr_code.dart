@@ -161,7 +161,7 @@ class QrCodeState extends State<QrCode> {
     print('Sending to sheet: $dataMap');
 
     final url = Uri.parse(
-      'https://docs.google.com/spreadsheets/d/1PuNPL4EYWW4F2yAiuk5ydpoZ2Nbo7uLJ3xI_mrKj6Xs/edit?gid=0&pli=1&authuser=0#gid=0',
+      'https://docs.google.com/spreadsheets/d/1PuNPL4EYWW4F2yAiuk5ydpoZ2Nbo7uLJ3xI_mrKj6Xs/edit?gid=0#gid=0',
     );
 
     final client = http.Client();
