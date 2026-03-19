@@ -45,7 +45,7 @@ class SpaceSettingsState extends State<SpaceSettings> {
         label: "Select the Height: ",
         max: 1000,
         min: 10,
-        initValue: () => 50,
+        initValue:  50,
         onChanged: (p0) {
           widget.space = Space(height: p0);
           widget.onChanged(widget.space);
