@@ -82,7 +82,6 @@ class Question extends StatefulWidget {
         isChangable: isChangable,
         init: init(),
       ),
-      // ✅ Fix: cast onChanged to the correct type
       Types.slider => LevelSlider.fromJson(
         json['question'],
         onChanged: (double p0) => {
@@ -250,7 +249,6 @@ class QuestionState extends State<Question> {
                           multipleChoice: multipleChoice,
                         );
                       case Types.slider:
-                        // ✅ Fix: explicitly type onChanged as void Function(double)
                         LevelSlider levelSlider = LevelSlider(
                           label: "Label",
                           isChangable: true,
@@ -265,3 +263,169 @@ class QuestionState extends State<Question> {
                           },
                           levelSlider: levelSlider,
                         );
+                      case Types.divider:
+                        SectionDivider sectionDivider = SectionDivider(
+                          label: "Label",
+                          isChangable: true,
+                        );
+                        widget.question = sectionDivider;
+                        settings = SectionDividerSettings(
+                          onChanged: (SectionDivider p0) {
+                            setState(() => widget.question = p0);
+                          },
+                          sectionDivider: sectionDivider,
+                        );
+                      case Types.color:
+                        ColorInput colorInput = ColorInput(
+                          onChanged: (p0) => {
+                            widget.onChanged(widget.index, p0),
+                          },
+                        );
+                        widget.question = colorInput;
+                        settings = Container();
+                      case Types.icon:
+                        IconPicker iconPicker = IconPicker(
+                          onChanged: (p0) => {
+                            widget.onChanged(widget.index, p0),
+                          },
+                        );
+                        widget.question = iconPicker;
+                        settings = Container();
+                      case Types.spacer:
+                        Space space = Space();
+                        widget.question = space;
+                        settings = SpaceSettings(
+                          onChanged: (p0) {
+                            setState(() {
+                              widget.question = p0;
+                            });
+                          },
+                          space: space,
+                        );
+                      case Types.string:
+                        StringInput stringInput = StringInput(
+                          label: "Label",
+                          isChangable: true,
+                          onChanged: (p0) => {
+                            widget.onChanged(widget.index, p0),
+                          },
+                        );
+                        widget.question = stringInput;
+                        settings = StringInputSettings(
+                          onChanged: (p0) {
+                            setState(() {
+                              widget.question = p0;
+                            });
+                          },
+                          stringInput: stringInput,
+                        );
+                      case Types.selectable:
+                        List<Entry> entries = [
+                          Entry(index: 0),
+                          Entry(index: 1),
+                          Entry(index: 2),
+                        ];
+                        Selection selection = Selection(
+                          label: "label",
+                          options: entries,
+                          isChangable: true,
+                          onChanged: (p0) => {
+                            widget.onChanged(widget.index, p0),
+                          },
+                        );
+                        widget.question = selection;
+                        settings = SelectionSettings(
+                          onChanged: (p0) {
+                            setState(() {
+                              widget.question = p0;
+                            });
+                          },
+                          selection: selection,
+                        );
+                    }
+                  });
+                },
+                segments: segments.map<ButtonSegment<Types>>((
+                  (Types, String) shirt,
+                ) {
+                  return ButtonSegment<Types>(
+                    value: shirt.$1,
+                    label: Text(shirt.$2),
+                  );
+                }).toList(),
+              )
+            : Container(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            widget.isChangable
+                ? Container(
+                    margin: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(10),
+                    constraints: BoxConstraints(),
+                    child: Form(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: settings,
+                      ),
+                    ),
+                  )
+                : Container(),
+            Container(
+              constraints: BoxConstraints(maxHeight: 1000, maxWidth: 450),
+              child: widget.question,
+            ),
+            widget.isChangable
+                ? PopupMenuButton(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      switch (value) {
+                        case Options.delete:
+                          setState(() {
+                            widget.onDelete(widget.index);
+                          });
+                        case Options.duplicate:
+                          setState(() {
+                            widget.onDuplicate(widget.index);
+                          });
+                      }
+                    },
+                    itemBuilder: (context) => <PopupMenuEntry<Options>>[
+                      const PopupMenuItem<Options>(
+                        value: Options.delete,
+                        child: ListTile(
+                          leading: Icon(Icons.delete_outline),
+                          title: Text("Delete"),
+                        ),
+                      ),
+                      const PopupMenuItem<Options>(
+                        value: Options.duplicate,
+                        child: ListTile(
+                          leading: Icon(Icons.control_point_duplicate),
+                          title: Text("Duplicate"),
+                        ),
+                      ),
+                    ],
+                  )
+                : Container(),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+enum Types {
+  spacer,
+  boolean,
+  int,
+  slider,
+  divider,
+  color,
+  icon,
+  string,
+  selectable,
+  multipleChoice,
+}
+
+enum Options { delete, duplicate }
