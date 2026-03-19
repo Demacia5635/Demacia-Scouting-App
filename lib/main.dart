@@ -7,7 +7,6 @@ import 'package:scouting_qr_maker/save.dart';
 import 'package:scouting_qr_maker/home_page.dart';
 import 'package:scouting_qr_maker/form_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {

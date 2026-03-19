@@ -1,14 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/widgets/demacia_app_bar.dart';
 import 'package:scouting_qr_maker/widgets/editing_enum.dart';
 import 'package:scouting_qr_maker/widgets/section_divider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 
 class QrCode extends StatefulWidget {

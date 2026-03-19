@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:scouting_qr_maker/database_service.dart';
 import 'package:scouting_qr_maker/main.dart';
 import 'package:scouting_qr_maker/question.dart';
