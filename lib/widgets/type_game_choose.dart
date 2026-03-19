@@ -4,7 +4,7 @@ class typeGameChoose extends StatefulWidget {
   const typeGameChoose({super.key});
 
   @override
-  State<typeGameChoose> createState => _typeGameChoose;
+  State<typeGameChoose> createState() => _typeGameChoose();
 }
 
 class _typeGameChoose extends State<typeGameChoose>{
@@ -18,16 +18,16 @@ class _typeGameChoose extends State<typeGameChoose>{
       hint: const Text("cose game type"),
       value: _selected,
       items: _opsean.map((option){
-        return DropdownMeuItem<String>(
+        return DropdownMenuItem<String>(
           value:option,
           child: Text(option),
-        )
+        );
       }).toList(),
         onChanged: (value){
           setState((){
             _selected =value;
-          })
+          });
         }
-      )
+      );
   }
 }
