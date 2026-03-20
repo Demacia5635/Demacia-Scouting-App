@@ -11,8 +11,7 @@ class Space extends QuestionType {
   State<StatefulWidget> createState() => SpaceState();
 
   @override
-  Widget settings(void Function(Space p1) onChanged) =>
-      SpaceSettings(onChanged: onChanged, space: this);
+  Widget settings(void Function(Space p1) onChanged) => SpaceSettings(onChanged: onChanged, space: this);
 
   @override
   Map<String, dynamic> toJson() => {'height': height};
