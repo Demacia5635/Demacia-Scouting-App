@@ -200,6 +200,7 @@ class QrCodeState extends State<QrCode> {
   void initState() {
     super.initState();
     focusNode = FocusNode();
+    print('DATA in qr: ${widget.data}');
     _loadData();
 
     // Take screenshot after 10 seconds

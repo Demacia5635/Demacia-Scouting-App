@@ -144,16 +144,18 @@ class Question extends StatefulWidget {
     int index, {
     Key? key,
     void Function(int, dynamic)? onChanged,
-  }) => Question(
-    key: key,
-    index: index,
-    question: question.question,
-    questionType: question.questionType,
-    isChangable: question.isChangable,
-    onDelete: question.onDelete,
-    onDuplicate: question.onDuplicate,
-    onChanged: onChanged,
-  );
+  }) {
+    final json = question.toJson();
+    return Question.fromJson(
+      {...json, 'index': index},
+      key: key ?? Key(index.toString()),
+      isChangable: question.isChangable,
+      onDelete: question.onDelete,
+      onDuplicate: question.onDuplicate,
+      onChanged: onChanged ?? question.onChanged,
+      init: () => null,
+    );
+  }
 }
 
 const List<(Types, String)> segments = <(Types, String)>[
