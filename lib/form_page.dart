@@ -108,10 +108,10 @@ class FormPage extends StatefulWidget {
           : Icons.article,
       color: json['color'] != null
           ? Color.from(
-              alpha: json['color']['a'],
-              red: json['color']['r'],
-              green: json['color']['g'],
-              blue: json['color']['b'],
+              alpha: (json['color']['a'] as num).toDouble(),
+              red: (json['color']['r'] as num).toDouble(),
+              green: (json['color']['g'] as num).toDouble(),
+              blue: (json['color']['b'] as num).toDouble(),
             )
           : Colors.blue,
       onSave: getJson,

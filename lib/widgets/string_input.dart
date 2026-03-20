@@ -72,16 +72,16 @@ class StringInput extends QuestionType {
       label: json['label'] as String,
       initValue: resolvedInit ?? (() => json['initValue'] as String),
       textColor: Color.from(
-        alpha: json['textColor']['a'] as double,
-        red: json['textColor']['r'] as double,
-        green: json['textColor']['g'] as double,
-        blue: json['textColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       labelColor: Color.from(
-        alpha: json['labelColor']['a'] as double,
-        red: json['labelColor']['r'] as double,
-        green: json['labelColor']['g'] as double,
-        blue: json['labelColor']['b'] as double,
+        alpha: (json['labelColor']['a'] as num).toDouble(),
+        red: (json['labelColor']['r'] as num).toDouble(),
+        green: (json['labelColor']['g'] as num).toDouble(),
+        blue: (json['labelColor']['b'] as num).toDouble(),
       ),
       onChanged: onChanged,
       isChangable: isChangable,
@@ -124,7 +124,6 @@ class StringInputState extends State<StringInput> {
     super.initState();
 
     controller.text = widget.initValue();
-
   }
 
   @override

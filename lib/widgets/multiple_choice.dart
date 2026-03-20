@@ -99,11 +99,11 @@ class MultipleChoice extends QuestionType {
         resolvedInit = () => init() as double;
         print('🛑🛑🛑init is a double Function() 🛑🛑🛑');
       } else {
-        resolvedInit = () => json['initValue'] as double;
+        resolvedInit = () => (json['initValue'] as num).toDouble();
         print('🛑🛑🛑init is NOT a double Function()🛑🛑🛑');
       }
     } catch (_) {
-      resolvedInit = () => json['initValue'] as double;
+      resolvedInit = () => (json['initValue'] as num).toDouble();
     }
     //print('CHOSE MULTIPLE CHOICE $resolvedInit 🟦🟦🟦🟦🟦🟦🟦🟦🟦');
     return MultipleChoice(
@@ -114,34 +114,34 @@ class MultipleChoice extends QuestionType {
         fontFamily: json['icon']['fontFamily'] as String,
       ),
       plus: Color.from(
-        alpha: json['plus']['a'] as double,
-        red: json['plus']['r'] as double,
-        green: json['plus']['g'] as double,
-        blue: json['plus']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       minus: Color.from(
-        alpha: json['minus']['a'] as double,
-        red: json['minus']['r'] as double,
-        green: json['minus']['g'] as double,
-        blue: json['minus']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       textColor: Color.from(
-        alpha: json['textColor']['a'] as double,
-        red: json['textColor']['r'] as double,
-        green: json['textColor']['g'] as double,
-        blue: json['textColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       numberColor: Color.from(
-        alpha: json['numberColor']['a'] as double,
-        red: json['numberColor']['r'] as double,
-        green: json['numberColor']['g'] as double,
-        blue: json['numberColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       iconColor: Color.from(
-        alpha: json['iconColor']['a'] as double,
-        red: json['iconColor']['r'] as double,
-        green: json['iconColor']['g'] as double,
-        blue: json['iconColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       stepValue: (json['stepValue'] as num).toDouble(),
       max: (json['max'] as num).toDouble(),

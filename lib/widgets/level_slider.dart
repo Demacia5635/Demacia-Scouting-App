@@ -94,8 +94,8 @@ class LevelSlider extends QuestionType {
       divisions = 1;
     }
     print('maximus dracarys: ${json['max']}, min: ${json['min']}');
-    double max = json['max'] as double;
-    double min = json['min'] as double;
+    double max = (json['max'] as num).toDouble();
+    double min = (json['min'] as num).toDouble();
     if (min <= 1.0) {
       min = 1.0;
     } else if (min >= 12.0) {
@@ -114,27 +114,27 @@ class LevelSlider extends QuestionType {
       key: key,
       label: json['label'] as String,
       textColor: Color.from(
-        alpha: json['textColor']['a'] as double,
-        red: json['textColor']['r'] as double,
-        green: json['textColor']['g'] as double,
-        blue: json['textColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       sliderColor: Color.from(
-        alpha: json['sliderColor']['a'] as double,
-        red: json['sliderColor']['r'] as double,
-        green: json['sliderColor']['g'] as double,
-        blue: json['sliderColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       thumbColor: Color.from(
-        alpha: json['thumbColor']['a'] as double,
-        red: json['thumbColor']['r'] as double,
-        green: json['thumbColor']['g'] as double,
-        blue: json['thumbColor']['b'] as double,
+        alpha: (json['textColor']['a'] as num).toDouble(),
+        red: (json['textColor']['r'] as num).toDouble(),
+        green: (json['textColor']['g'] as num).toDouble(),
+        blue: (json['textColor']['b'] as num).toDouble(),
       ),
       min: min,
       max: max,
       divisions: divisions,
-      initValue: resolvedInit ?? (() => json['initValue'] as double),
+      initValue: resolvedInit ?? (() => (json['initValue'] as num).toDouble()),
       onChanged: onChanged,
       isChangable: isChangable,
     );

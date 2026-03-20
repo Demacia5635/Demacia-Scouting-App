@@ -304,10 +304,11 @@ class Entry {
     title: json['title'] as String,
     sheetsTitle: json['sheetsTitle'] as String,
     color: Color.from(
-      alpha: json['color']['a'] as double,
-      red: json['color']['r'] as double,
-      green: json['color']['g'] as double,
-      blue: json['color']['b'] as double,
+      alpha: (json['color']['a'] as num)
+          .toDouble(), //(json['labelColor']['a'] as num).toDouble(),
+      red: (json['color']['r'] as num).toDouble(),
+      green: (json['color']['g'] as num).toDouble(),
+      blue: (json['color']['b'] as num).toDouble(),
     ),
     icon: (json['icon']['codePoint'] != '')
         ? IconData(

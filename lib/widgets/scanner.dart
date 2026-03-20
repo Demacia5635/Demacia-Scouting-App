@@ -50,17 +50,19 @@ class QRCodeState extends State<Scanner> {
     final parts = code.split(',').map((s) => s.trim()).toList();
 
     return {
-      'enter ur team station':                  parts.length > 0  ? parts[0]  : '',
-      'enter your name':                        parts.length > 1  ? parts[1]  : '',
-      'enter your match team':                  parts.length > 2  ? parts[2]  : '',
-      'enter your match number':                parts.length > 3  ? parts[3]  : '',
-      'Auto_how many scored fuel':              parts.length > 4  ? parts[4]  : '',
-      'Auto_how many fuel got to their side':   parts.length > 5  ? parts[5]  : '',
-      'label':                                  parts.length > 6  ? parts[6]  : '',
-      'teleop_how many scored fuel':            parts.length > 7  ? parts[7]  : '',
-      'teleop_how many fuel got to their side': parts.length > 8  ? parts[8]  : '',
-      'climb':                                  parts.length > 9  ? parts[9]  : '',
-      'defence0-5':                             parts.length > 10 ? parts[10] : '',
+      'enter ur team station': parts.length > 0 ? parts[0] : '',
+      'enter your name': parts.length > 1 ? parts[1] : '',
+      'enter your match team': parts.length > 2 ? parts[2] : '',
+      'enter your match number': parts.length > 3 ? parts[3] : '',
+      'Auto_how many scored fuel': parts.length > 4 ? parts[4] : '',
+      'Auto_how many fuel got to their side': parts.length > 5 ? parts[5] : '',
+      'label': parts.length > 6 ? parts[6] : '',
+      'teleop_how many scored fuel': parts.length > 7 ? parts[7] : '',
+      'teleop_how many fuel got to their side': parts.length > 8
+          ? parts[8]
+          : '',
+      'climb': parts.length > 9 ? parts[9] : '',
+      'defence0-5': parts.length > 10 ? parts[10] : '',
     };
   }
 
@@ -131,7 +133,10 @@ class QRCodeState extends State<Scanner> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               ),
             ),
           IconButton(
@@ -147,7 +152,7 @@ class QRCodeState extends State<Scanner> {
       backgroundColor: Colors.deepPurple.shade700,
       body: Column(
         children: [
-          isScanMode
+          isScanMode && !Platform.isWindows
               ? Expanded(
                   flex: 5,
                   child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated),
@@ -180,6 +185,5 @@ class QRCodeState extends State<Scanner> {
         ],
       ),
     );
-
   }
 }
