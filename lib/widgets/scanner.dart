@@ -49,18 +49,32 @@ class QRCodeState extends State<Scanner> {
   Map<String, dynamic> parseQRCode(String code) {
     final parts = code.split(',').map((s) => s.trim()).toList();
 
+    // parts[1] = team number, parts[2] = match number
+    final matchTeam = parts.length > 1 ? parts[1] : '';
+    final matchNum = parts.length > 2 ? parts[2] : '';
+
+    // ID = match number + team number
+    final id = '${matchNum}_${matchTeam}';
+
     return {
-      'enter ur team station':                  parts.length > 0  ? parts[0]  : '',
-      'enter your name':                        parts.length > 1  ? parts[1]  : '',
-      'enter your match team':                  parts.length > 2  ? parts[2]  : '',
-      'enter your match number':                parts.length > 3  ? parts[3]  : '',
-      'Auto_how many scored fuel':              parts.length > 4  ? parts[4]  : '',
-      'Auto_how many fuel got to their side':   parts.length > 5  ? parts[5]  : '',
-      'label':                                  parts.length > 6  ? parts[6]  : '',
-      'teleop_how many scored fuel':            parts.length > 7  ? parts[7]  : '',
-      'teleop_how many fuel got to their side': parts.length > 8  ? parts[8]  : '',
-      'climb':                                  parts.length > 9  ? parts[9]  : '',
-      'defence0-5':                             parts.length > 10 ? parts[10] : '',
+      'השם שלכם': parts.length > 0 ? parts[0] : '',
+      'מספר קבוצה': parts.length > 1 ? parts[1] : '',
+      'מספר משחק': parts.length > 2 ? parts[2] : '',
+      'איפה התחיל': parts.length > 3 ? parts[3] : '',
+      'איפה עבר': parts.length > 4 ? parts[4] : '',
+      '?ירה': parts.length > 5 ? parts[5] : '',
+      'אם כן כמה נקודות עשה בערך': parts.length > 6 ? parts[6] : '',
+      'טיפס': parts.length > 7 ? parts[7] : '',
+      'עובר סנטרליין': parts.length > 8 ? parts[8] : '',
+      'איפה משיג כדורים?': parts.length > 9 ? parts[9] : '',
+      'Auto_דליוורי': parts.length > 10 ? parts[10] : '',
+      'ירי': parts.length > 11 ? parts[11] : '',
+      'כמה נקודות עשה בירי': parts.length > 12 ? parts[12] : '',
+      'טיפוס': parts.length > 13 ? parts[13] : '',
+      'טל-אופ_דליוורי': parts.length > 14 ? parts[14] : '',
+      'הגנה': parts.length > 15 ? parts[15] : '',
+      'מה עובר': parts.length > 16 ? parts[16] : '',
+      'id': id,
     };
   }
 
@@ -72,7 +86,7 @@ class QRCodeState extends State<Scanner> {
     setState(() => isSending = true);
 
     final url = Uri.parse(
-      'https://script.google.com/macros/s/AKfycbzwDCPVAost-Crrql2l6CiGi8C5KUmH0ZFE6UBmFASLsN-l9mlzeOMrpbwlyD7LVM4svg/exec',
+      'https://script.google.com/macros/s/AKfycbyBLHJZRba0UXgpB_uhspvqZAyhXJghE9i80NlhNkGA7C8Uy2R-7vYcO7px9Lm-TRiV7A/exec',
     );
 
     final client = http.Client();
@@ -131,7 +145,10 @@ class QRCodeState extends State<Scanner> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               ),
             ),
           IconButton(
@@ -180,6 +197,5 @@ class QRCodeState extends State<Scanner> {
         ],
       ),
     );
-
   }
 }

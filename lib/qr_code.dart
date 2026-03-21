@@ -158,34 +158,46 @@ class QrCodeState extends State<QrCode> {
       }
     }
 
+    // Build and add ID from team number and match number
+    final teamNum = dataMap['מספר קבוצה']?.toString() ?? '';
+    final matchNum = dataMap['מספר משחק']?.toString() ?? '';
+    dataMap['id'] = '${matchNum}_${teamNum}';
+
     print('Sending to sheet: $dataMap');
 
     final url = Uri.parse(
-      'https://docs.google.com/spreadsheets/d/1PuNPL4EYWW4F2yAiuk5ydpoZ2Nbo7uLJ3xI_mrKj6Xs/edit?gid=0&pli=1&authuser=0#gid=0',
+      'https://script.google.com/macros/s/AKfycbyBLHJZRba0UXgpB_uhspvqZAyhXJghE9i80NlhNkGA7C8Uy2R-7vYcO7px9Lm-TRiV7A/exec',
     );
 
     final client = http.Client();
     try {
-      final encodedBody = jsonEncode(dataMap);
-
       final request = http.Request('POST', url)
         ..headers['Content-Type'] = 'application/json'
         ..followRedirects = false
-        ..body = encodedBody;
+        ..body = jsonEncode(dataMap);
 
       final firstResponse = await client.send(request);
 
-      http.Response response;
+      print('Status: ${firstResponse.statusCode}');
 
+      http.Response response;
       if (firstResponse.statusCode == 302) {
-        final redirectUrl = Uri.parse(firstResponse.headers['location']!);
+        final location = firstResponse.headers['location'];
+        print('Redirecting to: $location');
+        final redirectUrl = Uri.parse(location!);
         response = await http.get(redirectUrl);
       } else {
         response = await http.Response.fromStream(firstResponse);
       }
 
-      print('Status: ${response.statusCode}');
-      print('Body: ${response.body}');
+      print('Final Status: ${response.statusCode}');
+      print('Final Body: ${response.body}');
+
+      if (response.body.trimLeft().startsWith('<')) {
+        throw Exception(
+          'Server returned HTML. Check the Apps Script deployment.',
+        );
+      }
 
       final responseJson = jsonDecode(response.body);
       if (responseJson['status'] == 'error') {
