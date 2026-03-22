@@ -130,27 +130,27 @@ class QrCodeState extends State<QrCode> {
     }
 
     final labelCounts = <String, int>{};
-    for (final l in allLabels) {
-      labelCounts[l] = (labelCounts[l] ?? 0) + 1;
+    for (String lable in allLabels) {
+      labelCounts[lable] = (labelCounts[lable] ?? 0) + 1;
     }
     final duplicateLabels = labelCounts.entries
         .where((e) => e.value > 1)
         .map((e) => e.key)
         .toSet();
 
-    final Map<String, dynamic> dataMap = {};
+    Map<String, dynamic> dataMap = {};
     for (var screenEntry in widget.data.entries) {
-      final screenIndex = screenEntry.key;
-      final screenName = _getScreenName(screenIndex);
+      int screenIndex = screenEntry.key;
+      String screenName = _getScreenName(screenIndex);
       for (var qEntry in screenEntry.value.entries) {
-        final qIndex = qEntry.key;
-        final value = valueToString(qEntry.value);
+        int qIndex = qEntry.key;
+        String value = valueToString(qEntry.value);
         if (value == '\u200B') continue;
 
-        final rawLabel =
+        String rawLabel =
             labelMap[screenIndex]?[qIndex] ?? 'screen${screenIndex}_q$qIndex';
 
-        final finalLabel = duplicateLabels.contains(rawLabel)
+        String finalLabel = duplicateLabels.contains(rawLabel)
             ? '${screenName}_$rawLabel'
             : rawLabel;
 
@@ -159,9 +159,13 @@ class QrCodeState extends State<QrCode> {
     }
 
     // Build and add ID from team number and match number
-    final teamNum = dataMap['מספר קבוצה']?.toString() ?? '';
-    final matchNum = dataMap['מספר משחק']?.toString() ?? '';
-    dataMap['id'] = '${matchNum}_${teamNum}';
+    String teamNum = dataMap['Team Number']?.toString() ?? '';
+    String matchNum = dataMap['Match Number']?.toString() ?? '';
+    String matchType = dataMap['Match Type']?.toString() ?? '';
+    print('Half id: ${matchType + matchNum}');
+    dataMap.remove(dataMap['Match Type']);
+    dataMap['Match Number'] = matchType + matchNum;
+    dataMap['id'] = '${matchType + matchNum}_$teamNum';
 
     print('Sending to sheet: $dataMap');
 
@@ -295,24 +299,24 @@ class QrCodeState extends State<QrCode> {
     }
   }
 
-  Future<void> _uploadData() async {
-    Map<String, Map<String, String>> dataMap = {};
-    for (var entry in widget.data.entries) {
-      Map<String, String> screenMap = {};
-      for (var screenEntry in entry.value.entries) {
-        String value = valueToString(screenEntry.value);
-        if (value != '\u200B') {
-          screenMap[screenEntry.key.toString()] = value;
-        }
-      }
-      dataMap[entry.key.toString()] = screenMap;
-    }
+  // Future<void> _uploadData() async {
+  //   Map<String, Map<String, String>> dataMap = {};
+  //   for (var entry in widget.data.entries) {
+  //     Map<String, String> screenMap = {};
+  //     for (var screenEntry in entry.value.entries) {
+  //       String value = valueToString(screenEntry.value);
+  //       if (value != '\u200B') {
+  //         screenMap[screenEntry.key.toString()] = value;
+  //       }
+  //     }
+  //     dataMap[entry.key.toString()] = screenMap;
+  //   }
 
-    await DatabaseService().uploadData(
-      table: 'answer',
-      data: {'answer': dataMap},
-    );
-  }
+  //   await DatabaseService().uploadData(
+  //     table: 'answer',
+  //     data: {'answer': dataMap},
+  //   );
+  // }
 
   void handleKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent &&
@@ -383,7 +387,7 @@ class QrCodeState extends State<QrCode> {
                             : () async {
                                 setState(() => _isUploading = true);
                                 try {
-                                  await _uploadData();
+                                  // await _uploadData();
                                   await sendToSheet();
                                   if (context.mounted) {
                                     widget.onUploaded?.call();
