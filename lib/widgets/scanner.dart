@@ -164,7 +164,7 @@ class QRCodeState extends State<Scanner> {
       backgroundColor: Colors.deepPurple.shade700,
       body: Column(
         children: [
-          isScanMode
+          isScanMode && !Platform.isWindows
               ? Expanded(
                   flex: 5,
                   child: QRView(key: qrKey, onQRViewCreated: _onQRViewCreated),
