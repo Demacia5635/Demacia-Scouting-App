@@ -162,10 +162,24 @@ class QrCodeState extends State<QrCode> {
     String teamNum = dataMap['Team Number']?.toString() ?? '';
     String matchNum = dataMap['Match Number']?.toString() ?? '';
     String matchType = dataMap['Match Type']?.toString() ?? '';
-    print('Half id: ${matchType + matchNum}');
-    dataMap.remove(dataMap['Match Type']);
-    dataMap['Match Number'] = matchType + matchNum;
-    dataMap['id'] = '${matchType + matchNum}_$teamNum';
+    switch (matchType) {
+      case 'qm':
+        matchType = 'qm$matchNum';
+        break;
+      case 'sfm':
+        matchType = 'sf${matchNum}m1';
+        break;
+      case 'fm':
+        matchType = 'f1m$matchNum';
+        break;
+      default:
+        matchType = 't$matchNum';
+        break;
+    }
+    print('Half id: $matchType');
+    dataMap.remove('Match Type');
+    dataMap['Match Number'] = matchType;
+    dataMap['id'] = '${matchType}_$teamNum';
 
     print('Sending to sheet: $dataMap');
 
